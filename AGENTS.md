@@ -1,0 +1,18 @@
+# AquaLedger Web — agent instructions
+
+This repository owns Next.js/TypeScript and web tests only. Central authority: `AmeenBinBisher/aqualedger`, documents 00–10, especially decisions/product/architecture/acceptance/engineering standards. Review the latest central owner-correction PR and then pin the merged baseline. Read `docs/IMPLEMENTATION.md` before changes.
+
+1. Personal private repository; verify identity/remotes. Do not recreate repositories, modify global GitHub auth, overwrite local work or borrow credentials.
+2. Exactly two primary screens: Analysis Workspace and Settings/Data Sources. Embed history/results/evidence/charts/card/scenario as workspace panels. No extra business pages/mobile work.
+3. Arabic/RTL and English/LTR from first UI implementation and each subsequent capability. Translate validation/errors/evidence reasons/labels/exports, not just menus. Test lang/dir, keyboard/responsiveness and mixed-direction text. Never mirror maps/coordinates or change analytical input when switching locale.
+4. Use App Router, strict TypeScript, native server/client boundaries and a maintained i18n solution. Keep browser-only map code isolated. Prefer simple local state and bounded polling. No internal framework, speculative global state, premature abstractions or needless dependencies.
+5. Backend owns generated OpenAPI. Consume a pinned artifact; record backend SHA/hash/version, and check client compatibility. No unpinned moving-branch fetch in builds or duplicated handwritten domain API schemas.
+6. All analysis/job/result/source-status requests use the authorized backend contract. No EO calculation, queue consumption, Supabase migration or privileged direct database access in this repo. Public Auth use is permitted only for the actual approved access model; never expose service/database/provider secrets.
+7. Source settings reads real sanitized state. No fake green badges, provider credential fields, arbitrary endpoints or controls that disable required scientific evidence. Empty/outage/insufficient states remain distinct.
+8. Preserve saved analysis identity across locale changes/form edits/late responses/reopen. Do not send jobs in page-load effects. No production mocks or invented priorities; unit fixtures are explicitly tests.
+9. Add real install/build/lint/typecheck/tests, message-key/parameter parity, contract checks and bilingual browser gates with implementation. Pin compatible versions; no fake CI, blanket suppression or guessed passing commands.
+10. Task issue/branch -> PR to dev -> independent post-fix reviewer -> Council final scope review -> merge -> paired web/backend verification. Do not self-approve, force-push, release main or delete unrelated work.
+11. Link exact web/backend SHAs and contract/migration identities to the central mission/evidence index. A web-only PASS does not close an integrated milestone. Do not create a second product STATUS.
+12. Jarvis coordinates; implementers implement. Use only authorized existing resources. No billing, accounts, agreements, external publication, official submission or application of migrations from web. Simplicity never removes correctness/accessibility/security/scientific disclosure.
+
+Canonical detailed standards: https://github.com/AmeenBinBisher/aqualedger/blob/dev/docs/current/10-ENGINEERING-STANDARDS.md (available on central PR #1 until merged).
