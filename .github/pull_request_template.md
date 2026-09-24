@@ -12,6 +12,10 @@ Backend PR/SHA (or unchanged tested SHA):
 Generated contract version/hash:
 Migration dependency and safe rollout order, if any:
 
+## Planning Council decision linkage
+Council decision record(s) for any unresolved technical/domain choice introduced or resolved by this PR:
+If no new Council decision is required, cite the existing approved owner/Council decision or contract clause and the acceptance criteria that determine the behavior:
+
 ## Verification
 Commands actually run and outcomes:
 Applicable central acceptance IDs:
@@ -25,6 +29,7 @@ Secrets/access/security impact:
 ## Gates
 - [ ] Project documentation, code comments and engineering communication are English; Arabic is confined to necessary literal/localization content.
 - [ ] Exactly two primary screens; no speculative scope.
+- [ ] Any unresolved technical/domain choice is linked to a recorded Planning Council verdict (ACCEPTED, or a MODIFIED verdict whose conditions are met) before dependent implementation; no coordinator/agent recommendation is treated as a decision. A PENDING or REJECTED proposal does not authorize its implementation.
 - [ ] Independent latest-fix review linked to SHA.
 - [ ] Final Council owner-scope verdict linked.
 - [ ] Merge to dev only after required checks; record paired post-merge verification separately.
