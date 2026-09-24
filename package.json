@@ -1,0 +1,45 @@
+{
+  "name": "aqualedger-web",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.22.2",
+    "npm": ">=10.9.7 <11"
+  },
+  "packageManager": "npm@10.9.7",
+  "scripts": {
+    "predev": "node scripts/copy-maplibre-worker.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "messages:check": "node scripts/check-messages.mjs",
+    "test:e2e": "playwright test",
+    "test": "npm run messages:check && npm run test:e2e"
+  },
+  "dependencies": {
+    "@turf/area": "7.4.0",
+    "@turf/boolean-valid": "7.4.0",
+    "maplibre-gl": "6.11.2",
+    "next": "16.3.6",
+    "next-intl": "4.14.7",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "terra-draw": "1.35.0",
+    "terra-draw-maplibre-gl-adapter": "1.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@next/eslint-plugin-next": "16.3.6",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.1"
+  }
+}

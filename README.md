@@ -1,30 +1,44 @@
 # AquaLedger Web
 
-Private Next.js/TypeScript application repository for `AmeenBinBisher`. Product name: **AquaLedger**, without a geographic suffix.
+Next.js and TypeScript application for the AquaLedger analysis workspace. The product has two primary screens: Analysis Workspace and Settings / Data Sources. Both are available in English/LTR and Arabic/RTL.
 
-## Authority and state
+## Runtime and commands
 
-Central product decisions/status: [aqualedger](https://github.com/AmeenBinBisher/aqualedger). Backend API/analysis/worker/migrations: [aqualedger-backend](https://github.com/AmeenBinBisher/aqualedger-backend).
+Use Node.js `22.22.2` and its bundled npm `10.9.7`, as pinned by `.nvmrc` and `packageManager` in `package.json`.
 
-This branch contains implementation instructions, not application code. The corrected central baseline is under [central PR #1](https://github.com/AmeenBinBisher/aqualedger/pull/1); review and merge it before dependent feature implementation. Do not read the older central dev documents as authority to create a monorepo or defer Arabic. After review/merge, record the actual central baseline SHA in the first implementation report.
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm run messages:check
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
 
-Read [AGENTS.md](AGENTS.md) and [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md), then central documents 00–10. Central [STATUS.md](https://github.com/AmeenBinBisher/aqualedger/blob/dev/STATUS.md) is the only product-level milestone status. Use local issues/PRs for web tasks, not a competing product log.
+The browser suite starts the built app with `next start`. It exercises both locales at desktop and small widths, the map and drawing interaction, keyboard focus, input validation, locale switching, source-status empty state, and opening a saved-analysis URL without resubmitting it. The suite does not mock the backend.
 
-## Fixed scope
+`npm run dev` starts the development server. No `.env` file is required for the current contract-independent workspace foundation.
 
-Exactly two primary screens, each in English/LTR and Arabic/RTL from first delivery:
+## Scope and current backend dependency
 
-- Analysis Workspace: map/AOI/dates/run/status, saved result and provenance; later evidence/charts/history drawer/decision-card export/isolated hypothetical scenario panels.
-- Settings / Data Sources: truthful sanitized backend-configured source status, not arbitrary-source or credential management.
+`/` and `/{locale}` redirect to `/{locale}/analysis`. `/{locale}/analysis/{id}` uses the same workspace as the draft route. History, results, provenance, and the NDVI preview are workspace panels. `/{locale}/settings` is a read-only data-source status screen.
 
-`/{locale}/analysis/{id}` is the same workspace as `/{locale}/analysis`, not a new result page. Settings uses `/{locale}/settings`. Auth callbacks, not-found and errors are technical routes, not extra business pages. No native mobile or marketing/admin/report/profile expansion.
+The backend M1 branch and its generated `contracts/openapi.json` were not available when this foundation was started. The Run action therefore reports that it did not submit a request, Settings says that no source checks were requested, and saved analysis IDs remain unverified. The workspace shows no raster, execution success, source reachability, coverage, or provenance without a real backend response. No `contracts/BACKEND-REF.json` exists until the real artifact is consumed.
 
-## First implementation outcome
+Before contract integration, read the central baseline documents 01, 02, 04, 06, and 10 plus the proposed M1 freeze at its pinned commit. The web client must consume the backend-generated artifact pinned by SHA and hash; this repository does not own an API schema or a backend copy.
 
-Consume a pinned backend-generated OpenAPI contract. Submit AOI/dates to FastAPI; display the real persistent job stages, saved NDVI map/measurement/provenance and source status. Two suitable AOI/date runs must succeed without changing code. Reopen/switch language without another job or changed scientific inputs. No fabricated priorities or demo results in the live workflow.
+## Dependency choices
 
-## Workflow and setup
+- `next-intl` provides maintained locale routing and catalogs for the pinned Next.js App Router.
+- ESLint 10, the Next.js flat-config plugin and typescript-eslint provide explicit lint checks; Next.js 16 no longer runs lint during build.
+- MapLibre GL JS 6 renders the map; Terra Draw with its MapLibre adapter provides the single-polygon drawing interaction. MapLibre 6.11.2 includes the fix for the critical DOM sanitization advisory reported by npm.
+- The build and dev lifecycle copies MapLibre's version-matched worker pair into ignored public assets, as required by its ESM worker format under Next.js.
+- Turf area and validity packages reject unsupported client inputs early. Backend validation remains authoritative once the contract is integrated.
+- Playwright covers behavior in a real browser against the built application.
 
-Issue -> feature branch from dev -> PR to dev -> independent latest-fix review -> final Council scope review -> merge commit -> web and paired backend verification -> central status update. main is release-only after owner approval. This README seed is the one-time initialization exception, not permission for direct feature pushes.
+The current basemap uses the public [OSM Bright demo style](https://demotiles.maplibre.org/styles/osm-bright-gl-style/style.json) hosted by MapLibre. It is an unauthenticated demo basemap, not a service availability promise. Its OpenMapTiles and OpenStreetMap attribution comes from the tile metadata and remains visible in the map controls; the separate note beside the map identifies the demo provider. Report load failures in the UI. Do not infer analytical coverage or source quality from basemap availability.
 
-No package versions, setup commands, environment values or passing tests are invented here. The first implementation adds tested install/dev/build/test commands, runtime/package pins, lockfiles, secret-free environment example and actual CI. Documentation presence does not mean the web app is running.
+## Security and ownership
+
+The web application contains no service/database credentials, EO credentials, migrations, worker code, analysis calculations, API proxy route, or privileged data access. When API integration is added, every analysis and source-status request must follow the pinned backend contract and the actual approved access model.
