@@ -1,0 +1,12 @@
+{
+  "backend_repository": "AmeenBinBisher/aqualedger-backend",
+  "backend_commit": "1f3df95c0e1684cdc846cbe268d92f3222d09cc9",
+  "artifact_path": "contracts/openapi.json",
+  "artifact_git_blob_sha": "839d9e04857f8acec5c6adc6503596bf0fba3789",
+  "artifact_sha256": "8081f099ab74b4724c93828cb4ba841ffddf235de56f090341f7ffe10a101040",
+  "openapi_version": "3.1.0",
+  "contract_version": "0.1.0",
+  "central_freeze_document": "AmeenBinBisher/aqualedger@413dc884a22b05e9f8ed239eb8236e230c640937:docs/current/11-M1-CONTRACT-FREEZE.md",
+  "generated_types_path": "src/lib/api/generated.ts",
+  "generator": "openapi-typescript@7.6.1"
+}

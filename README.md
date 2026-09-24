@@ -11,22 +11,24 @@ npm ci
 npm run lint
 npm run typecheck
 npm run messages:check
+npm run contracts:check
 npm run build
 npx playwright install chromium
 npm run test:e2e
+npm run test:e2e:unconfigured
 ```
 
-The browser suite starts the built app with `next start`. It exercises both locales at desktop and small widths, the map and drawing interaction, keyboard focus, input validation, locale switching, source-status empty state, and opening a saved-analysis URL without resubmitting it. The suite does not mock the backend.
+`npm run test:e2e` creates a test-only build with an intercepted API origin and runs Playwright against `next start`; its fixtures verify browser request construction and pending/failed/succeeded/result/error presentation. `npm run test:e2e:unconfigured` creates a separate build with no API URL and checks the blocked states. Both suites cover Chromium at 1365×900 and 390×844. Fixture-backed tests are not backend integration evidence.
 
-`npm run dev` starts the development server. No `.env` file is required for the current contract-independent workspace foundation.
+`npm run dev` starts the development server. Set `NEXT_PUBLIC_AQUALEDGER_API_BASE_URL` to the backend API base URL to enable browser requests. This is a public endpoint URL, not a credential. No access token is available in this web product yet; the backend analysis routes require a bearer token and return a localized authorization error without one. Never put a signing secret, service key, database URL, or provider credential in a public variable.
 
 ## Scope and current backend dependency
 
 `/` and `/{locale}` redirect to `/{locale}/analysis`. `/{locale}/analysis/{id}` uses the same workspace as the draft route. History, results, provenance, and the NDVI preview are workspace panels. `/{locale}/settings` is a read-only data-source status screen.
 
-The backend M1 branch and its generated `contracts/openapi.json` were not available when this foundation was started. The Run action therefore reports that it did not submit a request, Settings says that no source checks were requested, and saved analysis IDs remain unverified. The workspace shows no raster, execution success, source reachability, coverage, or provenance without a real backend response. No `contracts/BACKEND-REF.json` exists until the real artifact is consumed.
+The backend artifact is pinned at `contracts/openapi.json`; `contracts/BACKEND-REF.json` records its commit, version and hashes, and `src/lib/api/generated.ts` is generated from it. The workspace sends `POST /analyses` only on an explicit click with an `Idempotency-Key`, polls saved IDs, and retrieves typed result responses. Settings reads `GET /sources`. Locale switching persists the choice and never submits a job. Timezone is not included in the API payload.
 
-Before contract integration, read the central baseline documents 01, 02, 04, 06, and 10 plus the proposed M1 freeze at its pinned commit. The web client must consume the backend-generated artifact pinned by SHA and hash; this repository does not own an API schema or a backend copy.
+The current merged central baseline is `db404bffe536fc969eb0069deba1acaf3d4b1707` (PR #4); contract rules are pinned to ratified revision 8 at `413dc884a22b05e9f8ed239eb8236e230c640937`. Central PR #5 is still open and is not a merged baseline. Contract and implementation differences, including the blocked auth and map-preview paths, are recorded in `docs/CONTRACT-RECONCILIATION.md`.
 
 ## Dependency choices
 
@@ -34,11 +36,12 @@ Before contract integration, read the central baseline documents 01, 02, 04, 06,
 - ESLint 10, the Next.js flat-config plugin and typescript-eslint provide explicit lint checks; Next.js 16 no longer runs lint during build.
 - MapLibre GL JS 6 renders the map; Terra Draw with its MapLibre adapter provides the single-polygon drawing interaction. MapLibre 6.11.2 includes the fix for the critical DOM sanitization advisory reported by npm.
 - The build and dev lifecycle copies MapLibre's version-matched worker pair into ignored public assets, as required by its ESM worker format under Next.js.
-- Turf area and validity packages reject unsupported client inputs early. Backend validation remains authoritative once the contract is integrated.
+- Turf area and validity packages reject unsupported client inputs early. Backend validation remains authoritative.
+- `openapi-typescript` is a pinned development dependency used only to regenerate/check API types from the immutable backend artifact.
 - Playwright covers behavior in a real browser against the built application.
 
 The current basemap uses the public [OSM Bright demo style](https://demotiles.maplibre.org/styles/osm-bright-gl-style/style.json) hosted by MapLibre. It is an unauthenticated demo basemap, not a service availability promise. Its OpenMapTiles and OpenStreetMap attribution comes from the tile metadata and remains visible in the map controls; the separate note beside the map identifies the demo provider. Report load failures in the UI. Do not infer analytical coverage or source quality from basemap availability.
 
 ## Security and ownership
 
-The web application contains no service/database credentials, EO credentials, migrations, worker code, analysis calculations, API proxy route, or privileged data access. When API integration is added, every analysis and source-status request must follow the pinned backend contract and the actual approved access model.
+The web application contains no service/database credentials, EO credentials, migrations, worker code, analysis calculations, API proxy route, or privileged data access. Analysis requests currently have no bearer-token provider, and the live authorized analysis journey is therefore BLOCKED. Hosted Supabase persist/enqueue, worker claim/commit and private Storage behavior remain NOT RUN/BLOCKED. The returned GeoTIFF artifact is not a browser-renderable georeferenced map preview, so that UI path is explicitly NOT RUN. Do not treat browser fixtures as integration evidence or close M1 from a web-only result.

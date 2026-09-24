@@ -2,10 +2,17 @@
 
 import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
+import {useRouter} from '@/i18n/navigation';
+import {createAnalysis, hasBackendUrl, type ApiFailure} from '@/lib/api/client';
+import {clearIdempotencyKey, getIdempotencyKey} from '@/lib/api/idempotency';
+import {useAnalysisRun} from '@/lib/api/use-analysis-run';
 import {formatNumber} from '@/lib/format';
 import {parseAoiGeoJson, validateAnalysisInput, type AoiPolygon, type InputProblem} from '@/lib/analysis-input';
 import {emptyWorkspaceDraft, readWorkspaceDraft, writeWorkspaceDraft, type WorkspaceDraft} from '@/lib/workspace-draft';
+import {AnalysisResultPanel} from './analysis-result-panel';
+import {AnalysisStagePanel} from './analysis-stage-panel';
+import {BackendErrorNotice} from './backend-error-notice';
 
 type WorkspaceProps = {
   analysisId?: string;
@@ -20,6 +27,7 @@ const WorkspaceMap = dynamic(() => import('./workspace-map'), {ssr: false, loadi
 
 export function Workspace({analysisId}: WorkspaceProps) {
   const locale = useLocale();
+  const router = useRouter();
   const t = useTranslations('workspace');
   const errorText = useTranslations('errors');
   const [draft, setDraft] = useState<WorkspaceDraft>(emptyWorkspaceDraft);
@@ -28,8 +36,11 @@ export function Workspace({analysisId}: WorkspaceProps) {
   const [drawingEnabled, setDrawingEnabled] = useState(false);
   const [coordinateText, setCoordinateText] = useState('');
   const [inputProblem, setInputProblem] = useState<InputProblem | null>(null);
-  const [actionNotice, setActionNotice] = useState(false);
+  const [submitFailure, setSubmitFailure] = useState<ApiFailure | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const submitController = useRef<AbortController | null>(null);
+  const {state: runState, retry: retryStatus} = useAnalysisRun(analysisId);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +58,8 @@ export function Workspace({analysisId}: WorkspaceProps) {
     };
   }, []);
 
+  useEffect(() => () => submitController.current?.abort(), []);
+
   const validation = validateAnalysisInput(draft.aoi, draft.startDate, draft.endDate);
   const areaText = validation.areaKm2 === null ? null : formatNumber(validation.areaKm2, locale);
 
@@ -55,7 +68,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
     if (draftLoaded) {
       setDraftStorageFailed(!writeWorkspaceDraft(nextDraft));
     }
-    setActionNotice(false);
+    setSubmitFailure(null);
   }
 
   function setAoi(aoi: AoiPolygon | null) {
@@ -78,8 +91,41 @@ export function Workspace({analysisId}: WorkspaceProps) {
     }
   }
 
-  function runAnalysis() {
-    setActionNotice(true);
+  async function runAnalysis() {
+    if (!draft.aoi || !validation.valid) return;
+    setSubmitFailure(null);
+    if (!hasBackendUrl()) {
+      setSubmitFailure({code: 'API_NOT_CONFIGURED', requestId: null, httpStatus: null, retryable: false});
+      return;
+    }
+
+    const request = {
+      aoi_geojson: draft.aoi,
+      start_date: draft.startDate,
+      end_date: draft.endDate,
+      locale
+    };
+    const idempotencyKey = getIdempotencyKey(request);
+    if (!idempotencyKey) {
+      setSubmitFailure({code: 'IDEMPOTENCY_KEY_UNAVAILABLE', requestId: null, httpStatus: null, retryable: false});
+      return;
+    }
+
+    const controller = new AbortController();
+    submitController.current = controller;
+    setSubmitting(true);
+    const response = await createAnalysis(request, idempotencyKey, controller.signal);
+    if (controller.signal.aborted) return;
+    setSubmitting(false);
+    submitController.current = null;
+    if (response.error) {
+      setSubmitFailure(response.error);
+      if (!response.error.retryable) clearIdempotencyKey();
+      return;
+    }
+
+    clearIdempotencyKey();
+    router.push(`/analysis/${response.data.analysis_id}`);
   }
 
   const problem = inputProblem ?? validation.problem;
@@ -107,11 +153,11 @@ export function Workspace({analysisId}: WorkspaceProps) {
 
           <div className="map-tools">
             {!draft.aoi ? (
-              <button type="button" className="button button-secondary" onClick={() => setDrawingEnabled(true)} disabled={mapStatus !== 'ready'}>
+              <button type="button" className="button button-secondary" onClick={() => setDrawingEnabled(true)} disabled={mapStatus !== 'ready' || submitting}>
                 {t('drawArea')}
               </button>
             ) : (
-              <button type="button" className="button button-secondary" onClick={() => setAoi(null)}>
+              <button type="button" className="button button-secondary" onClick={() => setAoi(null)} disabled={submitting}>
                 {t('clearArea')}
               </button>
             )}
@@ -137,6 +183,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
               id="aoi-geojson"
               dir="ltr"
               spellCheck={false}
+              disabled={submitting}
               value={coordinateText}
               onChange={(event) => {
                 setCoordinateText(event.target.value);
@@ -168,6 +215,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
                 type="date"
                 lang="en"
                 value={draft.startDate}
+                disabled={submitting}
                 onChange={(event) => updateDraft({...draft, startDate: event.target.value})}
                 aria-describedby="date-help"
               />
@@ -179,6 +227,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
                 type="date"
                 lang="en"
                 value={draft.endDate}
+                disabled={submitting}
                 onChange={(event) => updateDraft({...draft, endDate: event.target.value})}
                 aria-describedby="date-help"
               />
@@ -187,44 +236,18 @@ export function Workspace({analysisId}: WorkspaceProps) {
           <p id="date-help" className="field-help">{t('dateHelp')}</p>
 
           {problem ? <p className="notice notice-warning validation-message" role="status">{errorText(problem)}</p> : null}
-          {actionNotice ? <p className="notice notice-neutral" role="status">{t('runUnavailable')}</p> : null}
-
-          <button type="button" className="button button-primary run-button" disabled={!validation.valid} onClick={runAnalysis}>
-            {t('runAnalysis')}
+          <button type="button" className="button button-primary run-button" disabled={!validation.valid || submitting} onClick={runAnalysis}>
+            {submitting ? t('submittingAnalysis') : t('runAnalysis')}
           </button>
+          {submitFailure ? <BackendErrorNotice failure={submitFailure} /> : null}
 
-          <section className="stage-card" aria-labelledby="stage-heading">
-            <p className="eyebrow">03</p>
-            <h3 id="stage-heading">{t('analysisStageHeading')}</h3>
-            <p className="stage-state"><span className="status-dot" aria-hidden="true" />{analysisId ? t('savedStatusPending') : t('notSubmitted')}</p>
-            <p className="subtle-copy">{analysisId ? t('savedStatusPending') : t('notSubmittedDetail')}</p>
-            {analysisId ? <p className="id-line">{t('routeAnalysisId')}: <bdi dir="ltr">{analysisId}</bdi></p> : null}
-          </section>
+          <AnalysisStagePanel analysisId={analysisId} state={runState} submitFailure={null} onRetry={retryStatus} />
 
           <p className="science-disclosure">{t('workspaceDisclosure')}</p>
         </section>
       </div>
 
-      <section className="panel result-panel" aria-labelledby="result-heading">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">04</p>
-            <h2 id="result-heading">{t('resultHeading')}</h2>
-          </div>
-          {analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}
-        </div>
-        <div className="result-empty-state">
-          <div className="result-icon" aria-hidden="true">NDVI</div>
-          <div>
-            <h3>{t('previewUnavailable')}</h3>
-            <p>{analysisId ? t('savedResultPending') : t('noResult')}</p>
-          </div>
-        </div>
-        <div className="result-facts">
-          <p>{t('ndviLegendUnavailable')}</p>
-          <p>{t('provenanceUnavailable')}</p>
-        </div>
-      </section>
+      <AnalysisResultPanel analysisId={analysisId} state={runState} />
     </main>
   );
 }

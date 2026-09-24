@@ -41,25 +41,24 @@ export function parseAoiGeoJson(text: string): AoiPolygon {
   if (!isRecord(geometry) || geometry.type !== 'Polygon' || !Array.isArray(geometry.coordinates)) {
     throw new Error('unsupportedGeometry');
   }
-  if (geometry.coordinates.length !== 1) {
+  if (geometry.coordinates.length === 0) {
     throw new Error('unsupportedGeometry');
   }
 
   const coordinates = geometry.coordinates as unknown[];
-  const ring = coordinates[0];
-  if (!Array.isArray(ring)) {
-    throw new Error('invalidCoordinates');
-  }
-
-  const positions: Position[] = [];
-  for (const position of ring as unknown[]) {
-    if (!isPosition(position)) {
+  const rings: Position[][] = coordinates.map((ring) => {
+    if (!Array.isArray(ring)) {
       throw new Error('invalidCoordinates');
     }
-    positions.push(position);
-  }
+    return ring.map((position) => {
+      if (!isPosition(position)) {
+        throw new Error('invalidCoordinates');
+      }
+      return position;
+    });
+  });
 
-  const polygon = {type: 'Polygon', coordinates: [positions]} satisfies AoiPolygon;
+  const polygon = {type: 'Polygon', coordinates: rings} satisfies AoiPolygon;
   const validation = validatePolygon(polygon);
   if (validation.problem) {
     throw new Error(validation.problem);
@@ -96,8 +95,8 @@ export function validateAnalysisInput(
 
   const start = Date.parse(`${startDate}T00:00:00Z`);
   const end = Date.parse(`${endDate}T00:00:00Z`);
-  const inclusiveDays = (end - start) / 86_400_000 + 1;
-  if (inclusiveDays > MAX_DATE_SPAN_DAYS) {
+  const spanDays = (end - start) / 86_400_000;
+  if (spanDays > MAX_DATE_SPAN_DAYS) {
     return {valid: false, problem: 'dateSpanTooLong', areaKm2: polygonValidation.areaKm2};
   }
 
@@ -105,24 +104,25 @@ export function validateAnalysisInput(
 }
 
 export function validatePolygon(polygon: AoiPolygon): InputValidation {
-  const ring = polygon.coordinates[0];
-  if (!ring || ring.length < 4 || !ring.every(isPosition)) {
+  if (polygon.coordinates.length === 0 || polygon.coordinates.some((ring) => ring.length < 4 || !ring.every(isPosition))) {
     return {valid: false, problem: 'invalidCoordinates', areaKm2: null};
   }
-  if (ring.length - 1 > MAX_VERTICES) {
+  if (polygon.coordinates.reduce((total, ring) => total + ring.length, 0) > MAX_VERTICES) {
     return {valid: false, problem: 'tooManyVertices', areaKm2: null};
   }
-  if (!samePosition(ring[0], ring[ring.length - 1])) {
-    return {valid: false, problem: 'invalidPolygon', areaKm2: null};
-  }
-  for (let index = 0; index < ring.length - 1; index += 1) {
-    const position = ring[index];
-    const next = ring[index + 1];
-    if (!isPosition(position) || !isPosition(next)) {
-      return {valid: false, problem: 'invalidCoordinates', areaKm2: null};
+  for (const ring of polygon.coordinates) {
+    if (!samePosition(ring[0], ring[ring.length - 1])) {
+      return {valid: false, problem: 'invalidPolygon', areaKm2: null};
     }
-    if (Math.abs(position[0] - next[0]) > 180) {
-      return {valid: false, problem: 'antimeridianUnsupported', areaKm2: null};
+    for (let index = 0; index < ring.length - 1; index += 1) {
+      const position = ring[index];
+      const next = ring[index + 1];
+      if (!isPosition(position) || !isPosition(next)) {
+        return {valid: false, problem: 'invalidCoordinates', areaKm2: null};
+      }
+      if (Math.abs(position[0] - next[0]) > 180) {
+        return {valid: false, problem: 'antimeridianUnsupported', areaKm2: null};
+      }
     }
   }
 
@@ -150,14 +150,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isPosition(value: unknown): value is Position & AoiCoordinate {
-  if (!Array.isArray(value) || value.length !== 2) {
+  if (!Array.isArray(value) || value.length < 2 || !value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate))) {
     return false;
   }
   const coordinates = value as unknown[];
   const longitude = coordinates[0];
   const latitude = coordinates[1];
-  return typeof longitude === 'number' && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180
-    && typeof latitude === 'number' && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90;
+  return typeof longitude === 'number' && longitude >= -180 && longitude <= 180
+    && typeof latitude === 'number' && latitude >= -90 && latitude <= 90;
 }
 
 function samePosition(left: Position | undefined, right: Position | undefined): boolean {

@@ -1,6 +1,6 @@
 # Web implementation contract
 
-Documentation-only foundation. Full product/science/acceptance authority is in the central repository, not duplicated here. Until the correction is merged, read https://github.com/AmeenBinBisher/aqualedger/pull/1; then record its merged baseline SHA.
+Full product/science/acceptance authority is in the central repository, not duplicated here. The current merged central baseline is `AmeenBinBisher/aqualedger@db404bffe536fc969eb0069deba1acaf3d4b1707` (central PR #4). The ratified M1 contract is pinned separately at `AmeenBinBisher/aqualedger@413dc884a22b05e9f8ed239eb8236e230c640937`, document `docs/current/11-M1-CONTRACT-FREEZE.md` revision 8. Central PR #5 is an open governance proposal and is not part of the merged baseline. Read central documents 00–10 at the merged baseline and the frozen contract at its ratified SHA before changing behavior.
 
 ## Page and locale structure
 
@@ -12,9 +12,9 @@ Display Gregorian dates consistently with the backend ISO/UTC interval contract.
 
 ## API consumer
 
-Backend generates `contracts/openapi.json`. Store the consumed artifact or generated client/types with metadata recording backend commit SHA, contract version and hash. A small `contracts/BACKEND-REF.json` or equivalent is sufficient; create it only with the real artifact, not placeholder hashes. Reproducible web CI must not fetch an unpinned latest backend branch or import a sibling backend source tree.
+Backend generates `contracts/openapi.json`. The consumed artifact is pinned in `contracts/BACKEND-REF.json` to backend commit `1f3df95c0e1684cdc846cbe268d92f3222d09cc9`, contract version `0.1.0`, and its Git blob/SHA-256 hashes. `src/lib/api/generated.ts` is generated from that checked-in artifact with `openapi-typescript`; `npm run contracts:check` checks the recorded identity and generated-file drift. Reproducible web builds never fetch a moving backend branch or import a sibling backend source tree.
 
-Implement the central request/status/result/source-status/error contract. Stable machine codes map to localized messages; do not parse English error prose. Known missing translations fail checks; unknown server codes display a safe localized generic error with correlation ID. Caching is scoped to actual authorization and run identity.
+Implement the central request/status/result/source-status/error contract. Stable machine codes map to localized messages; do not parse English error prose. Known missing translations fail checks; unknown server codes display a safe localized generic error with correlation ID. Caching is scoped to actual authorization and run identity. See `docs/CONTRACT-RECONCILIATION.md` for the exact current artifact/freeze differences and blocked UI paths.
 
 Map/AOI/date interaction is client-side where necessary. API owns job creation; no analytical duplicate in Next.js routes/server actions. Request on explicit user action with idempotency handling, not on mount/locale navigation. Poll saved status at a bounded rate and stop on terminal states/unmount. Late responses cannot replace the selected run with another result.
 
