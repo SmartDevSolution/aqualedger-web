@@ -184,7 +184,7 @@ test('a queued saved run is shown as pending and does not submit again', async (
   expect(postRequests).toBe(0);
 });
 
-test('source status renders a real NOT_CHECKED response without a fabricated timestamp', async ({page}) => {
+test('source status renders a fixture NOT_CHECKED response without a fabricated timestamp', async ({page}) => {
   await page.route(`${apiOrigin}/sources`, async (route) => {
     await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({sources: [sourceResponse()]})});
   });
