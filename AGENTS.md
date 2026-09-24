@@ -2,6 +2,8 @@
 
 This repository owns Next.js/TypeScript and web tests only. Central authority: `AmeenBinBisher/aqualedger`, documents 00–10, especially decisions/product/architecture/acceptance/engineering standards. Review the latest central owner-correction PR and then pin the merged baseline. Read `docs/IMPLEMENTATION.md` before changes.
 
+**Authoring language: English only.** Write project documents, plans, agent prompts/briefs/handoffs, technical reports, issue/PR/review text, commit messages, code comments and docstrings in English even when the owner discusses the task in Arabic. Necessary exact Arabic terms/quotations and Arabic UI catalog values, localized product output and tests are narrow exceptions; surrounding engineering prose stays English. Do not create duplicate Arabic instructions. This is not an English-only product: preserve both Arabic/RTL and English/LTR. Review this rule before every approval; the canonical policy is in central document 10.
+
 1. Personal private repository; verify identity/remotes. Do not recreate repositories, modify global GitHub auth, overwrite local work or borrow credentials.
 2. Exactly two primary screens: Analysis Workspace and Settings/Data Sources. Embed history/results/evidence/charts/card/scenario as workspace panels. No extra business pages/mobile work.
 3. Arabic/RTL and English/LTR from first UI implementation and each subsequent capability. Translate validation/errors/evidence reasons/labels/exports, not just menus. Test lang/dir, keyboard/responsiveness and mixed-direction text. Never mirror maps/coordinates or change analytical input when switching locale.

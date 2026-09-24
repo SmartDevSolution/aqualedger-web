@@ -1,3 +1,5 @@
+Author this PR, agent briefs and review reports in English. Necessary exact Arabic terms and Arabic localization values/product fixtures are exceptions, not permission for Arabic engineering prose. Keep both UI languages.
+
 ## Requirement and scope
 Central mission/owner decision:
 Web issue:
@@ -21,6 +23,7 @@ New dependencies/complexity justification:
 Secrets/access/security impact:
 
 ## Gates
+- [ ] Project documentation, code comments and engineering communication are English; Arabic is confined to necessary literal/localization content.
 - [ ] Exactly two primary screens; no speculative scope.
 - [ ] Independent latest-fix review linked to SHA.
 - [ ] Final Council owner-scope verdict linked.
