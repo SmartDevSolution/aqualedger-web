@@ -2,7 +2,7 @@
 
 import {useLocale, useTranslations} from 'next-intl';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
-import {limitationMessageKey, reasonMessageKey} from '@/lib/api/error-messages';
+import {limitationMessageKey, perDateReasonMessageKey} from '@/lib/api/error-messages';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
 import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 
@@ -129,7 +129,7 @@ function LoadedAnalysisResult({
                     ? t('selectedDate')
                     : scene.rejection_reason === null || scene.rejection_reason === undefined
                       ? t('notSelectedDate')
-                      : errors(reasonMessageKey(scene.rejection_reason))}
+                      : errors(perDateReasonMessageKey(scene.rejection_reason))}
                 </span>
               </li>
             ))}

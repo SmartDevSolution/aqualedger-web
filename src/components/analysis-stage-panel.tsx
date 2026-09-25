@@ -2,7 +2,7 @@
 
 import {useTranslations} from 'next-intl';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
-import {reasonMessageKey} from '@/lib/api/error-messages';
+import {runFailureMessageKey} from '@/lib/api/error-messages';
 import {BackendErrorNotice} from './backend-error-notice';
 
 type AnalysisStagePanelProps = {
@@ -41,7 +41,7 @@ export function AnalysisStagePanel({analysisId, state, submitFailure, onRetry}: 
           {state.kind === 'failed' ? (
             <>
               <p className="subtle-copy" role="status">{t('analysisFailed')}</p>
-              <p className="subtle-copy">{errors(reasonMessageKey(state.errorCode))}</p>
+              <p className="subtle-copy">{errors(runFailureMessageKey(state.errorCode))}</p>
             </>
           ) : null}
           {state.kind === 'blocked' ? <BackendErrorNotice failure={state.error} /> : null}

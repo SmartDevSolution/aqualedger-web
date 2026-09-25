@@ -2,6 +2,7 @@ import {expect, test, type Page} from '@playwright/test';
 import {
   CONFLICT_START_DATE,
   FAILED_ID,
+  FAILED_WRONG_PATH_CODE_ID,
   NO_ELIGIBLE_ACQUISITION_ID,
   NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
   NO_SCENES_FOUND_ID,
@@ -172,6 +173,18 @@ test('failed status without evidence_status stays a failure and never requests a
   await expect(page.getByText('A required source tile or band could not be read.', {exact: true})).toHaveCount(1);
   await expect(page.getByText('Evidence status:', {exact: false})).toHaveCount(0);
   expect(resultRequests).toEqual([]);
+});
+
+// W14: the run-level `errors[].code` and per-date `rejection_reason` vocabularies must not accept
+// each other's codes. `LOW_VALID_COVERAGE` is a real per-date-only rejection reason
+// (pipeline.py:246-261); the run-level `failure_reason_code` path can never actually publish it
+// (only `SOURCE_READ_FAILED`, `SOURCE_UNAVAILABLE`, `PROCESSING_FAILED` — worker/runner.py's
+// `_fail` call sites), so this must render the honest unknown-reason fallback, never the per-date
+// `LOW_VALID_COVERAGE` translation.
+test('a run-level failure code that is only ever a per-date reason renders the honest unknown fallback', async ({page}) => {
+  await page.goto(`/en/analysis/${FAILED_WRONG_PATH_CODE_ID}`);
+  await expect(page.getByText('The backend reported a failure reason that this web version does not recognize.', {exact: true})).toHaveCount(1);
+  await expect(page.getByText('The acquisition did not meet the configured valid-coverage guard.')).toHaveCount(0);
 });
 
 test('a queued saved run is shown as pending and does not submit again', async ({page}) => {
@@ -368,6 +381,16 @@ for (const locale of ['en', 'ar'] as const) {
     // fallback, distinct from the null case directly above (W11 gap #4).
     const unknownReasonRow = page.locator('.scene-list li', {hasText: '2026-08-20'});
     await expect(unknownReasonRow.getByText(unrecognizedFailureText)).toBeVisible();
+
+    // W14: a real top-level-only code (`NDVI_OUT_OF_RANGE_PIXELS_REJECTED`) placed in the per-date
+    // slot must also fall back honestly, never render its own top-level `limitations[].code` text —
+    // the per-date and run-level/limitation reason vocabularies are disjoint.
+    const wrongVocabularyRow = page.locator('.scene-list li', {hasText: '2026-08-18'});
+    await expect(wrongVocabularyRow.getByText(unrecognizedFailureText)).toBeVisible();
+    const ndviLimitationText = locale === 'en'
+      ? 'NDVI pixels outside the valid range were excluded.'
+      : 'استُبعدت بكسلات NDVI الواقعة خارج النطاق الصالح.';
+    await expect(wrongVocabularyRow.getByText(ndviLimitationText)).toHaveCount(0);
   });
 }
 

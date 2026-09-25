@@ -61,6 +61,13 @@ export const NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID = 'aaaaaaaa-aaaa-4aaa
 // all. Proves `NO_VALID_PIXEL_IN_SELECTED_DATE` now renders its own catalogue text instead of the
 // unknown-limitation fallback (W13, independent review BLOCK point 2).
 export const NO_VALID_PIXEL_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac';
+// A FAILED run whose single `errors[].code` is a real per-date-only rejection code
+// (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
+// `failure_reason_code` path can actually publish (`SOURCE_READ_FAILED`, `SOURCE_UNAVAILABLE`,
+// `PROCESSING_FAILED` — worker/runner.py's `_fail` call sites). Proves the run-level and per-date
+// reason vocabularies are kept separate: this must render the honest unknown-reason fallback, never
+// the per-date `LOW_VALID_COVERAGE` translation (W14).
+export const FAILED_WRONG_PATH_CODE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaad';
 // The ndvi_preview artifact bounds/CRS every committed-result fixture above shares, exported so
 // tests can derive the expected map placement from the same values instead of duplicating them.
 export const PREVIEW_ARTIFACT_BOUNDS = {minx: 100, miny: 200, maxx: 300, maxy: 400};
@@ -81,7 +88,12 @@ type LoggedRequest = {
   body: JsonValue | null;
 };
 
-function statusFixture(id: string, executionStatus: string, evidenceStatus?: string): Record<string, unknown> {
+function statusFixture(
+  id: string,
+  executionStatus: string,
+  evidenceStatus?: string,
+  failureCode = 'SOURCE_READ_FAILED'
+): Record<string, unknown> {
   const base = {
     analysis_id: id,
     execution_status: executionStatus,
@@ -90,7 +102,7 @@ function statusFixture(id: string, executionStatus: string, evidenceStatus?: str
     created_at: '2026-09-24T12:00:00Z',
     updated_at: '2026-09-24T12:01:00Z',
     warnings: [],
-    errors: executionStatus === 'FAILED' ? [{code: 'SOURCE_READ_FAILED', params: {band: 'nir'}}] : []
+    errors: executionStatus === 'FAILED' ? [{code: failureCode, params: {band: 'nir'}}] : []
   };
   return executionStatus === 'FAILED' ? base : {...base, evidence_status: evidenceStatus};
 }
@@ -154,6 +166,20 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
       rejection_reason: 'FUTURE_UNRECOGNIZED_REASON',
       data_present_overlap_count: 1200,
       masked_yielded_coverage_count: 300,
+      discarded_candidates: [],
+      failures: []
+    }, {
+      // A real top-level-only code (`NDVI_OUT_OF_RANGE_PIXELS_REJECTED`, a `limitations[].code` the
+      // pipeline never assigns to a per-date `rejection_reason`) placed in the per-date slot. Proves
+      // the per-date and run-level/limitation reason vocabularies stay separate: this must render
+      // the honest unknown-reason fallback, never the top-level NDVI translation (W14).
+      acquisition_date: '2026-08-18',
+      valid_coverage_fraction: 0.1,
+      selected: false,
+      item_ids: ['Sentinel-2 item G'],
+      rejection_reason: 'NDVI_OUT_OF_RANGE_PIXELS_REJECTED',
+      data_present_overlap_count: 1100,
+      masked_yielded_coverage_count: 200,
       discarded_candidates: [],
       failures: []
     }],
@@ -437,6 +463,10 @@ export function startBackendDouble(
         respondJson(res, 200, statusFixture(id, 'FAILED'));
         return;
       }
+      if (id === FAILED_WRONG_PATH_CODE_ID) {
+        respondJson(res, 200, statusFixture(id, 'FAILED', undefined, 'LOW_VALID_COVERAGE'));
+        return;
+      }
       if (id === QUEUED_ID) {
         respondJson(res, 200, statusFixture(id, 'QUEUED', 'NOT_ASSESSED'));
         return;
@@ -452,7 +482,7 @@ export function startBackendDouble(
       // uncommitted, so it answers the same frozen 200 NOT_READY envelope as any other uncommitted
       // run, carrying execution_status so the caller can tell "failed" from "still running" — never
       // a fabricated non-200.
-      if (id === FAILED_ID) {
+      if (id === FAILED_ID || id === FAILED_WRONG_PATH_CODE_ID) {
         respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'FAILED'}));
         return;
       }
