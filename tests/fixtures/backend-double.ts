@@ -11,7 +11,23 @@ export const TEST_OPERATOR_TOKEN = 'e2e-relay-test-operator-token-not-a-secret';
 export const SUCCEEDED_ID = '11111111-1111-4111-8111-111111111111';
 export const FAILED_ID = '22222222-2222-4222-8222-222222222222';
 export const QUEUED_ID = '33333333-3333-4333-8333-333333333333';
+// A result whose ndvi_preview `preview_url` points back at this same double's own
+// `/__test__/preview-bytes` route (a small fixture GeoTIFF), so the same-origin preview route
+// (src/app/api/analyses/[id]/preview/route.ts) has a real, fetchable signed URL to resolve for the
+// "ready" decode-and-render path (W6.5), distinct from the other IDs whose preview_url is an
+// unreachable placeholder host (the honest fetch-failed path).
+export const PREVIEW_READY_ID = '44444444-4444-4444-8444-444444444444';
+// A committed result with no ndvi_preview artifact at all (an empty `artifacts` array — never an
+// omitted field, per the frozen contract's "absent means not offered" rule), for the preview
+// route's PREVIEW_ARTIFACT_MISSING path.
+export const NO_ARTIFACT_ID = '55555555-5555-4555-8555-555555555555';
+// A committed result whose ndvi_preview artifact exists but is not `ready` (no preview_url), for
+// the preview route's PREVIEW_ARTIFACT_NOT_READY path.
+export const ARTIFACT_NOT_READY_ID = '66666666-6666-4666-8666-666666666666';
 export const CONFLICT_START_DATE = '2001-01-01';
+// A non-secret marker embedded in the default (unreachable) preview_url's query string, so a log
+// scan can assert the signed URL is never printed without needing the real operator token.
+export const PREVIEW_URL_TOKEN = 'preview-url-marker-not-a-secret';
 
 type JsonValue = Record<string, unknown> | unknown[];
 
@@ -38,7 +54,7 @@ function statusFixture(id: string, executionStatus: string, evidenceStatus?: str
   return executionStatus === 'FAILED' ? base : {...base, evidence_status: evidenceStatus};
 }
 
-export function resultFixture(id: string): Record<string, unknown> {
+export function resultFixture(id: string, previewUrl = `https://private.invalid/signed?token=${PREVIEW_URL_TOKEN}`): Record<string, unknown> {
   return {
     analysis_id: id,
     schema_version: '1',
@@ -115,7 +131,7 @@ export function resultFixture(id: string): Record<string, unknown> {
       crs: 'EPSG:32638',
       bounds: {minx: 100, miny: 200, maxx: 300, maxy: 400},
       ready: true,
-      preview_url: 'https://private.invalid/signed'
+      preview_url: previewUrl
     }],
     limitations: []
   };
@@ -139,7 +155,15 @@ const defaultSources = {
   }]
 };
 
-export function startBackendDouble(port: number): Promise<import('node:http').Server> {
+export function startBackendDouble(
+  port: number,
+  options: {previewFixtureBytes?: Buffer} = {}
+): Promise<import('node:http').Server> {
+  // Callers resolve and read the fixture file themselves (each from a context where a
+  // module-relative path is safe — see tests/fixtures/run-backend-double.mjs) so this module never
+  // contains `import.meta`, which would be a syntax error when Playwright's config loader
+  // transitively requires this file as CommonJS to read its exported string constants.
+  const previewFixtureBytes = options.previewFixtureBytes ?? Buffer.alloc(0);
   const requests: LoggedRequest[] = [];
   // Any id other than SUCCEEDED_ID/FAILED_ID returns NOT_READY exactly once at /result, then the
   // canned success result — keyed per id (not a single flag) so concurrent Playwright projects
@@ -170,6 +194,11 @@ export function startBackendDouble(port: number): Promise<import('node:http').Se
       const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'outage'}) : {};
       sourcesMode = body.mode ?? 'default';
       respondJson(res, 200, {ok: true, sourcesMode});
+      return;
+    }
+    if (url.pathname === '/__test__/preview-bytes' && req.method === 'GET') {
+      res.writeHead(200, {'Content-Type': 'image/tiff', 'Content-Length': previewFixtureBytes.length});
+      res.end(previewFixtureBytes);
       return;
     }
 
@@ -216,12 +245,27 @@ export function startBackendDouble(port: number): Promise<import('node:http').Se
         respondJson(res, 500, errorEnvelope('PROCESSING_FAILED'));
         return;
       }
-      if (id !== SUCCEEDED_ID && !notReadyServedIds.has(id)) {
+      const immediateResultIds = new Set([SUCCEEDED_ID, PREVIEW_READY_ID, NO_ARTIFACT_ID, ARTIFACT_NOT_READY_ID]);
+      if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
         respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'RUNNING'}));
         return;
       }
-      respondJson(res, 200, resultFixture(id));
+      if (id === NO_ARTIFACT_ID) {
+        const fixture = resultFixture(id);
+        fixture.artifacts = [];
+        respondJson(res, 200, fixture);
+        return;
+      }
+      if (id === ARTIFACT_NOT_READY_ID) {
+        const fixture = resultFixture(id);
+        const existingArtifact = (fixture.artifacts as Record<string, unknown>[] | undefined)?.[0] ?? {};
+        fixture.artifacts = [{...existingArtifact, ready: false, preview_url: null}];
+        respondJson(res, 200, fixture);
+        return;
+      }
+      const previewUrl = id === PREVIEW_READY_ID ? `http://127.0.0.1:${port}/__test__/preview-bytes` : undefined;
+      respondJson(res, 200, previewUrl ? resultFixture(id, previewUrl) : resultFixture(id));
       return;
     }
 

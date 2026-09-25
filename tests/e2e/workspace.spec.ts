@@ -113,7 +113,10 @@ test('explicit submission sends a same-origin keyed request with no browser-held
   await expect(page.getByRole('heading', {name: 'NDVI statistics'})).toBeVisible();
   await expect(page.getByText('85%', {exact: true}).first()).toBeVisible();
   await expect(page.getByText('Sentinel-2 item A')).toBeVisible();
-  await expect(page.getByText(/backend returned an NDVI GeoTIFF artifact/)).toBeVisible();
+  // SUCCEEDED_ID's fixture preview_url is an unreachable placeholder host (private.invalid), so
+  // the same-origin preview route (W6.1) honestly reports a fetch failure here — a real signed URL
+  // decode-and-render path is covered by preview.spec.ts against PREVIEW_READY_ID.
+  await expect(page.getByText('The NDVI preview image could not be fetched from the backend. No map layer is shown.')).toBeVisible({timeout: 15_000});
 
   const post = browserRequests.find((request) => request.method === 'POST' && request.pathname.endsWith('/api/analyses'));
   expect(post).toBeTruthy();

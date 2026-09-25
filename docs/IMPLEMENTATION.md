@@ -26,6 +26,10 @@ M2: evidence layers/series/baseline/quality disclosures. M3: eligible priorities
 
 A basemap library does not supply unlimited hosted tiles or rights; document the chosen provider/attribution. Do not use a permanent fake raster when real data is missing. State exact source/render failures instead.
 
+**M1 basemap (Council DP-4 P2, central issue #8): self-hosted, no external provider.** `public/basemap/style.json` is a minimal MapLibre style served from this app's own origin — a background color plus an inline WGS84 30° graticule, with no fetched tile/vector/raster provider and no browser request leaving the app's origin for the map. Its own `attribution` names the self-hosted style in the map's attribution control. Adding an external basemap data provider (with its own attribution and availability caveat) is a later, separately recorded decision, not implied by this one.
+
+**M1 NDVI preview delivery (Council DP-4 P1, central issue #8): same-origin route plus client-side decode of the backend's own RGBA artifact.** `GET /api/analyses/{id}/preview` resolves the frozen signed `preview_url` server-side (never in the browser) and streams the bytes; the browser decodes the RGBA GeoTIFF (one new runtime dependency, `geotiff`) and renders it as a MapLibre overlay positioned from the artifact's recorded `bounds`/`crs`, rendering the artifact's own already-colormapped RGB unchanged rather than re-applying a palette. This is a Council-ratified, scoped exception to freeze document 11 section B9's "no client-side COG decoding" clause for M1's own preview artifact specifically — not a general reopening of B9.
+
 ## First implementation PR and tests
 
 Add minimal working Next.js setup, supported pinned versions/lockfile, real tested README commands and public/server environment distinction without secrets. No production EO secrets or Supabase service/database keys in NEXT_PUBLIC variables.

@@ -4,8 +4,17 @@ import {useLocale, useTranslations} from 'next-intl';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
 import {reasonMessageKey} from '@/lib/api/error-messages';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
+import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 
-export function AnalysisResultPanel({analysisId, state}: {analysisId?: string | undefined; state: AnalysisRunState}) {
+export function AnalysisResultPanel({
+  analysisId,
+  state,
+  previewStatus
+}: {
+  analysisId?: string | undefined;
+  state: AnalysisRunState;
+  previewStatus: PreviewOverlayStatus;
+}) {
   const locale = useLocale();
   const t = useTranslations('workspace');
 
@@ -39,27 +48,34 @@ export function AnalysisResultPanel({analysisId, state}: {analysisId?: string | 
       {analysisId && state.kind === 'blocked' ? <p className="notice notice-neutral">{t('resultBlocked')}</p> : null}
       {analysisId && state.kind === 'timedOut' ? <p className="notice notice-neutral">{t('resultTimedOut')}</p> : null}
       {analysisId && state.kind === 'complete' ? (
-        <LoadedAnalysisResult result={state.result} locale={locale} />
+        <LoadedAnalysisResult result={state.result} locale={locale} previewStatus={previewStatus} />
       ) : null}
     </section>
   );
 }
 
-function LoadedAnalysisResult({result, locale}: {result: import('@/lib/api/client').AnalysisResult; locale: string}) {
+function LoadedAnalysisResult({
+  result,
+  locale,
+  previewStatus
+}: {
+  result: import('@/lib/api/client').AnalysisResult;
+  locale: string;
+  previewStatus: PreviewOverlayStatus;
+}) {
   const t = useTranslations('workspace');
   const errors = useTranslations('errors');
-  const hasNdviArtifact = (result.artifacts ?? []).some((artifact) => isRecord(artifact) && artifact.kind === 'ndvi_preview');
   const coverage = result.effective_coverage;
   const statistics = result.statistics;
   const provenance = result.provenance;
 
   return (
     <>
-      <div className="result-preview-state notice notice-warning" role="status">
+      <div className={`result-preview-state notice ${previewStatus === 'ready' ? 'notice-positive' : 'notice-warning'}`} role="status">
         <div className="result-icon" aria-hidden="true">NDVI</div>
         <div>
-          <h3>{t('previewUnavailable')}</h3>
-          <p>{t(hasNdviArtifact ? 'previewArtifactBlocked' : 'previewArtifactMissing')}</p>
+          <h3>{t('previewHeading')}</h3>
+          <p>{t(previewMessageKey(previewStatus))}</p>
         </div>
       </div>
 
@@ -159,6 +175,36 @@ function LoadedAnalysisResult({result, locale}: {result: import('@/lib/api/clien
 
 function Fact({label, value}: {label: string; value: React.ReactNode}) {
   return <div className="result-fact"><dt>{label}</dt><dd>{value}</dd></div>;
+}
+
+type PreviewMessageKey =
+  | 'previewReady'
+  | 'previewLoading'
+  | 'previewNotReady'
+  | 'previewFetchFailed'
+  | 'previewDecodeFailed'
+  | 'previewCrsUnsupported'
+  | 'previewNoArtifact';
+
+function previewMessageKey(status: PreviewOverlayStatus): PreviewMessageKey {
+  switch (status) {
+    case 'ready':
+      return 'previewReady';
+    case 'loading':
+      return 'previewLoading';
+    case 'notReady':
+      return 'previewNotReady';
+    case 'fetchFailed':
+      return 'previewFetchFailed';
+    case 'decodeFailed':
+      return 'previewDecodeFailed';
+    case 'crsUnsupported':
+      return 'previewCrsUnsupported';
+    case 'noArtifact':
+    case 'idle':
+    default:
+      return 'previewNoArtifact';
+  }
 }
 
 function evidenceLabel(status: string, t: ReturnType<typeof useTranslations<'workspace'>>): string {

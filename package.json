@@ -20,14 +20,16 @@
     "messages:check": "node scripts/check-messages.mjs",
     "check-no-token-leak": "node scripts/check-no-token-leak.mjs",
     "check-relay-log-leak": "node scripts/check-relay-log-leak.mjs",
+    "check-preview-decode": "node scripts/check-preview-decode.mjs",
     "build:e2e": "node scripts/build-e2e.mjs",
     "test:e2e": "npm run build:e2e && playwright test",
     "test:e2e:unconfigured": "node scripts/test-e2e-unconfigured.mjs",
-    "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run check-relay-log-leak && npm run test:e2e && npm run test:e2e:unconfigured"
+    "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run check-relay-log-leak && npm run check-preview-decode && npm run test:e2e && npm run test:e2e:unconfigured"
   },
   "dependencies": {
     "@turf/area": "7.4.0",
     "@turf/boolean-valid": "7.4.0",
+    "geotiff": "3.0.5",
     "maplibre-gl": "6.11.2",
     "next": "16.3.6",
     "next-intl": "4.14.7",

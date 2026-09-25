@@ -504,6 +504,12 @@ h3 {
   background: #edf7fa;
 }
 
+.notice-positive {
+  border-color: var(--brand-bright);
+  color: var(--brand-dark);
+  background: #e8f7f2;
+}
+
 .validation-message {
   margin-block: 1rem 0;
 }

@@ -3,8 +3,18 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import type {AoiPolygon} from '@/lib/analysis-input';
+import {
+  boundsToImageCoordinates,
+  decodePreviewImage,
+  statusFromPreviewErrorCode,
+  type PreviewOverlayRequest,
+  type PreviewOverlayStatus
+} from '@/lib/preview/geotiff-overlay';
 
 type MapStatus = 'loading' | 'ready' | 'failed';
+
+const PREVIEW_SOURCE_ID = 'ndvi-preview-source';
+const PREVIEW_LAYER_ID = 'ndvi-preview-layer';
 
 type WorkspaceMapProps = {
   geometry: AoiPolygon | null;
@@ -12,6 +22,8 @@ type WorkspaceMapProps = {
   onGeometryChange: (geometry: AoiPolygon | null) => void;
   onDrawingFinished: () => void;
   onStatusChange: (status: MapStatus) => void;
+  previewOverlay: PreviewOverlayRequest | null;
+  onPreviewOverlayStatusChange: (status: PreviewOverlayStatus) => void;
 };
 
 export default function WorkspaceMap({
@@ -19,21 +31,26 @@ export default function WorkspaceMap({
   drawingEnabled,
   onGeometryChange,
   onDrawingFinished,
-  onStatusChange
+  onStatusChange,
+  previewOverlay,
+  onPreviewOverlayStatusChange
 }: WorkspaceMapProps) {
   const t = useTranslations('workspace');
   const containerRef = useRef<HTMLDivElement>(null);
   const drawRef = useRef<import('terra-draw').TerraDraw | null>(null);
+  const mapRef = useRef<import('maplibre-gl').Map | null>(null);
   const geometryRef = useRef(geometry);
   const drawingEnabledRef = useRef(drawingEnabled);
   const callbacksRef = useRef({onGeometryChange, onDrawingFinished, onStatusChange});
+  const previewCallbackRef = useRef(onPreviewOverlayStatusChange);
   const [status, setStatus] = useState<MapStatus>('loading');
 
   useEffect(() => {
     geometryRef.current = geometry;
     drawingEnabledRef.current = drawingEnabled;
     callbacksRef.current = {onGeometryChange, onDrawingFinished, onStatusChange};
-  }, [geometry, drawingEnabled, onGeometryChange, onDrawingFinished, onStatusChange]);
+    previewCallbackRef.current = onPreviewOverlayStatusChange;
+  }, [geometry, drawingEnabled, onGeometryChange, onDrawingFinished, onStatusChange, onPreviewOverlayStatusChange]);
 
   useEffect(() => {
     let disposed = false;
@@ -60,12 +77,26 @@ export default function WorkspaceMap({
         maplibreModule.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
         map = new maplibreModule.Map({
           container: containerRef.current,
-          style: 'https://demotiles.maplibre.org/styles/osm-bright-gl-style/style.json',
+          // DP-4 P2 (Council issue #8): a same-origin, self-hosted minimal style — no external
+          // basemap tile/vector/raster provider is used in M1 (see public/basemap/style.json).
+          style: '/basemap/style.json',
           center: [0, 0],
           zoom: 1.4,
           attributionControl: {compact: false},
-          cooperativeGestures: true
+          cooperativeGestures: true,
+          // DP-4 W6.4: MapLibre's own default control tooltips/gesture hint are English; this
+          // patches every one this app surfaces (zoom, compass reset, cooperative-gesture hint)
+          // from the message catalogues so both locales are actually localized, not just menus.
+          locale: {
+            'NavigationControl.ZoomIn': t('mapControlZoomIn'),
+            'NavigationControl.ZoomOut': t('mapControlZoomOut'),
+            'NavigationControl.ResetBearing': t('mapControlResetBearing'),
+            'CooperativeGesturesHandler.WindowsHelpText': t('mapGestureHintWindows'),
+            'CooperativeGesturesHandler.MacHelpText': t('mapGestureHintMac'),
+            'CooperativeGesturesHandler.MobileHelpText': t('mapGestureHintMobile')
+          }
         });
+        mapRef.current = map;
         map.getCanvas().setAttribute('aria-label', t('mapHeading'));
         map.getCanvas().setAttribute('role', 'application');
         map.addControl(new maplibreModule.NavigationControl({showCompass: true}), 'top-right');
@@ -148,6 +179,7 @@ export default function WorkspaceMap({
       disposed = true;
       activeDraw?.stop();
       drawRef.current = null;
+      mapRef.current = null;
       map?.remove();
     };
   }, [t]);
@@ -174,6 +206,85 @@ export default function WorkspaceMap({
     draw.setMode(drawingEnabled ? 'polygon' : 'render');
   }, [geometry, drawingEnabled]);
 
+  // DP-4 P1(a)/(b): once bytes are available from the same-origin preview route, decode and
+  // render them as an overlay positioned from the artifact's own recorded bounds/CRS. Every branch
+  // reports one honest `PreviewOverlayStatus` and never leaves a stale layer behind.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || status !== 'ready') {
+      return;
+    }
+
+    removePreviewOverlay(map);
+
+    if (!previewOverlay) {
+      previewCallbackRef.current('idle');
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    previewCallbackRef.current('loading');
+
+    (async () => {
+      let response: Response;
+      try {
+        response = await fetch(`/api/analyses/${encodeURIComponent(previewOverlay.analysisId)}/preview`, {
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+      } catch {
+        if (!cancelled) previewCallbackRef.current('fetchFailed');
+        return;
+      }
+      if (!response.ok) {
+        const body: unknown = await response.json().catch(() => null);
+        const code = isErrorEnvelope(body) ? body.error.code : 'PREVIEW_FETCH_FAILED';
+        if (!cancelled) previewCallbackRef.current(statusFromPreviewErrorCode(code));
+        return;
+      }
+
+      const coordinates = boundsToImageCoordinates(previewOverlay.bounds, previewOverlay.crs);
+      if (!coordinates) {
+        if (!cancelled) previewCallbackRef.current('crsUnsupported');
+        return;
+      }
+
+      let decoded: Awaited<ReturnType<typeof decodePreviewImage>>;
+      try {
+        const bytes = await response.arrayBuffer();
+        decoded = await decodePreviewImage(bytes);
+      } catch {
+        if (!cancelled) previewCallbackRef.current('decodeFailed');
+        return;
+      }
+      if (cancelled) {
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = decoded.width;
+      canvas.height = decoded.height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        previewCallbackRef.current('decodeFailed');
+        return;
+      }
+      context.putImageData(new ImageData(decoded.rgba, decoded.width, decoded.height), 0, 0);
+
+      removePreviewOverlay(map);
+      map.addSource(PREVIEW_SOURCE_ID, {type: 'canvas', canvas, coordinates, animate: false});
+      map.addLayer({id: PREVIEW_LAYER_ID, type: 'raster', source: PREVIEW_SOURCE_ID});
+      previewCallbackRef.current('ready');
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      removePreviewOverlay(map);
+    };
+  }, [previewOverlay, status]);
+
   return (
     <div className="map-canvas-wrap" dir="ltr">
       <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />
@@ -190,4 +301,24 @@ export default function WorkspaceMap({
 
 function sameGeometry(left: AoiPolygon | null, right: AoiPolygon | null): boolean {
   return JSON.stringify(left?.coordinates ?? null) === JSON.stringify(right?.coordinates ?? null);
+}
+
+function removePreviewOverlay(map: import('maplibre-gl').Map): void {
+  if (map.getLayer(PREVIEW_LAYER_ID)) {
+    map.removeLayer(PREVIEW_LAYER_ID);
+  }
+  if (map.getSource(PREVIEW_SOURCE_ID)) {
+    map.removeSource(PREVIEW_SOURCE_ID);
+  }
+}
+
+function isErrorEnvelope(value: unknown): value is {error: {code: string}} {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'error' in value &&
+    typeof (value as {error: unknown}).error === 'object' &&
+    (value as {error: unknown}).error !== null &&
+    typeof (value as {error: {code: unknown}}).error.code === 'string'
+  );
 }

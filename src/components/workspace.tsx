@@ -10,6 +10,7 @@ import {useAnalysisRun} from '@/lib/api/use-analysis-run';
 import {formatNumber} from '@/lib/format';
 import {parseAoiGeoJson, validateAnalysisInput, type AoiPolygon, type InputProblem} from '@/lib/analysis-input';
 import {emptyWorkspaceDraft, readWorkspaceDraft, writeWorkspaceDraft, type WorkspaceDraft} from '@/lib/workspace-draft';
+import type {PreviewOverlayRequest, PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {AnalysisResultPanel} from './analysis-result-panel';
 import {AnalysisStagePanel} from './analysis-stage-panel';
 import {BackendErrorNotice} from './backend-error-notice';
@@ -39,8 +40,24 @@ export function Workspace({analysisId}: WorkspaceProps) {
   const [submitFailure, setSubmitFailure] = useState<ApiFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [previewStatus, setPreviewStatus] = useState<PreviewOverlayStatus>('idle');
   const submitController = useRef<AbortController | null>(null);
   const {state: runState, retry: retryStatus} = useAnalysisRun(analysisId);
+
+  // DP-4 P1: the map renders the NDVI preview only for a committed result, and only when the
+  // result actually carries a ready, georeferenced ndvi_preview artifact — never on a partial or
+  // in-flight run, and never a fabricated layer when the artifact is absent.
+  let previewOverlay: PreviewOverlayRequest | null = null;
+  let previewArtifactAbsent = false;
+  if (runState.kind === 'complete') {
+    const artifact = runState.result.artifacts?.find((candidate) => candidate.kind === 'ndvi_preview');
+    if (artifact?.ready && artifact.bounds) {
+      previewOverlay = {analysisId: runState.result.analysis_id, bounds: artifact.bounds, crs: artifact.crs};
+    } else {
+      previewArtifactAbsent = true;
+    }
+  }
+  const effectivePreviewStatus: PreviewOverlayStatus = previewArtifactAbsent ? 'noArtifact' : previewStatus;
 
   useEffect(() => {
     let active = true;
@@ -167,6 +184,8 @@ export function Workspace({analysisId}: WorkspaceProps) {
               onGeometryChange={setAoi}
               onDrawingFinished={() => setDrawingEnabled(false)}
               onStatusChange={setMapStatus}
+              previewOverlay={previewOverlay}
+              onPreviewOverlayStatusChange={setPreviewStatus}
             />
           </div>
           <p className="map-attribution">{t('mapAttribution')}</p>
@@ -243,7 +262,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
         </section>
       </div>
 
-      <AnalysisResultPanel analysisId={analysisId} state={runState} />
+      <AnalysisResultPanel analysisId={analysisId} state={runState} previewStatus={effectivePreviewStatus} />
     </main>
   );
 }
