@@ -16,7 +16,16 @@ const reasonMessages = new Set<ErrorMessageKey>([
 
 const sourceReasonMessages = new Set<ErrorMessageKey>(['UNREACHABLE', 'UNEXPECTED_STATUS']);
 
-const limitationMessages = new Set<ErrorMessageKey>(['EFFECTIVE_QUALITY_RESOLUTION_20M']);
+// The pinned contract has no separate enum for `limitations[].code`; it is a free-form object
+// (see contracts/openapi.json AnalysisResult.limitations). The A17 hosted acceptance run (Council
+// finding F1) established that the backend reuses the same acquisition/coverage reason vocabulary
+// documented in `reasonMessages` (docs/CONTRACT-RECONCILIATION.md items 5-6) as top-level result
+// limitations, not only as per-scene `rejection_reason` values — it published `NO_SCENES_FOUND`
+// and `NO_ELIGIBLE_ACQUISITION` as limitations. Rather than special-casing exactly those two
+// observed codes, this recognizes the whole shared reason vocabulary plus the
+// resolution-degradation limitation this catalogue already ships, and keeps
+// `unknownBackendLimitation` for anything outside it.
+const limitationMessages = new Set<ErrorMessageKey>(['EFFECTIVE_QUALITY_RESOLUTION_20M', ...reasonMessages]);
 
 export function backendErrorMessageKey(code: string): ErrorMessageKey {
   return backendErrors.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendError';

@@ -36,6 +36,15 @@ export const ARTIFACT_URL_UNAVAILABLE_ID = '77777777-7777-4777-8777-777777777777
 // AppError(ErrorCode.NOT_FOUND, ...)`). Establishes the preview route's PREVIEW_RESULT_UNAVAILABLE
 // path with a real backend response, instead of a fabricated one.
 export const RESULT_NOT_FOUND_ID = '88888888-8888-4888-8888-888888888888';
+// An A17-shaped result (Council finding F1): evidence_status INSUFFICIENT, no persisted statistics,
+// no committed ndvi_preview artifact, and a single top-level limitation carrying the exact
+// acquisition/coverage reason code the hosted acceptance run observed the backend publish as a
+// limitation. The catalogue already ships a translation for this code as a scene
+// `rejection_reason`; before the W12 fix `limitationMessageKey` did not also recognize it here.
+export const NO_SCENES_FOUND_ID = '99999999-9999-4999-8999-999999999999';
+// Same A17 shape, but for the other reason code the acceptance run observed as a limitation:
+// scenes existed but no date met the configured valid-coverage guard.
+export const NO_ELIGIBLE_ACQUISITION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 // The ndvi_preview artifact bounds/CRS every committed-result fixture above shares, exported so
 // tests can derive the expected map placement from the same values instead of duplicating them.
 export const PREVIEW_ARTIFACT_BOUNDS = {minx: 100, miny: 200, maxx: 300, maxy: 400};
@@ -182,6 +191,41 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
   };
 }
 
+// Mirrors the A17 hosted acceptance run's shape: no eligible observation was committed, so there
+// is nothing to score or preview — only the honest INSUFFICIENT-evidence state and the reason the
+// backend reports as a top-level limitation, not a per-scene rejection_reason.
+function insufficientResultFixture(id: string, limitationCode: string): Record<string, unknown> {
+  return {
+    analysis_id: id,
+    schema_version: '1',
+    pipeline_version: 'm1-pipeline-test',
+    method_version: 'ndvi-test',
+    execution_status: 'SUCCEEDED',
+    evidence_status: 'INSUFFICIENT',
+    request: {
+      aoi_geojson: {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]},
+      start_date: '2026-08-01',
+      end_date: '2026-08-30',
+      locale: 'en'
+    },
+    effective_coverage: {acquisition_date: null, valid_coverage_fraction: null, min_valid_coverage_fraction_guard: 0.5},
+    statistics: null,
+    scenes_evaluated: [],
+    provenance: null,
+    baseline: {
+      contract_version: '0.1.0',
+      collection: 'sentinel-2-l2a',
+      offset_rule: 'boa_offset_applied',
+      mask_policy_version: 'scl-m1-v1',
+      grid_crs: 'EPSG:32638',
+      grid_resolution_m: 10,
+      pipeline_version: 'm1-pipeline-test'
+    },
+    artifacts: [],
+    limitations: [{code: limitationCode, params: {}}]
+  };
+}
+
 function errorEnvelope(code: string, params: Record<string, unknown> = {}, requestId = 'req-fixture-1'): Record<string, unknown> {
   return {error: {code, params, request_id: requestId}};
 }
@@ -307,11 +351,21 @@ export function startBackendDouble(
         PREVIEW_READY_ID,
         NO_ARTIFACT_ID,
         ARTIFACT_NOT_READY_ID,
-        ARTIFACT_URL_UNAVAILABLE_ID
+        ARTIFACT_URL_UNAVAILABLE_ID,
+        NO_SCENES_FOUND_ID,
+        NO_ELIGIBLE_ACQUISITION_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
         respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'RUNNING'}));
+        return;
+      }
+      if (id === NO_SCENES_FOUND_ID) {
+        respondJson(res, 200, insufficientResultFixture(id, 'NO_SCENES_FOUND'));
+        return;
+      }
+      if (id === NO_ELIGIBLE_ACQUISITION_ID) {
+        respondJson(res, 200, insufficientResultFixture(id, 'NO_ELIGIBLE_ACQUISITION'));
         return;
       }
       if (id === NO_ARTIFACT_ID) {

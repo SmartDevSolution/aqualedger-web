@@ -1,5 +1,12 @@
 import {expect, test, type Page} from '@playwright/test';
-import {CONFLICT_START_DATE, FAILED_ID, QUEUED_ID, SUCCEEDED_ID} from '../fixtures/backend-double';
+import {
+  CONFLICT_START_DATE,
+  FAILED_ID,
+  NO_ELIGIBLE_ACQUISITION_ID,
+  NO_SCENES_FOUND_ID,
+  QUEUED_ID,
+  SUCCEEDED_ID
+} from '../fixtures/backend-double';
 
 const doubleBase = 'http://127.0.0.1:3199';
 const polygon = {
@@ -345,6 +352,50 @@ for (const locale of ['en', 'ar'] as const) {
     const unknownReasonRow = page.locator('.scene-list li', {hasText: '2026-08-20'});
     await expect(unknownReasonRow.getByText(unrecognizedFailureText)).toBeVisible();
   });
+}
+
+// W12 (Council finding F1): the backend publishes acquisition/coverage reason codes as top-level
+// result limitations, not only as per-scene rejection_reason values. This asserts the two codes
+// the A17 hosted acceptance run actually observed each render their own shipped translation
+// instead of falling back to the generic unrecognized-limitation string, and that the surrounding
+// A17-shaped INSUFFICIENT-evidence, no-statistics, no-artifact presentation is unchanged.
+const insufficientLimitationCases = [
+  {
+    id: NO_SCENES_FOUND_ID,
+    en: 'The catalogue returned no scenes for this area and date range.',
+    ar: 'لم يُعد الفهرس مشاهد لهذه المنطقة والنطاق الزمني.'
+  },
+  {
+    id: NO_ELIGIBLE_ACQUISITION_ID,
+    en: 'No acquisition met the configured coverage guard.',
+    ar: 'لم يحقق أي التقاط حارس التغطية المهيأ.'
+  }
+];
+
+for (const locale of ['en', 'ar'] as const) {
+  for (const limitationCase of insufficientLimitationCases) {
+    test(`A17-shaped INSUFFICIENT result renders the shipped ${limitationCase.id === NO_SCENES_FOUND_ID ? 'NO_SCENES_FOUND' : 'NO_ELIGIBLE_ACQUISITION'} limitation translation in ${locale} (W12 F1)`, async ({page}) => {
+      await page.goto(`/${locale}/analysis/${limitationCase.id}`);
+
+      const expectedLimitationText = locale === 'en' ? limitationCase.en : limitationCase.ar;
+      await expect(page.getByText(expectedLimitationText)).toBeVisible();
+
+      const fallbackText = locale === 'en'
+        ? 'The backend reported a limitation that this web version does not recognize.'
+        : 'أبلغت الواجهة الخلفية عن قيد لا يتعرف عليه هذا الإصدار من التطبيق.';
+      await expect(page.getByText(fallbackText)).toHaveCount(0);
+
+      const insufficientText = locale === 'en'
+        ? 'Evidence status: insufficient; no eligible dated observation was selected.'
+        : 'حالة الأدلة: غير كافية؛ لم يتم اختيار رصد مؤهل مؤرخ.';
+      await expect(page.getByText(insufficientText)).toBeVisible();
+
+      const statisticsUnavailableText = locale === 'en'
+        ? 'The result contains no AOI-level NDVI statistics.'
+        : 'لا تتضمن النتيجة إحصاءات NDVI على مستوى منطقة الاهتمام.';
+      await expect(page.getByText(statisticsUnavailableText)).toBeVisible();
+    });
+  }
 }
 
 async function prepareDraft(page: Page, locale: 'en' | 'ar') {
