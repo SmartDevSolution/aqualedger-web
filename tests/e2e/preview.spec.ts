@@ -262,6 +262,23 @@ test.describe('browser-visible preview outcomes and basemap origin (DP-4 P1(c)/P
     const offOrigin = requests.filter((url) => new URL(url).origin !== baseOrigin);
     expect(offOrigin).toEqual([]);
   });
+
+  test('a committed but not-yet-ready ndvi_preview artifact reads distinctly from a genuinely missing one (W8)', async ({page}) => {
+    // Both ids reach `runState.kind === 'complete'` (ARTIFACT_NOT_READY_ID and NO_ARTIFACT_ID are
+    // in the double's `immediateResultIds`), so this exercises workspace.tsx's own artifact-record
+    // branch, not the preview route (which the "no artifact" collapse bypassed entirely).
+    const notReadyText = 'The backend has not finished preparing the NDVI preview artifact yet. No map layer is shown.';
+    const missingText = 'The backend result contains no ready NDVI preview artifact. No map layer is shown.';
+    expect(notReadyText).not.toBe(missingText);
+
+    await page.goto(`/en/analysis/${ARTIFACT_NOT_READY_ID}`);
+    await expect(page.getByText(notReadyText)).toBeVisible({timeout: 15_000});
+    await expect(page.getByText(missingText)).toHaveCount(0);
+
+    await page.goto(`/en/analysis/${NO_ARTIFACT_ID}`);
+    await expect(page.getByText(missingText)).toBeVisible({timeout: 15_000});
+    await expect(page.getByText(notReadyText)).toHaveCount(0);
+  });
 });
 
 test.describe('self-hosted basemap and localized map controls (DP-4 P2, W6.4)', () => {

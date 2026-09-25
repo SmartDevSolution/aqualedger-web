@@ -61,8 +61,21 @@ export function Workspace({analysisId}: WorkspaceProps) {
     }
     return {analysisId: runState.result.analysis_id, bounds: artifact.bounds, crs: artifact.crs};
   }, [runState]);
-  const previewArtifactAbsent = runState.kind === 'complete' && previewOverlay === null;
-  const effectivePreviewStatus: PreviewOverlayStatus = previewArtifactAbsent ? 'noArtifact' : previewStatus;
+  // A committed result's own artifact record is enough to tell "no ndvi_preview artifact at all"
+  // apart from "the artifact exists but isn't ready yet" without calling the preview route (which
+  // would otherwise be the only place that distinction is made) or fetching/rendering unready
+  // bytes. `artifact.ready === false` is the only case the not-ready presentation covers; a ready
+  // artifact missing `bounds` (not a real backend shape) falls back to the prior "absent" reading.
+  const committedPreviewArtifact = runState.kind === 'complete'
+    ? runState.result.artifacts?.find((candidate) => candidate.kind === 'ndvi_preview') ?? null
+    : null;
+  const previewArtifactUnready = runState.kind === 'complete' && previewOverlay === null && committedPreviewArtifact?.ready === false;
+  const previewArtifactAbsent = runState.kind === 'complete' && previewOverlay === null && !previewArtifactUnready;
+  const effectivePreviewStatus: PreviewOverlayStatus = previewArtifactUnready
+    ? 'artifactNotReady'
+    : previewArtifactAbsent
+      ? 'noArtifact'
+      : previewStatus;
 
   useEffect(() => {
     let active = true;
