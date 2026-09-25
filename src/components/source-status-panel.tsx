@@ -66,7 +66,7 @@ export function SourceStatusPanel() {
               </div>
               <dl className="source-facts">
                 <Fact label={t('role')} value={source.mandatory ? t('mandatory') : t('optional')} />
-                <Fact label={t('sourceType')} value={source.temporal_or_static === 'TEMPORAL' ? t('temporal') : t('static')} />
+                <Fact label={t('sourceType')} value={sourceTypeLabel(source.temporal_or_static, t)} />
                 <Fact label={t('configured')} value={source.configured ? t('yes') : t('no')} />
                 <Fact label={t('enabled')} value={source.enabled ? t('yes') : t('no')} />
                 <Fact label={t('checkScope')} value={scopeLabel(source.check.check_scope, t)} />
@@ -91,6 +91,18 @@ function checkStatusLabel(status: string, t: ReturnType<typeof useTranslations<'
     case 'not_configured': return t('notConfigured');
     default: return t('unknownCheckStatus');
   }
+}
+
+// `SourceStatus.temporal_or_static` is typed as a free string in the pinned contract, and the
+// pinned backend publishes it lowercase (work/backend/src/aqualedger/config.py's SOURCE_REGISTRY,
+// `temporal_or_static="temporal"`). A case-insensitive match tolerates that casing without ever
+// defaulting an unrecognized value to a specific (and possibly false) role — an unmapped value
+// renders an explicit "unrecognized" label instead of silently falling back to "Static" (A41).
+function sourceTypeLabel(value: string, t: ReturnType<typeof useTranslations<'settings'>>): string {
+  const normalized = value.toLowerCase();
+  if (normalized === 'temporal') return t('temporal');
+  if (normalized === 'static') return t('static');
+  return t('sourceTypeUnknown');
 }
 
 function scopeLabel(scope: string | null, t: ReturnType<typeof useTranslations<'settings'>>): string {
