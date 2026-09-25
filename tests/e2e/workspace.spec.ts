@@ -3,7 +3,9 @@ import {
   CONFLICT_START_DATE,
   FAILED_ID,
   NO_ELIGIBLE_ACQUISITION_ID,
+  NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
   NO_SCENES_FOUND_ID,
+  NO_VALID_PIXEL_ID,
   QUEUED_ID,
   SUCCEEDED_ID
 } from '../fixtures/backend-double';
@@ -15,7 +17,7 @@ const polygon = {
 };
 const polygonText = JSON.stringify(polygon);
 
-async function setSourcesMode(mode: 'default' | 'empty' | 'outage') {
+async function setSourcesMode(mode: 'default' | 'empty' | 'outage' | 'unknownRole') {
   await fetch(`${doubleBase}/__test__/set-sources-mode`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -194,6 +196,21 @@ test.describe('source status (serialized: shares mutable /sources fixture state)
     await expect(page.getByText('Not checked', {exact: true}).first()).toBeVisible();
     await expect(page.getByText('Last checked', {exact: true}).locator('..')).toContainText('Not checked');
     await expect(page.locator('.source-item')).toHaveCount(1);
+    // A41: the pinned backend publishes `temporal_or_static: "temporal"` (lowercase) for this
+    // mandatory Sentinel-2 source; the mandatory temporal source must read "Temporal", never the
+    // false "Static" a case-sensitive `=== 'TEMPORAL'` comparison used to render.
+    await expect(page.getByText('Data role', {exact: true}).locator('..')).toContainText('Temporal');
+  });
+
+  test('an unrecognized temporal_or_static value renders an honest unknown role, never a false Static (A41)', async ({page}) => {
+    await setSourcesMode('unknownRole');
+    await page.goto('/en/settings');
+    await expect(page.getByText('Sentinel-2 L2A')).toBeVisible();
+    const roleFact = page.getByText('Data role', {exact: true}).locator('..');
+    await expect(roleFact).toContainText('Unrecognized data role');
+    await expect(roleFact).not.toContainText('Static');
+    await expect(roleFact).not.toContainText('Temporal');
+    await setSourcesMode('default');
   });
 
   test('an empty source response remains distinct from an outage', async ({page}) => {
@@ -354,27 +371,39 @@ for (const locale of ['en', 'ar'] as const) {
   });
 }
 
-// W12 (Council finding F1): the backend publishes acquisition/coverage reason codes as top-level
-// result limitations, not only as per-scene rejection_reason values. This asserts the two codes
-// the A17 hosted acceptance run actually observed each render their own shipped translation
-// instead of falling back to the generic unrecognized-limitation string, and that the surrounding
-// A17-shaped INSUFFICIENT-evidence, no-statistics, no-artifact presentation is unchanged.
+// W12 (Council finding F1), corrected under W13 (independent review BLOCK): the backend publishes
+// acquisition/coverage reason codes as top-level result limitations, not only as per-scene
+// rejection_reason values. NO_SCENES_FOUND_ID exercises the empty-catalogue cause; the two
+// NO_ELIGIBLE_ACQUISITION ids below exercise the two real, distinct causes the pinned pipeline can
+// produce that same top-level code from (a below-guard rejection with coverage defined, and a
+// tile-limit/BOA-offset rejection with coverage never computed) — both must render the same
+// cause-neutral text, proving it is truthful for either (BLOCK point 1). This also asserts the
+// surrounding A17-shaped INSUFFICIENT-evidence, no-statistics, no-artifact presentation is
+// unchanged, including the no-artifact preview notice (BLOCK point 3).
 const insufficientLimitationCases = [
   {
+    label: 'NO_SCENES_FOUND',
     id: NO_SCENES_FOUND_ID,
     en: 'The catalogue returned no scenes for this area and date range.',
     ar: 'لم يُعد الفهرس مشاهد لهذه المنطقة والنطاق الزمني.'
   },
   {
+    label: 'NO_ELIGIBLE_ACQUISITION (below-guard cause)',
     id: NO_ELIGIBLE_ACQUISITION_ID,
-    en: 'No acquisition met the configured coverage guard.',
-    ar: 'لم يحقق أي التقاط حارس التغطية المهيأ.'
+    en: 'No evaluated acquisition date qualified for selection.',
+    ar: 'لم يتأهل أي تاريخ التقاط جرى تقييمه للاختيار.'
+  },
+  {
+    label: 'NO_ELIGIBLE_ACQUISITION (undefined-coverage cause)',
+    id: NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
+    en: 'No evaluated acquisition date qualified for selection.',
+    ar: 'لم يتأهل أي تاريخ التقاط جرى تقييمه للاختيار.'
   }
 ];
 
 for (const locale of ['en', 'ar'] as const) {
   for (const limitationCase of insufficientLimitationCases) {
-    test(`A17-shaped INSUFFICIENT result renders the shipped ${limitationCase.id === NO_SCENES_FOUND_ID ? 'NO_SCENES_FOUND' : 'NO_ELIGIBLE_ACQUISITION'} limitation translation in ${locale} (W12 F1)`, async ({page}) => {
+    test(`A17-shaped INSUFFICIENT result renders the shipped ${limitationCase.label} limitation translation in ${locale} (W12 F1 / W13)`, async ({page}) => {
       await page.goto(`/${locale}/analysis/${limitationCase.id}`);
 
       const expectedLimitationText = locale === 'en' ? limitationCase.en : limitationCase.ar;
@@ -386,16 +415,46 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByText(fallbackText)).toHaveCount(0);
 
       const insufficientText = locale === 'en'
-        ? 'Evidence status: insufficient; no eligible dated observation was selected.'
-        : 'حالة الأدلة: غير كافية؛ لم يتم اختيار رصد مؤهل مؤرخ.';
+        ? 'Evidence status: insufficient; no observation date yielded a scientifically usable NDVI result.'
+        : 'حالة الأدلة: غير كافية؛ لم ينتج عن أي تاريخ رصد نتيجة NDVI قابلة للاستخدام علمياً.';
       await expect(page.getByText(insufficientText)).toBeVisible();
 
       const statisticsUnavailableText = locale === 'en'
         ? 'The result contains no AOI-level NDVI statistics.'
         : 'لا تتضمن النتيجة إحصاءات NDVI على مستوى منطقة الاهتمام.';
       await expect(page.getByText(statisticsUnavailableText)).toBeVisible();
+
+      // W13 BLOCK point 3: these fixtures carry `artifacts: []` (no committed ndvi_preview), and
+      // no prior assertion covered that the preview panel says so honestly rather than silently
+      // showing nothing.
+      const noArtifactText = locale === 'en'
+        ? 'The backend result contains no ready NDVI preview artifact. No map layer is shown.'
+        : 'لا تحتوي نتيجة الواجهة الخلفية على ملف معاينة NDVI جاهز. لن تُعرض طبقة على الخريطة.';
+      await expect(page.getByText(noArtifactText)).toBeVisible({timeout: 15_000});
     });
   }
+}
+
+for (const locale of ['en', 'ar'] as const) {
+  test(`a selected acquisition with zero valid NDVI pixels renders its own NO_VALID_PIXEL_IN_SELECTED_DATE limitation translation in ${locale} (W13)`, async ({page}) => {
+    await page.goto(`/${locale}/analysis/${NO_VALID_PIXEL_ID}`);
+
+    const expectedLimitationText = locale === 'en'
+      ? 'The selected acquisition yielded no valid NDVI pixel.'
+      : 'لم يُسفر الالتقاط المختار عن أي بكسل NDVI صالح.';
+    await expect(page.getByText(expectedLimitationText)).toBeVisible();
+
+    const fallbackText = locale === 'en'
+      ? 'The backend reported a limitation that this web version does not recognize.'
+      : 'أبلغت الواجهة الخلفية عن قيد لا يتعرف عليه هذا الإصدار من التطبيق.';
+    await expect(page.getByText(fallbackText)).toHaveCount(0);
+
+    // Unlike the no-eligible-date cases above, this fixture DID select a date (`selected: true`,
+    // a real `effective_coverage.acquisition_date`) — only its NDVI computation yielded zero valid
+    // pixels, so the selected-date row must read "Selected", never a failure/unknown sentence.
+    const selectedRow = page.locator('.scene-list li', {hasText: '2026-08-30'});
+    await expect(selectedRow.getByText(locale === 'en' ? 'Selected' : 'مختار')).toBeVisible();
+  });
 }
 
 async function prepareDraft(page: Page, locale: 'en' | 'ar') {

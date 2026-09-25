@@ -42,9 +42,25 @@ export const RESULT_NOT_FOUND_ID = '88888888-8888-4888-8888-888888888888';
 // limitation. The catalogue already ships a translation for this code as a scene
 // `rejection_reason`; before the W12 fix `limitationMessageKey` did not also recognize it here.
 export const NO_SCENES_FOUND_ID = '99999999-9999-4999-8999-999999999999';
-// Same A17 shape, but for the other reason code the acceptance run observed as a limitation:
-// scenes existed but no date met the configured valid-coverage guard.
+// Same A17 shape, but for the other reason code the acceptance run observed as a limitation: every
+// evaluated date was rejected. Faithful to the real below-guard payload shape
+// (work/backend/src/aqualedger/analysis/pipeline.py:295-315): `scenes_evaluated` retains the
+// rejected date (never `[]`) and, because a mosaic was actually built before the coverage check
+// rejected it, the run also carries `EFFECTIVE_QUALITY_RESOLUTION_20M` (G19).
 export const NO_ELIGIBLE_ACQUISITION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+// Same top-level limitation code, but for the other real cause the pipeline can produce it from:
+// every evaluated date was rejected before a mosaic (and therefore coverage) was ever computed
+// (`TOO_MANY_TILES_FOR_DATE` / `BOA_OFFSET_NOT_ASSERTED`, pipeline.py:165-195). No mosaic means no
+// `EFFECTIVE_QUALITY_RESOLUTION_20M` limitation here, unlike the below-guard id above — proves the
+// rendered `NO_ELIGIBLE_ACQUISITION` text stays truthful for a cause where coverage was never
+// defined, not only the below-guard cause (W13, independent review BLOCK point 1).
+export const NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab';
+// A SUCCEEDED, `selected: true` result whose winner mosaic yielded zero valid NDVI pixels (D2,
+// pipeline.py:338-342): evidence_status INSUFFICIENT with a real, non-empty (if all-zero/null)
+// statistics object, distinct from the no-eligible-date ids above which never select a winner at
+// all. Proves `NO_VALID_PIXEL_IN_SELECTED_DATE` now renders its own catalogue text instead of the
+// unknown-limitation fallback (W13, independent review BLOCK point 2).
+export const NO_VALID_PIXEL_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac';
 // The ndvi_preview artifact bounds/CRS every committed-result fixture above shares, exported so
 // tests can derive the expected map placement from the same values instead of duplicating them.
 export const PREVIEW_ARTIFACT_BOUNDS = {minx: 100, miny: 200, maxx: 300, maxy: 400};
@@ -193,8 +209,15 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
 
 // Mirrors the A17 hosted acceptance run's shape: no eligible observation was committed, so there
 // is nothing to score or preview — only the honest INSUFFICIENT-evidence state and the reason the
-// backend reports as a top-level limitation, not a per-scene rejection_reason.
-function insufficientResultFixture(id: string, limitationCode: string): Record<string, unknown> {
+// backend reports as a top-level limitation, not a per-scene rejection_reason. `scenesEvaluated`
+// and `limitations` are supplied by each caller so every case stays faithful to the real payload
+// shape the pinned pipeline produces for it (W13, independent review BLOCK point 3) instead of
+// always collapsing to an empty `scenes_evaluated: []`.
+function insufficientResultFixture(
+  id: string,
+  scenesEvaluated: Record<string, unknown>[],
+  limitations: Record<string, unknown>[]
+): Record<string, unknown> {
   return {
     analysis_id: id,
     schema_version: '1',
@@ -210,7 +233,7 @@ function insufficientResultFixture(id: string, limitationCode: string): Record<s
     },
     effective_coverage: {acquisition_date: null, valid_coverage_fraction: null, min_valid_coverage_fraction_guard: 0.5},
     statistics: null,
-    scenes_evaluated: [],
+    scenes_evaluated: scenesEvaluated,
     provenance: null,
     baseline: {
       contract_version: '0.1.0',
@@ -222,7 +245,88 @@ function insufficientResultFixture(id: string, limitationCode: string): Record<s
       pipeline_version: 'm1-pipeline-test'
     },
     artifacts: [],
-    limitations: [{code: limitationCode, params: {}}]
+    limitations
+  };
+}
+
+// A SUCCEEDED, `selected: true` result whose winner mosaic yielded zero valid NDVI pixels (D2,
+// pipeline.py:338-342): `effective_coverage` is populated from the real winner (unlike the
+// no-eligible-date fixtures above, which never select one), but `statistics` is the real "empty"
+// shape the worker still publishes for this corner (worker/runner.py:286-303) — a present object
+// with `valid_observation_count: 0` and null NDVI aggregates, never a null `statistics`.
+function noValidPixelResultFixture(id: string): Record<string, unknown> {
+  return {
+    analysis_id: id,
+    schema_version: '1',
+    pipeline_version: 'm1-pipeline-test',
+    method_version: 'ndvi-test',
+    execution_status: 'SUCCEEDED',
+    evidence_status: 'INSUFFICIENT',
+    request: {
+      aoi_geojson: {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]},
+      start_date: '2026-08-01',
+      end_date: '2026-08-30',
+      locale: 'en'
+    },
+    effective_coverage: {acquisition_date: '2026-08-30', valid_coverage_fraction: 0.85, min_valid_coverage_fraction_guard: 0.5},
+    statistics: {
+      valid_observation_count: 0,
+      valid_area_m2: 0,
+      ndvi_min: null,
+      ndvi_max: null,
+      ndvi_mean: null,
+      ndvi_median: null,
+      ndvi_p05: null,
+      ndvi_p95: null,
+      masked_fraction: 1,
+      rejection_counts: {masked_class: 1500, missing_data: 0, non_positive_denominator: 0, out_of_range: 0}
+    },
+    scenes_evaluated: [{
+      acquisition_date: '2026-08-30',
+      valid_coverage_fraction: 0.85,
+      selected: true,
+      item_ids: ['Sentinel-2 item A'],
+      rejection_reason: null,
+      data_present_overlap_count: 1500,
+      masked_yielded_coverage_count: 1500,
+      discarded_candidates: [],
+      failures: []
+    }],
+    provenance: {
+      source_id: 'sentinel2_l2a_earth_search',
+      provider: 'Earth Search',
+      collection: 'sentinel-2-l2a',
+      item_ids: ['Sentinel-2 item A'],
+      asset_hrefs: {},
+      acquisition_datetime: '2026-08-30T08:20:00Z',
+      processing_baseline: '05.11',
+      scale: 0.0001,
+      offset: 0,
+      mask_policy: 'SCL M1 policy',
+      mask_masked_classes: [0, 1, 3, 8, 9, 10, 11],
+      mask_retained_classes: [2, 4, 5, 6, 7],
+      grid_crs: 'EPSG:32638',
+      grid_resolution_m: 10,
+      grid_origin: [100, 200],
+      resampling: {red: 'nearest', nir: 'nearest'},
+      resampling_scl: 'nearest',
+      aoi_hash: 'fixture-only',
+      stac_query: {}
+    },
+    baseline: {
+      contract_version: '0.1.0',
+      collection: 'sentinel-2-l2a',
+      offset_rule: 'boa_offset_applied',
+      mask_policy_version: 'scl-m1-v1',
+      grid_crs: 'EPSG:32638',
+      grid_resolution_m: 10,
+      pipeline_version: 'm1-pipeline-test'
+    },
+    artifacts: [],
+    limitations: [
+      {code: 'EFFECTIVE_QUALITY_RESOLUTION_20M', params: {}},
+      {code: 'NO_VALID_PIXEL_IN_SELECTED_DATE', params: {}}
+    ]
   };
 }
 
@@ -230,17 +334,30 @@ function errorEnvelope(code: string, params: Record<string, unknown> = {}, reque
   return {error: {code, params, request_id: requestId}};
 }
 
+// Lowercase, matching the pinned backend's real published value
+// (work/backend/src/aqualedger/config.py SOURCE_REGISTRY: `temporal_or_static="temporal"`), not
+// the 'TEMPORAL' this fixture used to carry — that mismatch is what let A41 (a false "Static" role
+// label on the mandatory temporal source) go undetected.
 const defaultSources = {
   sources: [{
     source_id: 'sentinel2_l2a_earth_search',
     name: 'Sentinel-2 L2A',
     provider: 'Earth Search',
     collection: 'sentinel-2-l2a',
-    temporal_or_static: 'TEMPORAL',
+    temporal_or_static: 'temporal',
     mandatory: true,
     configured: true,
     enabled: true,
     check: {status: 'NOT_CHECKED', checked_at: null, check_scope: null, reason_code: null, reason_params: {}}
+  }]
+};
+
+// A value the web catalogue does not recognize as either role, so the settings screen's fallback
+// (rather than a silently false "Static" label) is exercised too.
+const unknownRoleSources = {
+  sources: [{
+    ...defaultSources.sources[0],
+    temporal_or_static: 'archival'
   }]
 };
 
@@ -261,7 +378,7 @@ export function startBackendDouble(
   const notReadyServedIds = new Set<string>();
   // Mutable only for the /sources scenario tests, which run in a serial describe block to avoid
   // cross-test races on this shared, long-lived double.
-  let sourcesMode: 'default' | 'empty' | 'outage' = 'default';
+  let sourcesMode: 'default' | 'empty' | 'outage' | 'unknownRole' = 'default';
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
@@ -281,7 +398,7 @@ export function startBackendDouble(
       return;
     }
     if (url.pathname === '/__test__/set-sources-mode' && req.method === 'POST') {
-      const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'outage'}) : {};
+      const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'outage' | 'unknownRole'}) : {};
       sourcesMode = body.mode ?? 'default';
       respondJson(res, 200, {ok: true, sourcesMode});
       return;
@@ -353,7 +470,9 @@ export function startBackendDouble(
         ARTIFACT_NOT_READY_ID,
         ARTIFACT_URL_UNAVAILABLE_ID,
         NO_SCENES_FOUND_ID,
-        NO_ELIGIBLE_ACQUISITION_ID
+        NO_ELIGIBLE_ACQUISITION_ID,
+        NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
+        NO_VALID_PIXEL_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
@@ -361,11 +480,62 @@ export function startBackendDouble(
         return;
       }
       if (id === NO_SCENES_FOUND_ID) {
-        respondJson(res, 200, insufficientResultFixture(id, 'NO_SCENES_FOUND'));
+        respondJson(res, 200, insufficientResultFixture(id, [], [{code: 'NO_SCENES_FOUND', params: {}}]));
         return;
       }
       if (id === NO_ELIGIBLE_ACQUISITION_ID) {
-        respondJson(res, 200, insufficientResultFixture(id, 'NO_ELIGIBLE_ACQUISITION'));
+        // Below-guard cause: a mosaic was built (coverage defined) but rejected for falling short
+        // of the guard — pipeline.py:230-244's `LOW_VALID_COVERAGE` branch.
+        respondJson(res, 200, insufficientResultFixture(
+          id,
+          [{
+            acquisition_date: '2026-08-15',
+            valid_coverage_fraction: 0.2,
+            selected: false,
+            item_ids: ['Sentinel-2 item D'],
+            rejection_reason: 'LOW_VALID_COVERAGE',
+            data_present_overlap_count: 1000,
+            masked_yielded_coverage_count: 200,
+            discarded_candidates: [],
+            failures: []
+          }],
+          [{code: 'NO_ELIGIBLE_ACQUISITION', params: {}}, {code: 'EFFECTIVE_QUALITY_RESOLUTION_20M', params: {}}]
+        ));
+        return;
+      }
+      if (id === NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID) {
+        // Undefined-coverage cause: every evaluated date was rejected before a mosaic was ever
+        // built, so coverage was never computed — pipeline.py:165-195's `TOO_MANY_TILES_FOR_DATE`
+        // and `BOA_OFFSET_NOT_ASSERTED` branches. No `EFFECTIVE_QUALITY_RESOLUTION_20M` here.
+        respondJson(res, 200, insufficientResultFixture(
+          id,
+          [{
+            acquisition_date: '2026-08-10',
+            valid_coverage_fraction: null,
+            selected: false,
+            item_ids: ['Sentinel-2 item E'],
+            rejection_reason: 'TOO_MANY_TILES_FOR_DATE',
+            data_present_overlap_count: null,
+            masked_yielded_coverage_count: null,
+            discarded_candidates: [],
+            failures: []
+          }, {
+            acquisition_date: '2026-08-05',
+            valid_coverage_fraction: null,
+            selected: false,
+            item_ids: ['Sentinel-2 item F'],
+            rejection_reason: 'BOA_OFFSET_NOT_ASSERTED',
+            data_present_overlap_count: null,
+            masked_yielded_coverage_count: null,
+            discarded_candidates: [],
+            failures: []
+          }],
+          [{code: 'NO_ELIGIBLE_ACQUISITION', params: {}}]
+        ));
+        return;
+      }
+      if (id === NO_VALID_PIXEL_ID) {
+        respondJson(res, 200, noValidPixelResultFixture(id));
         return;
       }
       if (id === NO_ARTIFACT_ID) {
@@ -398,7 +568,12 @@ export function startBackendDouble(
         req.socket.destroy();
         return;
       }
-      respondJson(res, 200, sourcesMode === 'empty' ? {sources: []} : defaultSources);
+      const sourcesBody = sourcesMode === 'empty'
+        ? {sources: []}
+        : sourcesMode === 'unknownRole'
+          ? unknownRoleSources
+          : defaultSources;
+      respondJson(res, 200, sourcesBody);
       return;
     }
 
