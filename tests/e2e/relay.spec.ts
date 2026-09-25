@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {randomUUID} from 'node:crypto';
-import {FAILED_ID, PREVIEW_URL_TOKEN, resultFixture, SUCCEEDED_ID, TEST_OPERATOR_TOKEN} from '../fixtures/backend-double';
+import {PREVIEW_URL_TOKEN, RESULT_NOT_FOUND_ID, resultFixture, SUCCEEDED_ID, TEST_OPERATOR_TOKEN} from '../fixtures/backend-double';
 
 // These call the app's own same-origin relay routes directly (bypassing the browser UI) so each
 // assertion is precise about one relay behavior, per the Council DP-2 verdict (issue #8):
@@ -98,10 +98,13 @@ test.describe('same-origin relay (Council DP-2 access model)', () => {
   });
 
   test('GET /api/analyses/{id}/result passes a non-200 error through unchanged', async ({request}) => {
-    const response = await request.get(`/api/analyses/${FAILED_ID}/result`);
-    expect(response.status()).toBe(500);
+    // RESULT_NOT_FOUND_ID mirrors the real backend's own 404 NOT_FOUND (see backend-double.ts) —
+    // a genuine non-200 response, unlike a FAILED run, which the real backend answers with the
+    // frozen 200 NOT_READY envelope (covered in tests/e2e/preview.spec.ts).
+    const response = await request.get(`/api/analyses/${RESULT_NOT_FOUND_ID}/result`);
+    expect(response.status()).toBe(404);
     const body = await response.json();
-    expect(body.error.code).toBe('PROCESSING_FAILED');
+    expect(body.error.code).toBe('NOT_FOUND');
   });
 
   test('GET /api/sources never carries a Bearer, even when the caller sends one', async ({request}) => {

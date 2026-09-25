@@ -24,6 +24,22 @@ export const NO_ARTIFACT_ID = '55555555-5555-4555-8555-555555555555';
 // A committed result whose ndvi_preview artifact exists but is not `ready` (no preview_url), for
 // the preview route's PREVIEW_ARTIFACT_NOT_READY path.
 export const ARTIFACT_NOT_READY_ID = '66666666-6666-4666-8666-666666666666';
+// A committed result whose ndvi_preview artifact IS `ready` but carries no `preview_url` — mirrors
+// the real backend leaving `preview_url` unset whenever its storage client is not configured
+// (`work/backend/src/aqualedger/api/routes/analyses.py:195-201` `build_storage_client`), which is
+// conditional on backend deployment config, not the artifact's own readiness. For the preview
+// route's PREVIEW_URL_UNAVAILABLE path, distinct from ARTIFACT_NOT_READY_ID above.
+export const ARTIFACT_URL_UNAVAILABLE_ID = '77777777-7777-4777-8777-777777777777';
+// An id the double genuinely rejects at `/result` with a non-200 that is not the frozen NOT_READY
+// envelope — mirrors the real backend's `404 NOT_FOUND` from `get_analysis_result` when the row
+// does not exist or belongs to a different principal (`analyses.py`: `if row is None: raise
+// AppError(ErrorCode.NOT_FOUND, ...)`). Establishes the preview route's PREVIEW_RESULT_UNAVAILABLE
+// path with a real backend response, instead of a fabricated one.
+export const RESULT_NOT_FOUND_ID = '88888888-8888-4888-8888-888888888888';
+// The ndvi_preview artifact bounds/CRS every committed-result fixture above shares, exported so
+// tests can derive the expected map placement from the same values instead of duplicating them.
+export const PREVIEW_ARTIFACT_BOUNDS = {minx: 100, miny: 200, maxx: 300, maxy: 400};
+export const PREVIEW_ARTIFACT_CRS = 'EPSG:32638';
 export const CONFLICT_START_DATE = '2001-01-01';
 // A non-secret marker embedded in the default (unreachable) preview_url's query string, so a log
 // scan can assert the signed URL is never printed without needing the real operator token.
@@ -128,8 +144,8 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
       hash: 'sha256:fixture-only',
       size_bytes: 1200,
       resolution_m: 10,
-      crs: 'EPSG:32638',
-      bounds: {minx: 100, miny: 200, maxx: 300, maxy: 400},
+      crs: PREVIEW_ARTIFACT_CRS,
+      bounds: PREVIEW_ARTIFACT_BOUNDS,
       ready: true,
       preview_url: previewUrl
     }],
@@ -165,9 +181,10 @@ export function startBackendDouble(
   // transitively requires this file as CommonJS to read its exported string constants.
   const previewFixtureBytes = options.previewFixtureBytes ?? Buffer.alloc(0);
   const requests: LoggedRequest[] = [];
-  // Any id other than SUCCEEDED_ID/FAILED_ID returns NOT_READY exactly once at /result, then the
-  // canned success result — keyed per id (not a single flag) so concurrent Playwright projects
-  // minting their own fresh scenario id never race each other on this shared, long-lived double.
+  // Any id not otherwise special-cased below (FAILED_ID, RESULT_NOT_FOUND_ID, or one of the
+  // immediate-result ids) returns NOT_READY exactly once at /result, then the canned success
+  // result — keyed per id (not a single flag) so concurrent Playwright projects minting their own
+  // fresh scenario id never race each other on this shared, long-lived double.
   const notReadyServedIds = new Set<string>();
   // Mutable only for the /sources scenario tests, which run in a serial describe block to avoid
   // cross-test races on this shared, long-lived double.
@@ -241,11 +258,28 @@ export function startBackendDouble(
     const resultMatch = url.pathname.match(/^\/analyses\/([^/]+)\/result$/);
     if (req.method === 'GET' && resultMatch) {
       const id = resultMatch[1] as string;
+      // Mirrors the real backend exactly (analyses.py `get_analysis_result`): a FAILED run is
+      // uncommitted, so it answers the same frozen 200 NOT_READY envelope as any other uncommitted
+      // run, carrying execution_status so the caller can tell "failed" from "still running" — never
+      // a fabricated non-200.
       if (id === FAILED_ID) {
-        respondJson(res, 500, errorEnvelope('PROCESSING_FAILED'));
+        respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'FAILED'}));
         return;
       }
-      const immediateResultIds = new Set([SUCCEEDED_ID, PREVIEW_READY_ID, NO_ARTIFACT_ID, ARTIFACT_NOT_READY_ID]);
+      // Mirrors the real backend's genuine 404 NOT_FOUND (analyses.py: `if row is None: raise
+      // AppError(ErrorCode.NOT_FOUND, ...)`) — a real non-200 result-fetch failure, distinct from
+      // the frozen 200 NOT_READY envelope above.
+      if (id === RESULT_NOT_FOUND_ID) {
+        respondJson(res, 404, errorEnvelope('NOT_FOUND', {resource: 'analysis'}));
+        return;
+      }
+      const immediateResultIds = new Set([
+        SUCCEEDED_ID,
+        PREVIEW_READY_ID,
+        NO_ARTIFACT_ID,
+        ARTIFACT_NOT_READY_ID,
+        ARTIFACT_URL_UNAVAILABLE_ID
+      ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
         respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'RUNNING'}));
@@ -261,6 +295,13 @@ export function startBackendDouble(
         const fixture = resultFixture(id);
         const existingArtifact = (fixture.artifacts as Record<string, unknown>[] | undefined)?.[0] ?? {};
         fixture.artifacts = [{...existingArtifact, ready: false, preview_url: null}];
+        respondJson(res, 200, fixture);
+        return;
+      }
+      if (id === ARTIFACT_URL_UNAVAILABLE_ID) {
+        const fixture = resultFixture(id);
+        const existingArtifact = (fixture.artifacts as Record<string, unknown>[] | undefined)?.[0] ?? {};
+        fixture.artifacts = [{...existingArtifact, ready: true, preview_url: null}];
         respondJson(res, 200, fixture);
         return;
       }

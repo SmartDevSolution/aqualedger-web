@@ -29,7 +29,7 @@ npm run test:e2e:unconfigured
 
 The backend artifact is pinned at `contracts/openapi.json`; `contracts/BACKEND-REF.json` records its commit, version and hashes, and `src/lib/api/generated.ts` is generated from it. The workspace sends `POST /api/analyses` (relayed to the backend's `POST /analyses`) only on an explicit click with an `Idempotency-Key`, polls saved IDs, and retrieves typed result responses. Settings reads `GET /api/sources`. Locale switching persists the choice and never submits a job. Timezone is not included in the API payload.
 
-The current merged central baseline is `db404bffe536fc969eb0069deba1acaf3d4b1707` (PR #4); contract rules are pinned to ratified revision 8 at `413dc884a22b05e9f8ed239eb8236e230c640937`. Central PR #5 is still open and is not a merged baseline. Contract and implementation differences, including the blocked auth and map-preview paths, are recorded in `docs/CONTRACT-RECONCILIATION.md`.
+The current merged central baseline is `db404bffe536fc969eb0069deba1acaf3d4b1707` (PR #4); contract rules are pinned to ratified revision 8 at `413dc884a22b05e9f8ed239eb8236e230c640937`. Central PR #5 is still open and is not a merged baseline. Contract and implementation differences are recorded in `docs/CONTRACT-RECONCILIATION.md`, including which map-preview facts are already established on the hosted backend versus which part of the browser render path is still unverified there.
 
 ## Dependency choices
 

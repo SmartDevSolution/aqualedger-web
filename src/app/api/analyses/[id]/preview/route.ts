@@ -12,14 +12,23 @@ export const dynamic = 'force-dynamic';
 // authorizes that fetch), and the signed URL is never logged, in this file or otherwise.
 //
 // Every failure path answers with a small, documented `{error: {code}}` JSON body instead of a
-// fabricated image or a silent 200, so the browser can render an honest state:
+// fabricated image or a silent 200, so the browser can render an honest state. This is the full
+// status set (also documented in docs/IMPLEMENTATION.md so the UI mapping in
+// src/lib/preview/geotiff-overlay.ts cannot silently drift from this route):
 //   - 503 PREVIEW_NOT_CONFIGURED      the relay itself is not configured (mirrors API_NOT_CONFIGURED)
-//   - 200 PREVIEW_NOT_READY           the analysis result is not committed yet (mirrors the
-//                                     backend's own 200 NOT_READY envelope)
-//   - 502 PREVIEW_RESULT_UNAVAILABLE  the result could not be fetched, or was fetched but signals
-//                                     something other than a committed result (e.g. a failed run)
+//   - 200 PREVIEW_NOT_READY           the backend's own frozen 200 NOT_READY envelope (freeze B4):
+//                                     the analysis has no committed result yet, including a FAILED
+//                                     run (params.execution_status distinguishes the two) — never
+//                                     a decode failure, since this body is JSON, not image bytes
+//   - 502 PREVIEW_RESULT_UNAVAILABLE  the result request itself failed: a network error, or the
+//                                     backend answered a non-200 instead of a committed result or
+//                                     the frozen NOT_READY envelope (e.g. NOT_FOUND)
 //   - 404 PREVIEW_ARTIFACT_MISSING    the committed result carries no `ndvi_preview` artifact
-//   - 409 PREVIEW_ARTIFACT_NOT_READY  the artifact exists but is not `ready` or has no `preview_url`
+//   - 409 PREVIEW_ARTIFACT_NOT_READY  the artifact itself is not yet `ready`
+//   - 503 PREVIEW_URL_UNAVAILABLE     the artifact is `ready`, but the backend minted no signed
+//                                     `preview_url` for it — conditional on the backend's own
+//                                     storage configuration (analyses.py `build_storage_client`),
+//                                     not a property of the artifact's own readiness state
 //   - 502 PREVIEW_FETCH_FAILED        the signed URL could not be fetched or returned a failure
 export async function GET(request: Request, {params}: {params: Promise<{id: string}>}): Promise<Response> {
   const {id} = await params;
@@ -52,8 +61,11 @@ export async function GET(request: Request, {params}: {params: Promise<{id: stri
   if (!artifact) {
     return failure('PREVIEW_ARTIFACT_MISSING', 404);
   }
-  if (!artifact.ready || typeof artifact.preview_url !== 'string' || artifact.preview_url.length === 0) {
+  if (!artifact.ready) {
     return failure('PREVIEW_ARTIFACT_NOT_READY', 409);
+  }
+  if (typeof artifact.preview_url !== 'string' || artifact.preview_url.length === 0) {
+    return failure('PREVIEW_URL_UNAVAILABLE', 503);
   }
 
   let assetResponse: Response;

@@ -84,6 +84,11 @@ export default function WorkspaceMap({
           zoom: 1.4,
           attributionControl: {compact: false},
           cooperativeGestures: true,
+          // W7.4: lets a test read back actual rendered pixels via WebGL `readPixels` instead of
+          // asserting on implementation-private state — without it the drawing buffer may already
+          // be cleared by the time a test can inspect it, making a real render/no-render
+          // regression impossible to observe from outside the component.
+          canvasContextAttributes: {preserveDrawingBuffer: true},
           // DP-4 W6.4: MapLibre's own default control tooltips/gesture hint are English; this
           // patches every one this app surfaces (zoom, compass reset, cooperative-gesture hint)
           // from the message catalogues so both locales are actually localized, not just menus.
@@ -97,6 +102,11 @@ export default function WorkspaceMap({
           }
         });
         mapRef.current = map;
+        // W7.4 (DP-4 P1(c) non-vacuity): the only production-side test hook this component
+        // exposes — lets Playwright inspect the real MapLibre instance (layer/source presence,
+        // projected placement, rendered pixels) instead of an implementation-private variable a
+        // regression could keep alive. Never read by application code itself.
+        (window as unknown as {__AQUALEDGER_TEST_MAP__?: import('maplibre-gl').Map}).__AQUALEDGER_TEST_MAP__ = map;
         map.getCanvas().setAttribute('aria-label', t('mapHeading'));
         map.getCanvas().setAttribute('role', 'application');
         map.addControl(new maplibreModule.NavigationControl({showCompass: true}), 'top-right');
@@ -180,6 +190,7 @@ export default function WorkspaceMap({
       activeDraw?.stop();
       drawRef.current = null;
       mapRef.current = null;
+      delete (window as unknown as {__AQUALEDGER_TEST_MAP__?: import('maplibre-gl').Map}).__AQUALEDGER_TEST_MAP__;
       map?.remove();
     };
   }, [t]);
@@ -237,10 +248,18 @@ export default function WorkspaceMap({
         if (!cancelled) previewCallbackRef.current('fetchFailed');
         return;
       }
-      if (!response.ok) {
+      // The route answers every non-artifact outcome — including the backend's own frozen `200
+      // PREVIEW_NOT_READY` envelope (DP-4 P1(a)/(c)) — as `Content-Type: application/json`, never
+      // as image bytes. That must be checked before decoding, not inferred from `response.ok`
+      // alone: a `200` JSON envelope is `ok` but is never TIFF bytes, and treating it as such
+      // reports a fabricated decode failure for a condition that is not a decode failure.
+      const contentType = response.headers.get('content-type') ?? '';
+      const isJsonEnvelope = contentType.split(';')[0]?.trim() === 'application/json';
+      if (!response.ok || isJsonEnvelope) {
         const body: unknown = await response.json().catch(() => null);
         const code = isErrorEnvelope(body) ? body.error.code : 'PREVIEW_FETCH_FAILED';
-        if (!cancelled) previewCallbackRef.current(statusFromPreviewErrorCode(code));
+        const params = isErrorEnvelope(body) ? body.error.params : undefined;
+        if (!cancelled) previewCallbackRef.current(statusFromPreviewErrorCode(code, params));
         return;
       }
 
@@ -312,13 +331,15 @@ function removePreviewOverlay(map: import('maplibre-gl').Map): void {
   }
 }
 
-function isErrorEnvelope(value: unknown): value is {error: {code: string}} {
+function isErrorEnvelope(value: unknown): value is {error: {code: string; params: Record<string, unknown>}} {
   return (
     typeof value === 'object' &&
     value !== null &&
     'error' in value &&
     typeof (value as {error: unknown}).error === 'object' &&
     (value as {error: unknown}).error !== null &&
-    typeof (value as {error: {code: unknown}}).error.code === 'string'
+    typeof (value as {error: {code: unknown}}).error.code === 'string' &&
+    typeof (value as {error: {params: unknown}}).error.params === 'object' &&
+    (value as {error: {params: unknown}}).error.params !== null
   );
 }

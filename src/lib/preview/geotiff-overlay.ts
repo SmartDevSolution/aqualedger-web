@@ -14,13 +14,21 @@ export type PreviewOverlayRequest = {
 
 // Distinguishes every honest outcome the workspace map can report for the NDVI overlay (DP-4
 // P1(c)): 'ready' means the layer is on the map; every other value means no layer is shown, for
-// the stated reason, and none of them may be presented as the analysis's evidence status.
+// the stated reason, and none of them may be presented as the analysis's evidence status. Each
+// value keeps a distinct, user-visible meaning (see `statusFromPreviewErrorCode` and the preview
+// route's own documented status set in `src/app/api/analyses/[id]/preview/route.ts` and
+// `docs/IMPLEMENTATION.md`) — no two different causes ever collapse onto the same message.
 export type PreviewOverlayStatus =
   | 'idle'
   | 'loading'
   | 'ready'
   | 'notReady'
+  | 'notReadyFailed'
   | 'noArtifact'
+  | 'artifactNotReady'
+  | 'urlUnavailable'
+  | 'resultUnavailable'
+  | 'notConfigured'
   | 'fetchFailed'
   | 'decodeFailed'
   | 'crsUnsupported';
@@ -37,15 +45,25 @@ export type DecodedPreviewImage = {
 /**
  * Maps the preview route's documented `{error: {code}}` bodies (`src/app/api/analyses/[id]/preview/route.ts`)
  * onto the honest UI states DP-4 P1(c)/P4 requires the map to distinguish. An unrecognized code is
- * treated the same as a fetch failure: no layer is shown, and nothing is guessed.
+ * treated the same as a fetch failure: no layer is shown, and nothing is guessed. `params` is the
+ * envelope's own `error.params`, read only for `PREVIEW_NOT_READY` to tell an in-progress run from
+ * a failed one — a `FAILED` run must never read as "still running".
  */
-export function statusFromPreviewErrorCode(code: string): PreviewOverlayStatus {
+export function statusFromPreviewErrorCode(code: string, params?: Record<string, unknown>): PreviewOverlayStatus {
   switch (code) {
     case 'PREVIEW_NOT_READY':
-      return 'notReady';
+      return params?.execution_status === 'FAILED' ? 'notReadyFailed' : 'notReady';
     case 'PREVIEW_ARTIFACT_MISSING':
-    case 'PREVIEW_ARTIFACT_NOT_READY':
       return 'noArtifact';
+    case 'PREVIEW_ARTIFACT_NOT_READY':
+      return 'artifactNotReady';
+    case 'PREVIEW_URL_UNAVAILABLE':
+      return 'urlUnavailable';
+    case 'PREVIEW_RESULT_UNAVAILABLE':
+      return 'resultUnavailable';
+    case 'PREVIEW_NOT_CONFIGURED':
+      return 'notConfigured';
+    case 'PREVIEW_FETCH_FAILED':
     default:
       return 'fetchFailed';
   }

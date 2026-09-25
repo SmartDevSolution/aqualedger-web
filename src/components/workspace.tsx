@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useRouter} from '@/i18n/navigation';
 import {createAnalysis, type ApiFailure} from '@/lib/api/client';
 import {clearIdempotencyKey, getIdempotencyKey} from '@/lib/api/idempotency';
@@ -46,17 +46,22 @@ export function Workspace({analysisId}: WorkspaceProps) {
 
   // DP-4 P1: the map renders the NDVI preview only for a committed result, and only when the
   // result actually carries a ready, georeferenced ndvi_preview artifact — never on a partial or
-  // in-flight run, and never a fabricated layer when the artifact is absent.
-  let previewOverlay: PreviewOverlayRequest | null = null;
-  let previewArtifactAbsent = false;
-  if (runState.kind === 'complete') {
-    const artifact = runState.result.artifacts?.find((candidate) => candidate.kind === 'ndvi_preview');
-    if (artifact?.ready && artifact.bounds) {
-      previewOverlay = {analysisId: runState.result.analysis_id, bounds: artifact.bounds, crs: artifact.crs};
-    } else {
-      previewArtifactAbsent = true;
+  // in-flight run, and never a fabricated layer when the artifact is absent. Memoized on
+  // `runState` (stable across unrelated Workspace re-renders, e.g. `previewStatus` updates) rather
+  // than rebuilt as a fresh object every render: a fresh identity on each render would retrigger
+  // WorkspaceMap's `[previewOverlay, status]` effect on every one of its own status callbacks,
+  // tearing down and refetching the overlay in an unbounded loop instead of settling once ready.
+  const previewOverlay = useMemo<PreviewOverlayRequest | null>(() => {
+    if (runState.kind !== 'complete') {
+      return null;
     }
-  }
+    const artifact = runState.result.artifacts?.find((candidate) => candidate.kind === 'ndvi_preview');
+    if (!artifact?.ready || !artifact.bounds) {
+      return null;
+    }
+    return {analysisId: runState.result.analysis_id, bounds: artifact.bounds, crs: artifact.crs};
+  }, [runState]);
+  const previewArtifactAbsent = runState.kind === 'complete' && previewOverlay === null;
   const effectivePreviewStatus: PreviewOverlayStatus = previewArtifactAbsent ? 'noArtifact' : previewStatus;
 
   useEffect(() => {

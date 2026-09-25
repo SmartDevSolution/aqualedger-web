@@ -47,11 +47,26 @@ assert.equal(utmToWgs84(500000, 0, 'EPSG:4326'), null, 'a non-UTM CRS must be re
 assert.equal(utmToWgs84(500000, 0, 'not-a-crs'), null, 'a malformed CRS string must be reported as unsupported');
 assert.equal(boundsToImageCoordinates(realisticBounds, null), null, 'a null CRS must be reported as unsupported');
 
-assert.equal(statusFromPreviewErrorCode('PREVIEW_NOT_READY'), 'notReady');
+assert.equal(statusFromPreviewErrorCode('PREVIEW_NOT_READY'), 'notReady', 'a running/queued analysis reads as not-ready');
+assert.equal(
+  statusFromPreviewErrorCode('PREVIEW_NOT_READY', {execution_status: 'FAILED'}),
+  'notReadyFailed',
+  'a FAILED run must not read as still running'
+);
 assert.equal(statusFromPreviewErrorCode('PREVIEW_ARTIFACT_MISSING'), 'noArtifact');
-assert.equal(statusFromPreviewErrorCode('PREVIEW_ARTIFACT_NOT_READY'), 'noArtifact');
+assert.equal(
+  statusFromPreviewErrorCode('PREVIEW_ARTIFACT_NOT_READY'),
+  'artifactNotReady',
+  'a not-yet-ready artifact must stay distinct from a missing one'
+);
+assert.equal(
+  statusFromPreviewErrorCode('PREVIEW_URL_UNAVAILABLE'),
+  'urlUnavailable',
+  'a ready artifact with no signed URL must stay distinct from a not-ready artifact'
+);
 assert.equal(statusFromPreviewErrorCode('PREVIEW_FETCH_FAILED'), 'fetchFailed');
-assert.equal(statusFromPreviewErrorCode('PREVIEW_RESULT_UNAVAILABLE'), 'fetchFailed');
+assert.equal(statusFromPreviewErrorCode('PREVIEW_RESULT_UNAVAILABLE'), 'resultUnavailable');
+assert.equal(statusFromPreviewErrorCode('PREVIEW_NOT_CONFIGURED'), 'notConfigured');
 assert.equal(statusFromPreviewErrorCode('anything-unrecognized'), 'fetchFailed');
 
 // A malformed/undecodable TIFF must fail loudly (an honest decode failure), never silently render

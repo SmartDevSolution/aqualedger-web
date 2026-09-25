@@ -30,6 +30,20 @@ A basemap library does not supply unlimited hosted tiles or rights; document the
 
 **M1 NDVI preview delivery (Council DP-4 P1, central issue #8): same-origin route plus client-side decode of the backend's own RGBA artifact.** `GET /api/analyses/{id}/preview` resolves the frozen signed `preview_url` server-side (never in the browser) and streams the bytes; the browser decodes the RGBA GeoTIFF (one new runtime dependency, `geotiff`) and renders it as a MapLibre overlay positioned from the artifact's recorded `bounds`/`crs`, rendering the artifact's own already-colormapped RGB unchanged rather than re-applying a palette. This is a Council-ratified, scoped exception to freeze document 11 section B9's "no client-side COG decoding" clause for M1's own preview artifact specifically — not a general reopening of B9.
 
+The route's status set is documented in exactly one place — here — so `src/app/api/analyses/[id]/preview/route.ts` and the browser-side mapping in `src/lib/preview/geotiff-overlay.ts` (`statusFromPreviewErrorCode`) cannot silently drift apart. Every failure answers a small `{error: {code, params, request_id}}` JSON body, distinguished from a successful artifact response by `Content-Type: application/json` (never treated as image bytes just because the status is `200`):
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| 503 | `PREVIEW_NOT_CONFIGURED` | The relay itself is not configured (mirrors `API_NOT_CONFIGURED`). |
+| 200 | `PREVIEW_NOT_READY` | The backend's own frozen `200 NOT_READY` envelope (freeze B4): the analysis has no committed result yet, including a `FAILED` run — `params.execution_status` distinguishes an in-progress run from a failed one. |
+| 502 | `PREVIEW_RESULT_UNAVAILABLE` | The result request itself failed: a network error, or the backend answered a non-`200` (e.g. `NOT_FOUND`) instead of a committed result or the frozen `NOT_READY` envelope. |
+| 404 | `PREVIEW_ARTIFACT_MISSING` | The committed result carries no `ndvi_preview` artifact at all. |
+| 409 | `PREVIEW_ARTIFACT_NOT_READY` | The artifact itself is not yet `ready`. |
+| 503 | `PREVIEW_URL_UNAVAILABLE` | The artifact is `ready`, but the backend minted no signed `preview_url` for it — conditional on the backend's own storage configuration (`analyses.py` `build_storage_client`), not a property of the artifact's readiness. |
+| 502 | `PREVIEW_FETCH_FAILED` | The signed URL could not be fetched, or the fetch returned a failure. |
+
+Each of these maps to its own distinct, user-visible `PreviewOverlayStatus` and message key; no two different causes are ever collapsed onto the same string.
+
 ## First implementation PR and tests
 
 Add minimal working Next.js setup, supported pinned versions/lockfile, real tested README commands and public/server environment distinction without secrets. No production EO secrets or Supabase service/database keys in NEXT_PUBLIC variables.

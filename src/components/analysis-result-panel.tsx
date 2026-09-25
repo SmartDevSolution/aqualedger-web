@@ -181,10 +181,15 @@ type PreviewMessageKey =
   | 'previewReady'
   | 'previewLoading'
   | 'previewNotReady'
+  | 'previewNotReadyFailed'
   | 'previewFetchFailed'
   | 'previewDecodeFailed'
   | 'previewCrsUnsupported'
-  | 'previewNoArtifact';
+  | 'previewNoArtifact'
+  | 'previewArtifactNotReady'
+  | 'previewUrlUnavailable'
+  | 'previewResultUnavailable'
+  | 'previewNotConfigured';
 
 function previewMessageKey(status: PreviewOverlayStatus): PreviewMessageKey {
   switch (status) {
@@ -194,12 +199,22 @@ function previewMessageKey(status: PreviewOverlayStatus): PreviewMessageKey {
       return 'previewLoading';
     case 'notReady':
       return 'previewNotReady';
+    case 'notReadyFailed':
+      return 'previewNotReadyFailed';
     case 'fetchFailed':
       return 'previewFetchFailed';
     case 'decodeFailed':
       return 'previewDecodeFailed';
     case 'crsUnsupported':
       return 'previewCrsUnsupported';
+    case 'artifactNotReady':
+      return 'previewArtifactNotReady';
+    case 'urlUnavailable':
+      return 'previewUrlUnavailable';
+    case 'resultUnavailable':
+      return 'previewResultUnavailable';
+    case 'notConfigured':
+      return 'previewNotConfigured';
     case 'noArtifact':
     case 'idle':
     default:
