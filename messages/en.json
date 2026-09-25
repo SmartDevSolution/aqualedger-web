@@ -200,6 +200,7 @@
     "supportReferenceUnavailable": "not supplied",
     "requestReference": "Request reference",
     "unknownBackendReason": "The backend reported a failure reason that this web version does not recognize.",
+    "unknownBackendLimitation": "The backend reported a limitation that this web version does not recognize.",
     "unknownSourceReason": "The backend returned an unrecognized source-check reason.",
     "NO_ELIGIBLE_ACQUISITION": "No acquisition met the configured coverage guard.",
     "NO_SCENES_FOUND": "The catalogue returned no scenes for this area and date range.",
@@ -210,6 +211,7 @@
     "TOO_MANY_TILES_FOR_DATE": "The date requires more tiles than the backend's configured processing limit.",
     "BOA_OFFSET_NOT_ASSERTED": "The source metadata did not confirm the required BOA offset handling.",
     "NDVI_OUT_OF_RANGE_PIXELS_REJECTED": "NDVI pixels outside the valid range were excluded.",
+    "EFFECTIVE_QUALITY_RESOLUTION_20M": "The effective analysis resolution was 20 m due to a lower-resolution source band.",
     "UNREACHABLE": "The backend could not reach the catalogue during this recorded check.",
     "UNEXPECTED_STATUS": "The catalogue returned an unexpected response during this recorded check.",
     "draftStorageUnavailable": "This browser could not preserve the current draft. Keep this tab open while changing languages."

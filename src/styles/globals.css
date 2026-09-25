@@ -16,6 +16,7 @@
   --focus: #c44e0e;
   --radius-card: 1.15rem;
   --shadow-card: 0 12px 34px rgb(19 48 51 / 5%);
+  --header-height: 5.25rem;
 }
 
 * {
@@ -25,7 +26,7 @@
 html {
   min-width: 320px;
   background: var(--paper);
-  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-height);
 }
 
 body {
@@ -73,7 +74,7 @@ a {
   z-index: 20;
   inset-block-start: 0;
   display: flex;
-  min-height: 5.25rem;
+  min-height: var(--header-height);
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -769,6 +770,10 @@ h3 {
 }
 
 @media (max-width: 640px) {
+  html {
+    scroll-padding-top: 0;
+  }
+
   .site-header {
     position: static;
     align-items: flex-start;

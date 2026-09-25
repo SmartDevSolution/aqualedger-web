@@ -16,12 +16,18 @@ const reasonMessages = new Set<ErrorMessageKey>([
 
 const sourceReasonMessages = new Set<ErrorMessageKey>(['UNREACHABLE', 'UNEXPECTED_STATUS']);
 
+const limitationMessages = new Set<ErrorMessageKey>(['EFFECTIVE_QUALITY_RESOLUTION_20M']);
+
 export function backendErrorMessageKey(code: string): ErrorMessageKey {
   return backendErrors.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendError';
 }
 
 export function reasonMessageKey(code: string | null): ErrorMessageKey {
   return code && reasonMessages.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendReason';
+}
+
+export function limitationMessageKey(code: string | null): ErrorMessageKey {
+  return code && limitationMessages.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendLimitation';
 }
 
 export function sourceReasonMessageKey(code: string | null): ErrorMessageKey {

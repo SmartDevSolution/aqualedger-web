@@ -2,7 +2,7 @@
 
 import {useLocale, useTranslations} from 'next-intl';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
-import {reasonMessageKey} from '@/lib/api/error-messages';
+import {limitationMessageKey, reasonMessageKey} from '@/lib/api/error-messages';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
 import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 
@@ -137,7 +137,7 @@ function LoadedAnalysisResult({
           <ul className="scene-list">
             {result.limitations?.map((limitation, index) => (
               <li key={`${limitationCode(limitation) ?? 'unknown'}-${index}`}>
-                <span>{errors(reasonMessageKey(limitationCode(limitation)))}</span>
+                <span>{errors(limitationMessageKey(limitationCode(limitation)))}</span>
               </li>
             ))}
           </ul>
@@ -160,7 +160,7 @@ function LoadedAnalysisResult({
             <Fact label={t('gridCrs')} value={<bdi dir="ltr">{provenance.grid_crs}</bdi>} />
             <Fact label={t('gridResolution')} value={`${formatValue(provenance.grid_resolution_m, locale)} m`} />
             <Fact label={t('gridOrigin')} value={<bdi dir="ltr">{provenance.grid_origin.map((value) => formatValue(value, 'en')).join(', ')}</bdi>} />
-            <Fact label={t('scaleOffset')} value={<bdi dir="ltr">{formatValue(provenance.scale, 'en')} / {formatValue(provenance.offset, 'en')}</bdi>} />
+            <Fact label={t('scaleOffset')} value={<bdi dir="ltr">{formatValue(provenance.scale, 'en', 8)} / {formatValue(provenance.offset, 'en', 8)}</bdi>} />
             <Fact label={t('maskPolicy')} value={provenance.mask_policy} />
             <Fact label={t('maskedClasses')} value={<bdi dir="ltr">{provenance.mask_masked_classes.join(', ')}</bdi>} />
             <Fact label={t('retainedClasses')} value={<bdi dir="ltr">{provenance.mask_retained_classes.join(', ')}</bdi>} />

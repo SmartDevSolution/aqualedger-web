@@ -243,6 +243,80 @@ test('small width keeps workspace controls in the viewport and keyboard focus vi
   await expect(page.getByLabel('تاريخ البداية')).toBeVisible();
 });
 
+for (const locale of ['en', 'ar'] as const) {
+  test(`desktop keyboard focus into the date fields is never obscured by the sticky header in ${locale}`, async ({page}) => {
+    // Forced regardless of project viewport (this file also runs under small-width-chromium),
+    // because the finding is specifically about the 1365x900 desktop breakpoint.
+    await page.setViewportSize({width: 1365, height: 900});
+    await page.goto(`/${locale}/analysis`);
+
+    // Reaches the GeoJSON drawer, textarea and "Use polygon" button purely by real Tab/Enter/type
+    // key presses from page load, instead of Playwright's click()/fill() (which auto-scroll the
+    // target into view and mask the defect): the browser's own native scroll-into-view-on-focus,
+    // triggered when a later Tab needs to bring an off-screen field into view, is what lands a
+    // field under the sticky header — that only happens on this unassisted keyboard path.
+    const summary = page.locator('.coordinate-entry summary');
+    await tabUntilFocused(page, summary);
+    await page.keyboard.press('Enter');
+    const textarea = page.getByLabel(locale === 'en' ? 'Polygon GeoJSON' : 'GeoJSON للمضلع');
+    await expect(textarea).toBeVisible();
+    await tabUntilFocused(page, textarea);
+    await page.keyboard.type(polygonText);
+    const usePolygonButton = page.getByRole('button', {name: locale === 'en' ? 'Use polygon' : 'استخدم المضلع'});
+    await tabUntilFocused(page, usePolygonButton);
+    await page.keyboard.press('Enter');
+
+    const headerBottom = await page.locator('.site-header').evaluate((element) => element.getBoundingClientRect().bottom);
+
+    const startDate = page.getByLabel(locale === 'en' ? 'Start date' : 'تاريخ البداية');
+    await tabUntilFocused(page, startDate);
+    // The browser's scroll-into-view-on-focus animates (unless scroll-behavior is not smooth); a
+    // measurement taken immediately can still show the correct in-progress position even when the
+    // animation later overshoots and settles the field back under the header, so this waits out
+    // the animation before asserting the position that actually persists.
+    await page.waitForTimeout(1000);
+    const startBox = await startDate.boundingBox();
+    expect(startBox).not.toBeNull();
+    expect(startBox!.y).toBeGreaterThanOrEqual(headerBottom);
+
+    // The native date input exposes several internal segments (month/day/year) that Tab moves
+    // through before leaving the control, so reaching end-date takes more than one further Tab.
+    const endDate = page.getByLabel(locale === 'en' ? 'End date' : 'تاريخ النهاية');
+    await tabUntilFocused(page, endDate);
+    await page.waitForTimeout(1000);
+    const endBox = await endDate.boundingBox();
+    expect(endBox).not.toBeNull();
+    expect(endBox!.y).toBeGreaterThanOrEqual(headerBottom);
+  });
+}
+
+async function tabUntilFocused(page: Page, locator: ReturnType<Page['locator']>, max = 20) {
+  for (let attempt = 0; attempt < max; attempt += 1) {
+    if (await locator.evaluate((element) => element === document.activeElement)) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error('tabUntilFocused: target never received focus within the Tab budget.');
+}
+
+for (const locale of ['en', 'ar'] as const) {
+  test(`provenance shows the real scale/offset value and the resolution limitation is shown honestly in ${locale}`, async ({page}) => {
+    await page.goto(`/${locale}/analysis/${SUCCEEDED_ID}`);
+
+    const scaleOffset = page.locator('.result-fact', {hasText: locale === 'en' ? 'Scale / offset' : 'المقياس / الإزاحة'});
+    await expect(scaleOffset).toContainText('0.0001 / 0');
+
+    const limitationText = locale === 'en'
+      ? 'The effective analysis resolution was 20 m due to a lower-resolution source band.'
+      : 'كانت الدقة الفعلية للتحليل 20 متراً بسبب نطاق مصدر أقل دقة.';
+    await expect(page.getByText(limitationText)).toBeVisible();
+
+    const unrecognizedFailureText = locale === 'en'
+      ? 'The backend reported a failure reason that this web version does not recognize.'
+      : 'أبلغت الواجهة الخلفية عن سبب فشل لا يتعرف عليه هذا الإصدار من التطبيق.';
+    await expect(page.getByText(unrecognizedFailureText)).toHaveCount(0);
+  });
+}
+
 async function prepareDraft(page: Page, locale: 'en' | 'ar') {
   await page.goto(`/${locale}/analysis`);
   await page.locator('.coordinate-entry summary').click();

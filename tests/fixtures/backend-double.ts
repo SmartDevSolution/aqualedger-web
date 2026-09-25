@@ -149,7 +149,7 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
       ready: true,
       preview_url: previewUrl
     }],
-    limitations: []
+    limitations: [{code: 'EFFECTIVE_QUALITY_RESOLUTION_20M', params: {}}]
   };
 }
 
