@@ -6,7 +6,7 @@ type GeneratedAnalysisStatus = components['schemas']['AnalysisStatusResponse'];
 export type AnalysisStatus =
   | (Omit<GeneratedAnalysisStatus, 'execution_status' | 'evidence_status'> & {
       execution_status: Exclude<GeneratedAnalysisStatus['execution_status'], 'FAILED'>;
-      evidence_status: GeneratedAnalysisStatus['evidence_status'];
+      evidence_status: components['schemas']['EvidenceStatus'];
     })
   | (Omit<GeneratedAnalysisStatus, 'execution_status' | 'evidence_status'> & {
       execution_status: 'FAILED';
@@ -26,16 +26,17 @@ export type ApiResult<T> =
   | {data: T; error: null}
   | {data: null; error: ApiFailure};
 
-export function hasBackendUrl(): boolean {
-  return getBackendBaseUrl() !== null;
-}
+// Same-origin relay paths only (Council DP-2 access model): the browser never learns the
+// backend base URL or holds a bearer token. `src/app/api/**/route.ts` adds the Bearer and
+// forwards to the server-only configured backend.
+const RELAY_BASE = '/api';
 
 export function createAnalysis(
   body: AnalysisCreateRequest,
   idempotencyKey: string,
   signal?: AbortSignal
 ): Promise<ApiResult<AnalysisCreateResponse>> {
-  return request('/analyses', {
+  return request(`${RELAY_BASE}/analyses`, {
     method: 'POST',
     headers: {'Idempotency-Key': idempotencyKey},
     body: JSON.stringify(body),
@@ -47,7 +48,7 @@ export function getAnalysisStatus(
   analysisId: string,
   signal?: AbortSignal
 ): Promise<ApiResult<AnalysisStatus>> {
-  return request(`/analyses/${encodeURIComponent(analysisId)}`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisStatus =>
+  return request(`${RELAY_BASE}/analyses/${encodeURIComponent(analysisId)}`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisStatus =>
     isAnalysisStatus(value) && value.analysis_id === analysisId);
 }
 
@@ -55,12 +56,12 @@ export function getAnalysisResult(
   analysisId: string,
   signal?: AbortSignal
 ): Promise<ApiResult<AnalysisResult>> {
-  return request(`/analyses/${encodeURIComponent(analysisId)}/result`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisResult =>
+  return request(`${RELAY_BASE}/analyses/${encodeURIComponent(analysisId)}/result`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisResult =>
     isAnalysisResult(value) && value.analysis_id === analysisId);
 }
 
 export function getSources(signal?: AbortSignal): Promise<ApiResult<SourcesResponse>> {
-  return request('/sources', {method: 'GET', ...(signal ? {signal} : {})}, isSourcesResponse);
+  return request(`${RELAY_BASE}/sources`, {method: 'GET', ...(signal ? {signal} : {})}, isSourcesResponse);
 }
 
 async function request<T>(
@@ -73,11 +74,6 @@ async function request<T>(
   },
   validate: (value: unknown) => value is T
 ): Promise<ApiResult<T>> {
-  const baseUrl = getBackendBaseUrl();
-  if (!baseUrl) {
-    return failed('API_NOT_CONFIGURED', null, null, false);
-  }
-
   const headers = new Headers({Accept: 'application/json', ...options.headers});
   if (options.body) {
     headers.set('Content-Type', 'application/json');
@@ -96,7 +92,7 @@ async function request<T>(
   try {
     const init: RequestInit = {method: options.method, headers, cache: 'no-store', signal: controller.signal};
     if (options.body) init.body = options.body;
-    const response = await fetch(new URL(path.replace(/^\/+/, ''), `${baseUrl}/`), init);
+    const response = await fetch(path, init);
     const payload: unknown = await response.json().catch(() => null);
     const envelope = readErrorEnvelope(payload);
     if (envelope) {
@@ -104,7 +100,10 @@ async function request<T>(
         code: envelope.code,
         requestId: envelope.requestId,
         httpStatus: response.status,
-        retryable: response.status >= 500 || response.status === 429
+        // API_NOT_CONFIGURED is a deployment condition, not a transient backend failure: retrying
+        // the same request cannot succeed, so it must never be treated as retryable regardless of
+        // the relay's HTTP status.
+        retryable: envelope.code !== 'API_NOT_CONFIGURED' && (response.status >= 500 || response.status === 429)
       }};
     }
     if (!response.ok) {
@@ -122,22 +121,6 @@ async function request<T>(
   } finally {
     clearTimeout(timeout);
     options.signal?.removeEventListener('abort', abortFromCaller);
-  }
-}
-
-function getBackendBaseUrl(): string | null {
-  const configured = process.env.NEXT_PUBLIC_AQUALEDGER_API_BASE_URL?.trim();
-  if (!configured) {
-    return null;
-  }
-  try {
-    const parsed = new URL(configured);
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) {
-      return null;
-    }
-    return parsed.toString().replace(/\/+$/, '');
-  } catch {
-    return null;
   }
 }
 
@@ -192,10 +175,35 @@ function isAnalysisResult(value: unknown): value is AnalysisResult {
     || typeof value.effective_coverage.min_valid_coverage_fraction_guard !== 'number') return false;
   if (value.statistics !== null && !isNdviStatistics(value.statistics)) return false;
   if (value.provenance !== null && !isProvenance(value.provenance)) return false;
-  if (value.artifacts !== undefined && (!Array.isArray(value.artifacts) || !value.artifacts.every(isRecord))) return false;
+  if (!isBaseline(value.baseline)) return false;
+  if (value.artifacts !== undefined && (!Array.isArray(value.artifacts) || !value.artifacts.every(isArtifactReference))) return false;
   if (value.scenes_evaluated !== undefined && (!Array.isArray(value.scenes_evaluated) || !value.scenes_evaluated.every(isSceneSelection))) return false;
   if (value.limitations !== undefined && (!Array.isArray(value.limitations) || !value.limitations.every(isRecord))) return false;
   return true;
+}
+
+function isBaseline(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return typeof value.contract_version === 'string'
+    && typeof value.collection === 'string'
+    && typeof value.offset_rule === 'string'
+    && typeof value.mask_policy_version === 'string'
+    && typeof value.grid_crs === 'string'
+    && typeof value.grid_resolution_m === 'number'
+    && typeof value.pipeline_version === 'string';
+}
+
+function isArtifactReference(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return typeof value.kind === 'string'
+    && typeof value.storage_key === 'string'
+    && typeof value.hash === 'string'
+    && typeof value.size_bytes === 'number'
+    && isNullableNumber(value.resolution_m)
+    && isNullableString(value.crs)
+    && (value.bounds === null || isRecord(value.bounds))
+    && typeof value.ready === 'boolean'
+    && (value.preview_url === undefined || isNullableString(value.preview_url));
 }
 
 function isSourcesResponse(value: unknown): value is SourcesResponse {
@@ -218,8 +226,8 @@ function isSourcesResponse(value: unknown): value is SourcesResponse {
 
 function isNdviStatistics(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return ['valid_observation_count', 'valid_area_m2', 'ndvi_min', 'ndvi_max', 'ndvi_mean', 'ndvi_median', 'ndvi_p05', 'ndvi_p95', 'masked_fraction']
-    .every((field) => typeof value[field] === 'number')
+  return ['valid_observation_count', 'valid_area_m2', 'masked_fraction'].every((field) => typeof value[field] === 'number')
+    && ['ndvi_min', 'ndvi_max', 'ndvi_mean', 'ndvi_median', 'ndvi_p05', 'ndvi_p95'].every((field) => isNullableNumber(value[field]))
     && isRecord(value.rejection_counts);
 }
 
@@ -243,14 +251,19 @@ function isProvenance(value: unknown): boolean {
     && Array.isArray(value.mask_masked_classes)
     && value.mask_masked_classes.every((item) => typeof item === 'number')
     && Array.isArray(value.mask_retained_classes)
-    && value.mask_retained_classes.every((item) => typeof item === 'number');
+    && value.mask_retained_classes.every((item) => typeof item === 'number')
+    && isRecord(value.resampling);
 }
 
 function isSceneSelection(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return isIsoDate(value.acquisition_date)
-    && typeof value.valid_coverage_fraction === 'number'
+    && isNullableNumber(value.valid_coverage_fraction)
     && typeof value.selected === 'boolean'
+    && isNullableNumber(value.data_present_overlap_count)
+    && isNullableNumber(value.masked_yielded_coverage_count)
+    && Array.isArray(value.discarded_candidates) && value.discarded_candidates.every(isRecord)
+    && Array.isArray(value.failures) && value.failures.every(isRecord)
     && (value.rejection_reason === undefined || isNullableString(value.rejection_reason))
     && (value.item_ids === undefined || (Array.isArray(value.item_ids) && value.item_ids.every((item) => typeof item === 'string')));
 }

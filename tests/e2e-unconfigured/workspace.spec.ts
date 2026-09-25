@@ -5,10 +5,15 @@ const polygonText = JSON.stringify({
   coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]
 });
 
+// Without AQUALEDGER_API_BASE_URL / AQUALEDGER_OPERATOR_JWT on the server process, the relay
+// itself now surfaces API_NOT_CONFIGURED (the config gate moved server-side with the Council
+// DP-2 access model), rather than the browser pre-emptively refusing to call an unset public URL.
+// The browser therefore does reach the same-origin route; the route just answers "not configured".
+
 test('missing API URL blocks submission in both locales and the locale choice persists', async ({page}) => {
   const analysisPosts: string[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/analyses')) analysisPosts.push(request.url());
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/api/analyses')) analysisPosts.push(request.url());
   });
 
   await prepareDraft(page, 'en');
@@ -24,13 +29,13 @@ test('missing API URL blocks submission in both locales and the locale choice pe
   await expect(page.getByRole('alert').filter({hasText: 'لم يتم إعداد عنوان واجهة API الخلفية لهذا التطبيق.'})).toBeVisible();
   await page.goto('/');
   await expect(page).toHaveURL(/\/ar\/analysis$/);
-  expect(analysisPosts).toEqual([]);
+  expect(analysisPosts).toHaveLength(2);
 });
 
 test('a saved ID without an API URL is clearly blocked and is not resubmitted', async ({page}) => {
   const analysisPosts: string[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/analyses')) analysisPosts.push(request.url());
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/api/analyses')) analysisPosts.push(request.url());
   });
   await page.goto('/en/analysis/5b4d86a2-8b3e-4e11-9045-bce502aa1a31');
   await expect(page.getByRole('alert').filter({hasText: 'The backend API URL is not configured'})).toBeVisible();

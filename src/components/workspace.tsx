@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
 import {useEffect, useRef, useState} from 'react';
 import {useRouter} from '@/i18n/navigation';
-import {createAnalysis, hasBackendUrl, type ApiFailure} from '@/lib/api/client';
+import {createAnalysis, type ApiFailure} from '@/lib/api/client';
 import {clearIdempotencyKey, getIdempotencyKey} from '@/lib/api/idempotency';
 import {useAnalysisRun} from '@/lib/api/use-analysis-run';
 import {formatNumber} from '@/lib/format';
@@ -94,10 +94,6 @@ export function Workspace({analysisId}: WorkspaceProps) {
   async function runAnalysis() {
     if (!draft.aoi || !validation.valid) return;
     setSubmitFailure(null);
-    if (!hasBackendUrl()) {
-      setSubmitFailure({code: 'API_NOT_CONFIGURED', requestId: null, httpStatus: null, retryable: false});
-      return;
-    }
 
     const request = {
       aoi_geojson: draft.aoi,

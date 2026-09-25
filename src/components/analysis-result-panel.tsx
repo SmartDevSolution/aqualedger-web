@@ -89,10 +89,10 @@ function LoadedAnalysisResult({result, locale}: {result: import('@/lib/api/clien
           <dl className="result-facts result-statistics">
             <Fact label={t('validObservationCount')} value={formatValue(statistics.valid_observation_count, locale, 0)} />
             <Fact label={t('validArea')} value={`${formatValue(statistics.valid_area_m2 / 1_000_000, locale)} ${t('areaUnit')}`} />
-            <Fact label={t('ndviMean')} value={formatValue(statistics.ndvi_mean, locale)} />
-            <Fact label={t('ndviMedian')} value={formatValue(statistics.ndvi_median, locale)} />
-            <Fact label={t('ndviRange')} value={`${formatValue(statistics.ndvi_min, locale)} – ${formatValue(statistics.ndvi_max, locale)}`} />
-            <Fact label={t('ndviPercentiles')} value={`${formatValue(statistics.ndvi_p05, locale)} – ${formatValue(statistics.ndvi_p95, locale)}`} />
+            <Fact label={t('ndviMean')} value={formatNullableValue(statistics.ndvi_mean, locale, t)} />
+            <Fact label={t('ndviMedian')} value={formatNullableValue(statistics.ndvi_median, locale, t)} />
+            <Fact label={t('ndviRange')} value={`${formatNullableValue(statistics.ndvi_min, locale, t)} – ${formatNullableValue(statistics.ndvi_max, locale, t)}`} />
+            <Fact label={t('ndviPercentiles')} value={`${formatNullableValue(statistics.ndvi_p05, locale, t)} – ${formatNullableValue(statistics.ndvi_p95, locale, t)}`} />
             <Fact label={t('maskedFraction')} value={formatPercent(statistics.masked_fraction, locale)} />
           </dl>
         </section>
@@ -107,7 +107,7 @@ function LoadedAnalysisResult({result, locale}: {result: import('@/lib/api/clien
             {result.scenes_evaluated?.map((scene) => (
               <li key={`${scene.acquisition_date}:${scene.item_ids?.join('|') ?? ''}`}>
                 <bdi dir="ltr">{scene.acquisition_date}</bdi>
-                <span>{formatPercent(scene.valid_coverage_fraction, locale)}</span>
+                <span>{scene.valid_coverage_fraction === null ? t('notReturned') : formatPercent(scene.valid_coverage_fraction, locale)}</span>
                 <span>{scene.selected ? t('selectedDate') : errors(reasonMessageKey(scene.rejection_reason ?? null))}</span>
               </li>
             ))}
@@ -166,6 +166,10 @@ function evidenceLabel(status: string, t: ReturnType<typeof useTranslations<'wor
   if (status === 'INSUFFICIENT') return t('evidenceInsufficient');
   if (status === 'SUFFICIENT' || status === 'LIMITED') return t('unsupportedEvidenceStatus', {status});
   return t('unknownEvidenceStatus');
+}
+
+function formatNullableValue(value: number | null, locale: string, t: ReturnType<typeof useTranslations<'workspace'>>): string {
+  return value === null ? t('notReturned') : formatValue(value, locale);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -65,11 +65,13 @@
           },
           "artifacts": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ArtifactReference"
             },
             "title": "Artifacts",
             "type": "array"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/Baseline"
           },
           "effective_coverage": {
             "$ref": "#/components/schemas/EffectiveCoverage"
@@ -141,7 +143,8 @@
           "request",
           "effective_coverage",
           "statistics",
-          "provenance"
+          "provenance",
+          "baseline"
         ],
         "title": "AnalysisResult",
         "type": "object"
@@ -172,7 +175,14 @@
             "type": "array"
           },
           "evidence_status": {
-            "$ref": "#/components/schemas/EvidenceStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "execution_status": {
             "$ref": "#/components/schemas/ExecutionStatus"
@@ -199,13 +209,186 @@
         "required": [
           "analysis_id",
           "execution_status",
-          "evidence_status",
           "start_date",
           "end_date",
           "created_at",
           "updated_at"
         ],
         "title": "AnalysisStatusResponse",
+        "type": "object"
+      },
+      "ArtifactBounds": {
+        "properties": {
+          "maxx": {
+            "title": "Maxx",
+            "type": "number"
+          },
+          "maxy": {
+            "title": "Maxy",
+            "type": "number"
+          },
+          "minx": {
+            "title": "Minx",
+            "type": "number"
+          },
+          "miny": {
+            "title": "Miny",
+            "type": "number"
+          }
+        },
+        "required": [
+          "minx",
+          "miny",
+          "maxx",
+          "maxy"
+        ],
+        "title": "ArtifactBounds",
+        "type": "object"
+      },
+      "ArtifactReference": {
+        "description": "An `analysis_artifacts` row reference, typed (D5, ratified text E) so its field\ndescriptions \u2014 in particular `source_hash`'s \u2014 can live in the generated contract instead of\nonly in prose. Fields are exactly the keys the worker already writes, plus the read-time\n`preview_url` the result route adds.",
+        "properties": {
+          "bounds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactBounds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crs"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "ndvi_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Hash"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "resolution_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution M"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Hash"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "storage_key",
+          "hash",
+          "size_bytes",
+          "resolution_m",
+          "crs",
+          "bounds",
+          "ready"
+        ],
+        "title": "ArtifactReference",
+        "type": "object"
+      },
+      "Baseline": {
+        "description": "Method/source baseline identity actually used (freeze B4 revision 7, G13) \u2014 never a\nnumeric comparison or scoring baseline. Present on every SUCCEEDED result, independent of\nwhether a dated observation was selected.",
+        "properties": {
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "grid_crs": {
+            "title": "Grid Crs",
+            "type": "string"
+          },
+          "grid_resolution_m": {
+            "title": "Grid Resolution M",
+            "type": "number"
+          },
+          "mask_policy_version": {
+            "title": "Mask Policy Version",
+            "type": "string"
+          },
+          "offset_rule": {
+            "title": "Offset Rule",
+            "type": "string"
+          },
+          "pipeline_version": {
+            "title": "Pipeline Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contract_version",
+          "collection",
+          "offset_rule",
+          "mask_policy_version",
+          "grid_crs",
+          "grid_resolution_m",
+          "pipeline_version"
+        ],
+        "title": "Baseline",
         "type": "object"
       },
       "CheckStatus": {
@@ -218,6 +401,44 @@
         ],
         "title": "CheckStatus",
         "type": "string"
+      },
+      "DiscardedCandidate": {
+        "description": "A per-tile duplicate discarded by B2 rule 2's tie-break (D1, final ratified pass-4 text\nA).",
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "kept_item_id": {
+            "title": "Kept Item Id",
+            "type": "string"
+          },
+          "mgrs_tile": {
+            "title": "Mgrs Tile",
+            "type": "string"
+          },
+          "processing_baseline": {
+            "title": "Processing Baseline",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "LOWER_PROCESSING_BASELINE",
+              "SAME_BASELINE_SMALLER_ITEM_ID"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "mgrs_tile",
+          "processing_baseline",
+          "kept_item_id",
+          "reason"
+        ],
+        "title": "DiscardedCandidate",
+        "type": "object"
       },
       "EffectiveCoverage": {
         "description": "Which acquisition, if any, the persisted statistics describe (freeze B2 rule 5).",
@@ -256,6 +477,44 @@
           "min_valid_coverage_fraction_guard"
         ],
         "title": "EffectiveCoverage",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "The `error` object of the frozen envelope (freeze B4, G15).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "params",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "description": "`{error: {code, params, request_id}}` (central document 04 / freeze B4, G15).",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
         "type": "object"
       },
       "EvidenceStatus": {
@@ -309,19 +568,6 @@
         "title": "GeoJSONPolygon",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "NdviStatistics": {
         "properties": {
           "masked_fraction": {
@@ -329,28 +575,70 @@
             "type": "number"
           },
           "ndvi_max": {
-            "title": "Ndvi Max",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Max"
           },
           "ndvi_mean": {
-            "title": "Ndvi Mean",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Mean"
           },
           "ndvi_median": {
-            "title": "Ndvi Median",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Median"
           },
           "ndvi_min": {
-            "title": "Ndvi Min",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Min"
           },
           "ndvi_p05": {
-            "title": "Ndvi P05",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi P05"
           },
           "ndvi_p95": {
-            "title": "Ndvi P95",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi P95"
           },
           "rejection_counts": {
             "$ref": "#/components/schemas/RejectionCounts"
@@ -467,6 +755,13 @@
             "title": "Provider",
             "type": "string"
           },
+          "resampling": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Resampling",
+            "type": "object"
+          },
           "resampling_scl": {
             "title": "Resampling Scl",
             "type": "string"
@@ -502,6 +797,7 @@
           "grid_resolution_m",
           "grid_origin",
           "resampling_scl",
+          "resampling",
           "aoi_hash",
           "stac_query"
         ],
@@ -564,12 +860,48 @@
             ],
             "title": "Cloud Cover Percent"
           },
+          "data_present_overlap_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Present Overlap Count"
+          },
+          "discarded_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscardedCandidate"
+            },
+            "title": "Discarded Candidates",
+            "type": "array"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/StacItemFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
           "item_ids": {
             "items": {
               "type": "string"
             },
             "title": "Item Ids",
             "type": "array"
+          },
+          "masked_yielded_coverage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Yielded Coverage Count"
           },
           "rejection_reason": {
             "anyOf": [
@@ -587,14 +919,25 @@
             "type": "boolean"
           },
           "valid_coverage_fraction": {
-            "title": "Valid Coverage Fraction",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Coverage Fraction"
           }
         },
         "required": [
           "acquisition_date",
           "valid_coverage_fraction",
-          "selected"
+          "selected",
+          "data_present_overlap_count",
+          "masked_yielded_coverage_count",
+          "discarded_candidates",
+          "failures"
         ],
         "title": "SceneSelection",
         "type": "object"
@@ -723,44 +1066,49 @@
         "title": "SourcesResponse",
         "type": "object"
       },
-      "ValidationError": {
+      "StacItemFailure": {
+        "description": "A missing STAC asset requirement for one band of one item (D4, ratified text D). No\n`detail` key; `SOURCE_ITEM_INCOMPLETE` never appears here or anywhere else published.",
         "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
+          "acquisition_date": {
+            "format": "date",
+            "title": "Acquisition Date",
             "type": "string"
           },
-          "type": {
-            "title": "Error Type",
+          "band": {
+            "enum": [
+              "red",
+              "nir",
+              "scl"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "asset_missing",
+              "asset_href_missing",
+              "asset_scale_missing"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "tile_id": {
+            "title": "Tile Id",
             "type": "string"
           }
         },
         "required": [
-          "loc",
-          "msg",
-          "type"
+          "tile_id",
+          "band",
+          "reason",
+          "item_id",
+          "acquisition_date"
         ],
-        "title": "ValidationError",
+        "title": "StacItemFailure",
         "type": "object"
       }
     }
@@ -829,15 +1177,55 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "INPUT_INVALID | LIMIT_EXCEEDED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "IDEMPOTENCY_CONFLICT"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
           }
         },
         "summary": "Create Analysis",
@@ -888,15 +1276,45 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
           }
         },
         "summary": "Get Analysis Status",
@@ -941,21 +1359,69 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalysisResult"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AnalysisResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    }
+                  ],
+                  "title": "Response Get Analysis Result Analyses  Analysis Id  Result Get"
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "The committed AnalysisResult. At the same 200 status (freeze B4: 'GET /analyses/{id}/result (NOT_READY while uncommitted)'), an analysis with no committed result yet instead returns the frozen ErrorEnvelope with code NOT_READY and typed params {execution_status}."
           },
-          "422": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "SOURCE_UNAVAILABLE"
           }
         },
         "summary": "Get Analysis Result",
@@ -977,6 +1443,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
           }
         },
         "summary": "Get Sources",

@@ -1,12 +1,25 @@
 import {expect, test, type Page} from '@playwright/test';
+import {CONFLICT_START_DATE, FAILED_ID, QUEUED_ID, SUCCEEDED_ID} from '../fixtures/backend-double';
 
-const apiOrigin = 'http://127.0.0.1:3100/test-api';
-const analysisId = '5b4d86a2-8b3e-4e11-9045-bce502aa1a31';
+const doubleBase = 'http://127.0.0.1:3199';
 const polygon = {
   type: 'Polygon',
   coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]
 };
 const polygonText = JSON.stringify(polygon);
+
+async function setSourcesMode(mode: 'default' | 'empty' | 'outage') {
+  await fetch(`${doubleBase}/__test__/set-sources-mode`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({mode})
+  });
+}
+
+async function doubleRequests(): Promise<{path: string; method: string; idempotencyKey: string | null; authorization: string | null}[]> {
+  const response = await fetch(`${doubleBase}/__test__/requests`);
+  return response.json();
+}
 
 test('root enters the English workspace and server markup sets language direction', async ({page}) => {
   await page.goto('/');
@@ -44,7 +57,7 @@ test('invalid GeoJSON and reversed dates are explained and cannot be submitted',
 test('a draft persists across locale and browser timezone changes without submitting', async ({page, browser}) => {
   const posts: string[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/analyses')) posts.push(request.url());
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/api/analyses')) posts.push(request.url());
   });
   await prepareDraft(page, 'en');
   const startDate = dateFromToday(-30);
@@ -70,7 +83,7 @@ test('a draft persists across locale and browser timezone changes without submit
   }, {key: 'aqualedger.workspace-draft.v1', value: storageValue});
   const timezonePage = await timezoneContext.newPage();
   timezonePage.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/analyses')) posts.push(request.url());
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/api/analyses')) posts.push(request.url());
   });
   await timezonePage.goto('/ar/analysis');
   await expect(timezonePage.getByLabel('تاريخ البداية')).toHaveValue(startDate);
@@ -80,23 +93,13 @@ test('a draft persists across locale and browser timezone changes without submit
   await timezoneContext.close();
 });
 
-test('explicit submission sends a keyed request, loads saved status and result, and survives locale switching', async ({page}) => {
-  const requests: {method: string; pathname: string; headers: Record<string, string>; body: unknown}[] = [];
-  let submittedRequest: {aoi_geojson: typeof polygon; start_date: string; end_date: string; locale?: string} | null = null;
-  await page.route(`${apiOrigin}/analyses`, async (route) => {
-    const request = route.request();
-    const body = request.postDataJSON() as {aoi_geojson: typeof polygon; start_date: string; end_date: string; locale?: string};
-    submittedRequest = body;
-    requests.push({method: request.method(), pathname: new URL(request.url()).pathname, headers: request.headers(), body});
-    await route.fulfill({status: 202, contentType: 'application/json', body: JSON.stringify({analysis_id: analysisId, status_url: `/analyses/${analysisId}`})});
-  });
-  await page.route(`${apiOrigin}/analyses/${analysisId}`, async (route) => {
-    requests.push({method: 'GET', pathname: new URL(route.request().url()).pathname, headers: route.request().headers(), body: null});
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(statusResponse(analysisId, 'SUCCEEDED', 'NOT_ASSESSED'))});
-  });
-  await page.route(`${apiOrigin}/analyses/${analysisId}/result`, async (route) => {
-    requests.push({method: 'GET', pathname: new URL(route.request().url()).pathname, headers: route.request().headers(), body: null});
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(resultResponse(analysisId, submittedRequest))});
+test('explicit submission sends a same-origin keyed request with no browser-held Authorization, loads the saved result, and survives locale switching', async ({page}) => {
+  const browserRequests: {method: string; pathname: string; authorization: string | undefined}[] = [];
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.startsWith('/api/')) {
+      browserRequests.push({method: request.method(), pathname, authorization: request.headers()['authorization']});
+    }
   });
 
   await prepareDraft(page, 'en');
@@ -106,111 +109,97 @@ test('explicit submission sends a keyed request, loads saved status and result, 
   await page.getByLabel('End date').fill(endDate);
   await page.getByRole('button', {name: 'Run analysis'}).click();
 
-  await expect(page).toHaveURL(new RegExp(`/en/analysis/${analysisId}$`));
+  await expect(page).toHaveURL(new RegExp(`/en/analysis/${SUCCEEDED_ID}$`));
   await expect(page.getByRole('heading', {name: 'NDVI statistics'})).toBeVisible();
   await expect(page.getByText('85%', {exact: true}).first()).toBeVisible();
   await expect(page.getByText('Sentinel-2 item A')).toBeVisible();
   await expect(page.getByText(/backend returned an NDVI GeoTIFF artifact/)).toBeVisible();
 
-  const post = requests.find((request) => request.method === 'POST');
-  expect(post?.pathname.endsWith('/analyses')).toBe(true);
-  expect(post?.headers['idempotency-key']).toMatch(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i);
-  expect(post?.headers.authorization).toBeUndefined();
-  expect(post?.body).toMatchObject({aoi_geojson: polygon, start_date: startDate, end_date: endDate, locale: 'en'});
-  expect(post?.body).not.toHaveProperty('timezone');
+  const post = browserRequests.find((request) => request.method === 'POST' && request.pathname.endsWith('/api/analyses'));
+  expect(post).toBeTruthy();
+  expect(post?.authorization).toBeUndefined();
+  expect(browserRequests.every((request) => request.authorization === undefined)).toBe(true);
 
-  const postCount = requests.filter((request) => request.method === 'POST').length;
+  const storedKey = await page.evaluate(() => {
+    const raw = sessionStorage.getItem('aqualedger.analysis-attempt.v1');
+    return raw ? (JSON.parse(raw) as {key: string}).key : null;
+  });
+  const relayed = (await doubleRequests()).find((entry) => entry.idempotencyKey === storedKey);
+  expect(relayed).toBeTruthy();
+
+  const postCount = browserRequests.filter((request) => request.method === 'POST').length;
   await page.getByRole('link', {name: 'العربية'}).click();
-  await expect(page).toHaveURL(new RegExp(`/ar/analysis/${analysisId}$`));
+  await expect(page).toHaveURL(new RegExp(`/ar/analysis/${SUCCEEDED_ID}$`));
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', {name: 'إحصاءات NDVI'})).toBeVisible();
-  expect(requests.filter((request) => request.method === 'POST')).toHaveLength(postCount);
+  expect(browserRequests.filter((request) => request.method === 'POST')).toHaveLength(postCount);
   await page.goto('/');
   await expect(page).toHaveURL(new RegExp(`/ar/analysis$`));
 });
 
 for (const locale of ['en', 'ar'] as const) {
   test(`IDEMPOTENCY_CONFLICT is shown in ${locale}`, async ({page}) => {
-    let submittedKey: string | undefined;
-    await page.route(`${apiOrigin}/analyses`, async (route) => {
-      submittedKey = route.request().headers()['idempotency-key'];
-      await route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({error: {code: 'IDEMPOTENCY_CONFLICT', params: {idempotency_key: submittedKey}, request_id: 'req-conflict-1'}})
-      });
-    });
     await prepareDraft(page, locale);
-    await page.getByLabel(locale === 'en' ? 'Start date' : 'تاريخ البداية').fill(dateFromToday(-10));
-    await page.getByLabel(locale === 'en' ? 'End date' : 'تاريخ النهاية').fill(dateFromToday(-1));
+    await page.getByLabel(locale === 'en' ? 'Start date' : 'تاريخ البداية').fill(CONFLICT_START_DATE);
+    await page.getByLabel(locale === 'en' ? 'End date' : 'تاريخ النهاية').fill('2001-01-10');
     await page.getByRole('button', {name: locale === 'en' ? 'Run analysis' : 'شغّل التحليل'}).click();
     await expect(page.getByRole('alert').filter({hasText: locale === 'en'
       ? 'This request key was already used with different analysis input.'
       : 'استُخدم مفتاح هذا الطلب مسبقاً مع مدخلات تحليل مختلفة.'})).toBeVisible();
-    expect(submittedKey).toMatch(/^[0-9a-f-]{36}$/i);
     await expect(page.locator('.result-id')).toHaveCount(0);
   });
 }
 
 test('failed status without evidence_status stays a failure and never requests a result', async ({page}) => {
-  let resultRequests = 0;
-  await page.route(`${apiOrigin}/analyses/${analysisId}`, async (route) => {
-    const status = statusResponse(analysisId, 'FAILED');
-    delete status.evidence_status;
-    status.errors = [{code: 'SOURCE_READ_FAILED', params: {band: 'nir'}}];
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(status)});
+  const resultRequests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === `/api/analyses/${FAILED_ID}/result`) resultRequests.push(request.url());
   });
-  await page.route(`${apiOrigin}/analyses/${analysisId}/result`, async (route) => {
-    resultRequests += 1;
-    await route.fulfill({status: 500, body: ''});
-  });
-  await page.goto(`/en/analysis/${analysisId}`);
+  await page.goto(`/en/analysis/${FAILED_ID}`);
   await expect(page.getByText('No evidence status is shown for a failed run.')).toBeVisible();
   await expect(page.getByText('A required source tile or band could not be read.', {exact: true})).toHaveCount(1);
   await expect(page.getByText('Evidence status:', {exact: false})).toHaveCount(0);
-  expect(resultRequests).toBe(0);
+  expect(resultRequests).toEqual([]);
 });
 
 test('a queued saved run is shown as pending and does not submit again', async ({page}) => {
-  let postRequests = 0;
-  await page.on('request', (request) => {
-    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/analyses')) postRequests += 1;
+  const posts: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/api/analyses')) posts.push(request.url());
   });
-  await page.route(`${apiOrigin}/analyses/${analysisId}`, async (route) => {
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify(statusResponse(analysisId, 'QUEUED', 'NOT_ASSESSED'))});
-  });
-  await page.goto(`/ar/analysis/${analysisId}`);
+  await page.goto(`/ar/analysis/${QUEUED_ID}`);
   await expect(page.getByText('التحليل قيد التنفيذ')).toBeVisible();
-  expect(postRequests).toBe(0);
+  expect(posts).toEqual([]);
 });
 
-test('source status renders a fixture NOT_CHECKED response without a fabricated timestamp', async ({page}) => {
-  await page.route(`${apiOrigin}/sources`, async (route) => {
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({sources: [sourceResponse()]})});
+test.describe('source status (serialized: shares mutable /sources fixture state)', () => {
+  test.describe.configure({mode: 'serial'});
+
+  test('source status renders a fixture NOT_CHECKED response without a fabricated timestamp', async ({page}) => {
+    await setSourcesMode('default');
+    await page.goto('/en/settings');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.getByRole('heading', {level: 1, name: 'Settings / Data Sources'})).toBeVisible();
+    await expect(page.getByText('Sentinel-2 L2A')).toBeVisible();
+    await expect(page.getByText('Not checked', {exact: true}).first()).toBeVisible();
+    await expect(page.getByText('Last checked', {exact: true}).locator('..')).toContainText('Not checked');
+    await expect(page.locator('.source-item')).toHaveCount(1);
   });
-  await page.goto('/en/settings');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', {level: 1, name: 'Settings / Data Sources'})).toBeVisible();
-  await expect(page.getByText('Sentinel-2 L2A')).toBeVisible();
-  await expect(page.getByText('Not checked', {exact: true}).first()).toBeVisible();
-  await expect(page.getByText('Last checked', {exact: true}).locator('..')).toContainText('Not checked');
-  await expect(page.locator('.source-item')).toHaveCount(1);
-});
 
-test('an empty source response remains distinct from an outage', async ({page}) => {
-  await page.route(`${apiOrigin}/sources`, async (route) => {
-    await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({sources: []})});
+  test('an empty source response remains distinct from an outage', async ({page}) => {
+    await setSourcesMode('empty');
+    await page.goto('/ar/settings');
+    await expect(page.getByRole('status').filter({hasText: 'لم تُعد الواجهة الخلفية سجلات لمصادر مهيأة.'})).toBeVisible();
+    await expect(page.locator('.source-item')).toHaveCount(0);
   });
-  await page.goto('/ar/settings');
-  await expect(page.getByRole('status').filter({hasText: 'لم تُعد الواجهة الخلفية سجلات لمصادر مهيأة.'})).toBeVisible();
-  await expect(page.locator('.source-item')).toHaveCount(0);
-});
 
-test('a source API outage is presented as unavailable and can be retried', async ({page}) => {
-  await page.route(`${apiOrigin}/sources`, async (route) => route.abort('failed'));
-  await page.goto('/en/settings');
-  await expect(page.getByRole('alert').filter({hasText: 'The backend could not be reached.'})).toBeVisible();
-  await expect(page.getByRole('button', {name: 'Retry source status'})).toBeVisible();
+  test('a source API outage is presented as unavailable and can be retried', async ({page}) => {
+    await setSourcesMode('outage');
+    await page.goto('/en/settings');
+    await expect(page.getByRole('alert').filter({hasText: 'The backend could not be reached.'})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Retry source status'})).toBeVisible();
+    await setSourcesMode('default');
+  });
 });
 
 test('map drawing works with zoom controls and reaches the AOI form', async ({page}) => {
@@ -256,98 +245,6 @@ async function prepareDraft(page: Page, locale: 'en' | 'ar') {
   await page.locator('.coordinate-entry summary').click();
   await page.getByLabel(locale === 'en' ? 'Polygon GeoJSON' : 'GeoJSON للمضلع').fill(polygonText);
   await page.getByRole('button', {name: locale === 'en' ? 'Use polygon' : 'استخدم المضلع'}).click();
-}
-
-type StatusFixture = {
-  analysis_id: string;
-  execution_status: string;
-  evidence_status?: string;
-  start_date: string;
-  end_date: string;
-  created_at: string;
-  updated_at: string;
-  warnings: unknown[];
-  errors: {code: string; params: Record<string, unknown>}[];
-};
-
-function statusResponse(id: string, executionStatus: string, evidenceStatus?: string): StatusFixture {
-  return {
-    analysis_id: id,
-    execution_status: executionStatus,
-    ...(evidenceStatus ? {evidence_status: evidenceStatus} : {}),
-    start_date: '2026-08-01',
-    end_date: '2026-08-30',
-    created_at: '2026-09-24T12:00:00Z',
-    updated_at: '2026-09-24T12:01:00Z',
-    warnings: [],
-    errors: []
-  };
-}
-
-function resultResponse(
-  id: string,
-  request: {aoi_geojson: typeof polygon; start_date: string; end_date: string; locale?: string} | null
-) {
-  const selectedDate = request?.end_date ?? '2026-08-30';
-  return {
-    analysis_id: id,
-    schema_version: '1',
-    pipeline_version: 'm1-pipeline-test',
-    method_version: 'ndvi-test',
-    execution_status: 'SUCCEEDED',
-    evidence_status: 'NOT_ASSESSED',
-    request: request ?? {aoi_geojson: polygon, start_date: '2026-08-01', end_date: '2026-08-30', locale: 'en'},
-    effective_coverage: {acquisition_date: selectedDate, valid_coverage_fraction: 0.85, min_valid_coverage_fraction_guard: 0.5},
-    statistics: {
-      valid_observation_count: 1200,
-      valid_area_m2: 120000,
-      ndvi_min: -0.15,
-      ndvi_max: 0.79,
-      ndvi_mean: 0.42,
-      ndvi_median: 0.44,
-      ndvi_p05: 0.08,
-      ndvi_p95: 0.71,
-      masked_fraction: 0.12,
-      rejection_counts: {masked_class: 20, missing_data: 4, non_positive_denominator: 0, out_of_range: 0}
-    },
-    scenes_evaluated: [{acquisition_date: selectedDate, valid_coverage_fraction: 0.85, selected: true, item_ids: ['Sentinel-2 item A'], rejection_reason: null}],
-    provenance: {
-      source_id: 'sentinel2_l2a_earth_search',
-      provider: 'Earth Search',
-      collection: 'sentinel-2-l2a',
-      item_ids: ['Sentinel-2 item A'],
-      asset_hrefs: {},
-      acquisition_datetime: `${selectedDate}T08:20:00Z`,
-      processing_baseline: '05.11',
-      scale: 0.0001,
-      offset: 0,
-      mask_policy: 'SCL M1 policy',
-      mask_masked_classes: [0, 1, 3, 8, 9, 10, 11],
-      mask_retained_classes: [2, 4, 5, 6, 7],
-      grid_crs: 'EPSG:32638',
-      grid_resolution_m: 10,
-      grid_origin: [100, 200],
-      resampling_scl: 'nearest',
-      aoi_hash: 'fixture-only',
-      stac_query: {}
-    },
-    artifacts: [{kind: 'ndvi_preview', storage_key: 'private/fixture-only', size_bytes: 1200, preview_url: 'https://private.invalid/signed'}],
-    limitations: []
-  };
-}
-
-function sourceResponse() {
-  return {
-    source_id: 'sentinel2_l2a_earth_search',
-    name: 'Sentinel-2 L2A',
-    provider: 'Earth Search',
-    collection: 'sentinel-2-l2a',
-    temporal_or_static: 'TEMPORAL',
-    mandatory: true,
-    configured: true,
-    enabled: true,
-    check: {status: 'NOT_CHECKED', checked_at: null, check_scope: null, reason_code: null, reason_params: {}}
-  };
 }
 
 function dateFromToday(offsetDays: number): string {

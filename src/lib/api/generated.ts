@@ -113,9 +113,8 @@ export interface components {
              */
             analysis_id: string;
             /** Artifacts */
-            artifacts?: {
-                [key: string]: unknown;
-            }[];
+            artifacts?: components["schemas"]["ArtifactReference"][];
+            baseline: components["schemas"]["Baseline"];
             effective_coverage: components["schemas"]["EffectiveCoverage"];
             evidence_status: components["schemas"]["EvidenceStatus"];
             execution_status: components["schemas"]["ExecutionStatus"];
@@ -156,7 +155,7 @@ export interface components {
             errors?: {
                 [key: string]: unknown;
             }[];
-            evidence_status: components["schemas"]["EvidenceStatus"];
+            evidence_status?: components["schemas"]["EvidenceStatus"] | null;
             execution_status: components["schemas"]["ExecutionStatus"];
             /**
              * Start Date
@@ -173,11 +172,94 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** ArtifactBounds */
+        ArtifactBounds: {
+            /** Maxx */
+            maxx: number;
+            /** Maxy */
+            maxy: number;
+            /** Minx */
+            minx: number;
+            /** Miny */
+            miny: number;
+        };
+        /**
+         * ArtifactReference
+         * @description An `analysis_artifacts` row reference, typed (D5, ratified text E) so its field
+         *     descriptions — in particular `source_hash`'s — can live in the generated contract instead of
+         *     only in prose. Fields are exactly the keys the worker already writes, plus the read-time
+         *     `preview_url` the result route adds.
+         */
+        ArtifactReference: {
+            bounds: components["schemas"]["ArtifactBounds"] | null;
+            /** Crs */
+            crs: string | null;
+            /** Hash */
+            hash: string;
+            /** Kind */
+            kind: string;
+            /** Ndvi Hash */
+            ndvi_hash?: string | null;
+            /** Preview Url */
+            preview_url?: string | null;
+            /** Ready */
+            ready: boolean;
+            /** Resolution M */
+            resolution_m: number | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Source Hash */
+            source_hash?: string | null;
+            /** Storage Key */
+            storage_key: string;
+        };
+        /**
+         * Baseline
+         * @description Method/source baseline identity actually used (freeze B4 revision 7, G13) — never a
+         *     numeric comparison or scoring baseline. Present on every SUCCEEDED result, independent of
+         *     whether a dated observation was selected.
+         */
+        Baseline: {
+            /** Collection */
+            collection: string;
+            /** Contract Version */
+            contract_version: string;
+            /** Grid Crs */
+            grid_crs: string;
+            /** Grid Resolution M */
+            grid_resolution_m: number;
+            /** Mask Policy Version */
+            mask_policy_version: string;
+            /** Offset Rule */
+            offset_rule: string;
+            /** Pipeline Version */
+            pipeline_version: string;
+        };
         /**
          * CheckStatus
          * @enum {string}
          */
         CheckStatus: "NOT_CHECKED" | "reachable" | "failed" | "deferred" | "not_configured";
+        /**
+         * DiscardedCandidate
+         * @description A per-tile duplicate discarded by B2 rule 2's tie-break (D1, final ratified pass-4 text
+         *     A).
+         */
+        DiscardedCandidate: {
+            /** Item Id */
+            item_id: string;
+            /** Kept Item Id */
+            kept_item_id: string;
+            /** Mgrs Tile */
+            mgrs_tile: string;
+            /** Processing Baseline */
+            processing_baseline: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "LOWER_PROCESSING_BASELINE" | "SAME_BASELINE_SMALLER_ITEM_ID";
+        };
         /**
          * EffectiveCoverage
          * @description Which acquisition, if any, the persisted statistics describe (freeze B2 rule 5).
@@ -189,6 +271,27 @@ export interface components {
             min_valid_coverage_fraction_guard: number;
             /** Valid Coverage Fraction */
             valid_coverage_fraction: number | null;
+        };
+        /**
+         * ErrorDetail
+         * @description The `error` object of the frozen envelope (freeze B4, G15).
+         */
+        ErrorDetail: {
+            /** Code */
+            code: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Request Id */
+            request_id: string;
+        };
+        /**
+         * ErrorEnvelope
+         * @description `{error: {code, params, request_id}}` (central document 04 / freeze B4, G15).
+         */
+        ErrorEnvelope: {
+            error: components["schemas"]["ErrorDetail"];
         };
         /**
          * EvidenceStatus
@@ -216,27 +319,22 @@ export interface components {
              */
             type: "Polygon";
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /** NdviStatistics */
         NdviStatistics: {
             /** Masked Fraction */
             masked_fraction: number;
             /** Ndvi Max */
-            ndvi_max: number;
+            ndvi_max: number | null;
             /** Ndvi Mean */
-            ndvi_mean: number;
+            ndvi_mean: number | null;
             /** Ndvi Median */
-            ndvi_median: number;
+            ndvi_median: number | null;
             /** Ndvi Min */
-            ndvi_min: number;
+            ndvi_min: number | null;
             /** Ndvi P05 */
-            ndvi_p05: number;
+            ndvi_p05: number | null;
             /** Ndvi P95 */
-            ndvi_p95: number;
+            ndvi_p95: number | null;
             rejection_counts: components["schemas"]["RejectionCounts"];
             /** Valid Area M2 */
             valid_area_m2: number;
@@ -281,6 +379,10 @@ export interface components {
             processing_baseline: string | null;
             /** Provider */
             provider: string;
+            /** Resampling */
+            resampling: {
+                [key: string]: string;
+            };
             /** Resampling Scl */
             resampling_scl: string;
             /** Scale */
@@ -326,14 +428,22 @@ export interface components {
             acquisition_datetime?: string | null;
             /** Cloud Cover Percent */
             cloud_cover_percent?: number | null;
+            /** Data Present Overlap Count */
+            data_present_overlap_count: number | null;
+            /** Discarded Candidates */
+            discarded_candidates: components["schemas"]["DiscardedCandidate"][];
+            /** Failures */
+            failures: components["schemas"]["StacItemFailure"][];
             /** Item Ids */
             item_ids?: string[];
+            /** Masked Yielded Coverage Count */
+            masked_yielded_coverage_count: number | null;
             /** Rejection Reason */
             rejection_reason?: string | null;
             /** Selected */
             selected: boolean;
             /** Valid Coverage Fraction */
-            valid_coverage_fraction: number;
+            valid_coverage_fraction: number | null;
         };
         /** SourceCheck */
         SourceCheck: {
@@ -377,18 +487,31 @@ export interface components {
             /** Sources */
             sources: components["schemas"]["SourceStatus"][];
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
+        /**
+         * StacItemFailure
+         * @description A missing STAC asset requirement for one band of one item (D4, ratified text D). No
+         *     `detail` key; `SOURCE_ITEM_INCOMPLETE` never appears here or anywhere else published.
+         */
+        StacItemFailure: {
+            /**
+             * Acquisition Date
+             * Format: date
+             */
+            acquisition_date: string;
+            /**
+             * Band
+             * @enum {string}
+             */
+            band: "red" | "nir" | "scl";
+            /** Item Id */
+            item_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "asset_missing" | "asset_href_missing" | "asset_scale_missing";
+            /** Tile Id */
+            tile_id: string;
         };
     };
     responses: never;
@@ -424,13 +547,49 @@ export interface operations {
                     "application/json": components["schemas"]["AnalysisCreateResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description INPUT_INVALID | LIMIT_EXCEEDED */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description IDEMPOTENCY_CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -457,13 +616,40 @@ export interface operations {
                     "application/json": components["schemas"]["AnalysisStatusResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description UNAUTHENTICATED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -481,22 +667,58 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description The committed AnalysisResult. At the same 200 status (freeze B4: 'GET /analyses/{id}/result (NOT_READY while uncommitted)'), an analysis with no committed result yet instead returns the frozen ErrorEnvelope with code NOT_READY and typed params {execution_status}. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnalysisResult"];
+                    "application/json": components["schemas"]["AnalysisResult"] | components["schemas"]["ErrorEnvelope"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description UNAUTHENTICATED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description SOURCE_UNAVAILABLE */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -517,6 +739,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourcesResponse"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };

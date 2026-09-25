@@ -1,0 +1,131 @@
+import {expect, test} from '@playwright/test';
+import {randomUUID} from 'node:crypto';
+import {FAILED_ID, SUCCEEDED_ID, TEST_OPERATOR_TOKEN} from '../fixtures/backend-double';
+
+// These call the app's own same-origin relay routes directly (bypassing the browser UI) so each
+// assertion is precise about one relay behavior, per the Council DP-2 verdict (issue #8):
+// - the Bearer is added only on the three read/write analysis operations, never on GET /sources;
+// - any inbound Authorization from the caller is dropped, never forwarded;
+// - Idempotency-Key is forwarded when the caller sent one;
+// - status and body pass through unchanged, including a 200 NOT_READY and a signed preview_url;
+// - the operator token value never appears in a relay response body.
+const doubleBase = 'http://127.0.0.1:3199';
+const polygon = {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]};
+
+type DoubleRequestLogEntry = {
+  method: string;
+  path: string;
+  hasAuthorization: boolean;
+  authorization: string | null;
+  idempotencyKey: string | null;
+  body: unknown;
+};
+
+async function doubleRequests(): Promise<DoubleRequestLogEntry[]> {
+  const response = await fetch(`${doubleBase}/__test__/requests`);
+  return response.json();
+}
+
+test.describe('same-origin relay (Council DP-2 access model)', () => {
+  test('POST /api/analyses adds the Bearer, drops an inbound Authorization, and forwards Idempotency-Key', async ({request}) => {
+    const idempotencyKey = `relay-create-${randomUUID()}`;
+    const response = await request.post('/api/analyses', {
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+        Authorization: 'Bearer browser-injected-should-never-reach-the-backend'
+      },
+      data: {aoi_geojson: polygon, start_date: '2015-01-01', end_date: '2015-01-10'}
+    });
+    expect(response.status()).toBe(202);
+    const body = await response.text();
+    expect(body).not.toContain(TEST_OPERATOR_TOKEN);
+
+    const entry = (await doubleRequests()).find((candidate) => candidate.idempotencyKey === idempotencyKey);
+    expect(entry).toBeTruthy();
+    expect(entry?.method).toBe('POST');
+    expect(entry?.authorization).toBe(`Bearer ${TEST_OPERATOR_TOKEN}`);
+  });
+
+  test('POST /api/analyses without an Idempotency-Key forwards none', async ({request}) => {
+    const marker = randomUUID();
+    const response = await request.post('/api/analyses', {
+      data: {aoi_geojson: polygon, start_date: '2016-01-01', end_date: '2016-09-30', locale: marker}
+    });
+    expect(response.status()).toBe(202);
+
+    const entry = (await doubleRequests()).find((candidate) =>
+      candidate.method === 'POST' && (candidate.body as {locale?: string} | null)?.locale === marker);
+    expect(entry).toBeTruthy();
+    expect(entry?.idempotencyKey).toBeNull();
+  });
+
+  test('GET /api/analyses/{id} adds the Bearer and drops an inbound Authorization', async ({request}) => {
+    const id = randomUUID();
+    const response = await request.get(`/api/analyses/${id}`, {
+      headers: {Authorization: 'Bearer browser-injected-should-never-reach-the-backend'}
+    });
+    expect(response.status()).toBe(200);
+    const body = await response.text();
+    expect(body).not.toContain(TEST_OPERATOR_TOKEN);
+
+    const entry = (await doubleRequests()).find((candidate) => candidate.path === `/analyses/${id}`);
+    expect(entry).toBeTruthy();
+    expect(entry?.authorization).toBe(`Bearer ${TEST_OPERATOR_TOKEN}`);
+  });
+
+  test('GET /api/analyses/{id}/result adds the Bearer, passes a 200 NOT_READY through unchanged, then the committed result with its signed preview_url', async ({request}) => {
+    const id = randomUUID();
+
+    const notReady = await request.get(`/api/analyses/${id}/result`, {
+      headers: {Authorization: 'Bearer browser-injected-should-never-reach-the-backend'}
+    });
+    expect(notReady.status()).toBe(200);
+    const notReadyBody = await notReady.json();
+    expect(notReadyBody).toEqual({error: {code: 'NOT_READY', params: {execution_status: 'RUNNING'}, request_id: 'req-fixture-1'}});
+
+    const ready = await request.get(`/api/analyses/${id}/result`);
+    expect(ready.status()).toBe(200);
+    const readyBody = await ready.json();
+    expect(readyBody.execution_status).toBe('SUCCEEDED');
+    expect(readyBody.artifacts[0].preview_url).toBe('https://private.invalid/signed');
+    expect(await ready.text()).not.toContain(TEST_OPERATOR_TOKEN);
+
+    const entries = (await doubleRequests()).filter((candidate) => candidate.path === `/analyses/${id}/result`);
+    expect(entries.every((entry) => entry.authorization === `Bearer ${TEST_OPERATOR_TOKEN}`)).toBe(true);
+  });
+
+  test('GET /api/analyses/{id}/result passes a non-200 error through unchanged', async ({request}) => {
+    const response = await request.get(`/api/analyses/${FAILED_ID}/result`);
+    expect(response.status()).toBe(500);
+    const body = await response.json();
+    expect(body.error.code).toBe('PROCESSING_FAILED');
+  });
+
+  test('GET /api/sources never carries a Bearer, even when the caller sends one', async ({request}) => {
+    const response = await request.get('/api/sources', {
+      headers: {Authorization: 'Bearer browser-injected-should-never-reach-the-backend'}
+    });
+    expect(response.status()).toBe(200);
+    expect(await response.text()).not.toContain(TEST_OPERATOR_TOKEN);
+
+    const sourcesRequests = (await doubleRequests()).filter((candidate) => candidate.path === '/sources');
+    expect(sourcesRequests.length).toBeGreaterThan(0);
+    expect(sourcesRequests.every((entry) => !entry.hasAuthorization)).toBe(true);
+  });
+
+  test('every relayed /analyses request that reached the double carried exactly the configured operator Bearer', async ({request}) => {
+    // Triggers its own request first so the invariant below never depends on other tests' timing.
+    await request.get(`/api/analyses/${randomUUID()}`);
+    const entries = (await doubleRequests()).filter((candidate) => candidate.path.startsWith('/analyses'));
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.every((entry) => entry.authorization === `Bearer ${TEST_OPERATOR_TOKEN}`)).toBe(true);
+  });
+
+  test('the create response echoes the frozen shape and never the operator token', async ({request}) => {
+    const response = await request.get(`/api/analyses/${SUCCEEDED_ID}`);
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.analysis_id).toBe(SUCCEEDED_ID);
+    expect(JSON.stringify(body)).not.toContain(TEST_OPERATOR_TOKEN);
+  });
+});

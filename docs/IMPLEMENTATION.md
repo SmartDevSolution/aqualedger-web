@@ -12,7 +12,7 @@ Display Gregorian dates consistently with the backend ISO/UTC interval contract.
 
 ## API consumer
 
-Backend generates `contracts/openapi.json`. The consumed artifact is pinned in `contracts/BACKEND-REF.json` to backend commit `1f3df95c0e1684cdc846cbe268d92f3222d09cc9`, contract version `0.1.0`, and its Git blob/SHA-256 hashes. `src/lib/api/generated.ts` is generated from that checked-in artifact with `openapi-typescript`; `npm run contracts:check` checks the recorded identity and generated-file drift. Reproducible web builds never fetch a moving backend branch or import a sibling backend source tree.
+Backend generates `contracts/openapi.json`. The consumed artifact is pinned in `contracts/BACKEND-REF.json` to backend commit `998453aad0c446908e57aab0edc473cbe388b6cc` (the single Council-sequenced re-pin recorded on `AmeenBinBisher/aqualedger#8`), contract version `0.1.0`, and its Git blob/SHA-256 hashes. `src/lib/api/generated.ts` is generated from that checked-in artifact with `openapi-typescript`; `npm run contracts:check` checks the recorded identity and generated-file drift. Reproducible web builds never fetch a moving backend branch or import a sibling backend source tree.
 
 Implement the central request/status/result/source-status/error contract. Stable machine codes map to localized messages; do not parse English error prose. Known missing translations fail checks; unknown server codes display a safe localized generic error with correlation ID. Caching is scoped to actual authorization and run identity. See `docs/CONTRACT-RECONCILIATION.md` for the exact current artifact/freeze differences and blocked UI paths.
 

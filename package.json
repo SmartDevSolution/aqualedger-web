@@ -18,10 +18,11 @@
     "api:generate": "openapi-typescript contracts/openapi.json --output src/lib/api/generated.ts",
     "contracts:check": "node scripts/check-contract.mjs",
     "messages:check": "node scripts/check-messages.mjs",
+    "check-no-token-leak": "node scripts/check-no-token-leak.mjs",
     "build:e2e": "node scripts/build-e2e.mjs",
     "test:e2e": "npm run build:e2e && playwright test",
     "test:e2e:unconfigured": "node scripts/build-unconfigured.mjs && playwright test --config playwright.unconfigured.config.ts",
-    "test": "npm run messages:check && npm run contracts:check && npm run test:e2e && npm run test:e2e:unconfigured"
+    "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run test:e2e && npm run test:e2e:unconfigured"
   },
   "dependencies": {
     "@turf/area": "7.4.0",
@@ -31,6 +32,7 @@
     "next-intl": "4.14.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "0.0.1",
     "terra-draw": "1.35.0",
     "terra-draw-maplibre-gl-adapter": "1.4.1"
   },
