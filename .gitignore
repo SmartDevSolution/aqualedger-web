@@ -1,5 +1,6 @@
 node_modules/
 .next/
+public/maplibre/
 out/
 coverage/
 playwright-report/
@@ -8,4 +9,5 @@ test-results/
 .env.*
 !.env.example
 *.log
+*.tsbuildinfo
 .DS_Store

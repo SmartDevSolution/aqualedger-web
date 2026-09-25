@@ -1,0 +1,1465 @@
+{
+  "components": {
+    "schemas": {
+      "AnalysisCreateRequest": {
+        "properties": {
+          "aoi_geojson": {
+            "$ref": "#/components/schemas/GeoJSONPolygon"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Presentation metadata only; excluded from the canonical hash.",
+            "title": "Locale"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "aoi_geojson",
+          "start_date",
+          "end_date"
+        ],
+        "title": "AnalysisCreateRequest",
+        "type": "object"
+      },
+      "AnalysisCreateResponse": {
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "status_url": {
+            "title": "Status Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analysis_id",
+          "status_url"
+        ],
+        "title": "AnalysisCreateResponse",
+        "type": "object"
+      },
+      "AnalysisResult": {
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactReference"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/Baseline"
+          },
+          "effective_coverage": {
+            "$ref": "#/components/schemas/EffectiveCoverage"
+          },
+          "evidence_status": {
+            "$ref": "#/components/schemas/EvidenceStatus"
+          },
+          "execution_status": {
+            "$ref": "#/components/schemas/ExecutionStatus"
+          },
+          "limitations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "method_version": {
+            "title": "Method Version",
+            "type": "string"
+          },
+          "pipeline_version": {
+            "title": "Pipeline Version",
+            "type": "string"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProvenanceRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "request": {
+            "$ref": "#/components/schemas/AnalysisCreateRequest"
+          },
+          "scenes_evaluated": {
+            "items": {
+              "$ref": "#/components/schemas/SceneSelection"
+            },
+            "title": "Scenes Evaluated",
+            "type": "array"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "statistics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NdviStatistics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "analysis_id",
+          "schema_version",
+          "pipeline_version",
+          "method_version",
+          "execution_status",
+          "evidence_status",
+          "request",
+          "effective_coverage",
+          "statistics",
+          "provenance",
+          "baseline"
+        ],
+        "title": "AnalysisResult",
+        "type": "object"
+      },
+      "AnalysisStatusResponse": {
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "evidence_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "execution_status": {
+            "$ref": "#/components/schemas/ExecutionStatus"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "analysis_id",
+          "execution_status",
+          "start_date",
+          "end_date",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AnalysisStatusResponse",
+        "type": "object"
+      },
+      "ArtifactBounds": {
+        "properties": {
+          "maxx": {
+            "title": "Maxx",
+            "type": "number"
+          },
+          "maxy": {
+            "title": "Maxy",
+            "type": "number"
+          },
+          "minx": {
+            "title": "Minx",
+            "type": "number"
+          },
+          "miny": {
+            "title": "Miny",
+            "type": "number"
+          }
+        },
+        "required": [
+          "minx",
+          "miny",
+          "maxx",
+          "maxy"
+        ],
+        "title": "ArtifactBounds",
+        "type": "object"
+      },
+      "ArtifactReference": {
+        "description": "An `analysis_artifacts` row reference, typed (D5, ratified text E) so its field\ndescriptions \u2014 in particular `source_hash`'s \u2014 can live in the generated contract instead of\nonly in prose. Fields are exactly the keys the worker already writes, plus the read-time\n`preview_url` the result route adds.",
+        "properties": {
+          "bounds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactBounds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "crs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crs"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "ndvi_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Hash"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "resolution_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution M"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Hash"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "storage_key",
+          "hash",
+          "size_bytes",
+          "resolution_m",
+          "crs",
+          "bounds",
+          "ready"
+        ],
+        "title": "ArtifactReference",
+        "type": "object"
+      },
+      "Baseline": {
+        "description": "Method/source baseline identity actually used (freeze B4 revision 7, G13) \u2014 never a\nnumeric comparison or scoring baseline. Present on every SUCCEEDED result, independent of\nwhether a dated observation was selected.",
+        "properties": {
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          },
+          "contract_version": {
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "grid_crs": {
+            "title": "Grid Crs",
+            "type": "string"
+          },
+          "grid_resolution_m": {
+            "title": "Grid Resolution M",
+            "type": "number"
+          },
+          "mask_policy_version": {
+            "title": "Mask Policy Version",
+            "type": "string"
+          },
+          "offset_rule": {
+            "title": "Offset Rule",
+            "type": "string"
+          },
+          "pipeline_version": {
+            "title": "Pipeline Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contract_version",
+          "collection",
+          "offset_rule",
+          "mask_policy_version",
+          "grid_crs",
+          "grid_resolution_m",
+          "pipeline_version"
+        ],
+        "title": "Baseline",
+        "type": "object"
+      },
+      "CheckStatus": {
+        "enum": [
+          "NOT_CHECKED",
+          "reachable",
+          "failed",
+          "deferred",
+          "not_configured"
+        ],
+        "title": "CheckStatus",
+        "type": "string"
+      },
+      "DiscardedCandidate": {
+        "description": "A per-tile duplicate discarded by B2 rule 2's tie-break (D1, final ratified pass-4 text\nA).",
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "kept_item_id": {
+            "title": "Kept Item Id",
+            "type": "string"
+          },
+          "mgrs_tile": {
+            "title": "Mgrs Tile",
+            "type": "string"
+          },
+          "processing_baseline": {
+            "title": "Processing Baseline",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "LOWER_PROCESSING_BASELINE",
+              "SAME_BASELINE_SMALLER_ITEM_ID"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "mgrs_tile",
+          "processing_baseline",
+          "kept_item_id",
+          "reason"
+        ],
+        "title": "DiscardedCandidate",
+        "type": "object"
+      },
+      "EffectiveCoverage": {
+        "description": "Which acquisition, if any, the persisted statistics describe (freeze B2 rule 5).",
+        "properties": {
+          "acquisition_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Date"
+          },
+          "min_valid_coverage_fraction_guard": {
+            "title": "Min Valid Coverage Fraction Guard",
+            "type": "number"
+          },
+          "valid_coverage_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Coverage Fraction"
+          }
+        },
+        "required": [
+          "acquisition_date",
+          "valid_coverage_fraction",
+          "min_valid_coverage_fraction_guard"
+        ],
+        "title": "EffectiveCoverage",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "The `error` object of the frozen envelope (freeze B4, G15).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "params",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "description": "`{error: {code, params, request_id}}` (central document 04 / freeze B4, G15).",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EvidenceStatus": {
+        "description": "M1 is deliberately blunt (freeze rev.3): every completed run is NOT_ASSESSED except a\nzero-valid-observation run, which is INSUFFICIENT. SUFFICIENT/LIMITED exist in the enum for\nlater milestones and MUST NOT be emitted by M1 logic.",
+        "enum": [
+          "NOT_ASSESSED",
+          "SUFFICIENT",
+          "LIMITED",
+          "INSUFFICIENT"
+        ],
+        "title": "EvidenceStatus",
+        "type": "string"
+      },
+      "ExecutionStatus": {
+        "enum": [
+          "QUEUED",
+          "RUNNING",
+          "RETRY_WAIT",
+          "SUCCEEDED",
+          "FAILED"
+        ],
+        "title": "ExecutionStatus",
+        "type": "string"
+      },
+      "GeoJSONPolygon": {
+        "description": "A single-ring or ring-with-holes WGS84 Polygon. MultiPolygon is explicitly unsupported.",
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "title": "Coordinates",
+            "type": "array"
+          },
+          "type": {
+            "const": "Polygon",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "GeoJSONPolygon",
+        "type": "object"
+      },
+      "NdviStatistics": {
+        "properties": {
+          "masked_fraction": {
+            "title": "Masked Fraction",
+            "type": "number"
+          },
+          "ndvi_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Max"
+          },
+          "ndvi_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Mean"
+          },
+          "ndvi_median": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Median"
+          },
+          "ndvi_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi Min"
+          },
+          "ndvi_p05": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi P05"
+          },
+          "ndvi_p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ndvi P95"
+          },
+          "rejection_counts": {
+            "$ref": "#/components/schemas/RejectionCounts"
+          },
+          "valid_area_m2": {
+            "title": "Valid Area M2",
+            "type": "number"
+          },
+          "valid_observation_count": {
+            "title": "Valid Observation Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "valid_observation_count",
+          "valid_area_m2",
+          "ndvi_min",
+          "ndvi_max",
+          "ndvi_mean",
+          "ndvi_median",
+          "ndvi_p05",
+          "ndvi_p95",
+          "masked_fraction",
+          "rejection_counts"
+        ],
+        "title": "NdviStatistics",
+        "type": "object"
+      },
+      "ProvenanceRecord": {
+        "properties": {
+          "acquisition_datetime": {
+            "format": "date-time",
+            "title": "Acquisition Datetime",
+            "type": "string"
+          },
+          "aoi_hash": {
+            "title": "Aoi Hash",
+            "type": "string"
+          },
+          "asset_hrefs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Asset Hrefs",
+            "type": "object"
+          },
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          },
+          "grid_crs": {
+            "title": "Grid Crs",
+            "type": "string"
+          },
+          "grid_origin": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Grid Origin",
+            "type": "array"
+          },
+          "grid_resolution_m": {
+            "title": "Grid Resolution M",
+            "type": "number"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Item Ids",
+            "type": "array"
+          },
+          "mask_masked_classes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Mask Masked Classes",
+            "type": "array"
+          },
+          "mask_policy": {
+            "title": "Mask Policy",
+            "type": "string"
+          },
+          "mask_retained_classes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Mask Retained Classes",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "number"
+          },
+          "processing_baseline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Baseline"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "resampling": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Resampling",
+            "type": "object"
+          },
+          "resampling_scl": {
+            "title": "Resampling Scl",
+            "type": "string"
+          },
+          "scale": {
+            "title": "Scale",
+            "type": "number"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "stac_query": {
+            "additionalProperties": true,
+            "title": "Stac Query",
+            "type": "object"
+          }
+        },
+        "required": [
+          "source_id",
+          "provider",
+          "collection",
+          "item_ids",
+          "asset_hrefs",
+          "acquisition_datetime",
+          "processing_baseline",
+          "scale",
+          "offset",
+          "mask_policy",
+          "mask_masked_classes",
+          "mask_retained_classes",
+          "grid_crs",
+          "grid_resolution_m",
+          "grid_origin",
+          "resampling_scl",
+          "resampling",
+          "aoi_hash",
+          "stac_query"
+        ],
+        "title": "ProvenanceRecord",
+        "type": "object"
+      },
+      "RejectionCounts": {
+        "properties": {
+          "masked_class": {
+            "default": 0,
+            "title": "Masked Class",
+            "type": "integer"
+          },
+          "missing_data": {
+            "default": 0,
+            "title": "Missing Data",
+            "type": "integer"
+          },
+          "non_positive_denominator": {
+            "default": 0,
+            "title": "Non Positive Denominator",
+            "type": "integer"
+          },
+          "out_of_range": {
+            "default": 0,
+            "title": "Out Of Range",
+            "type": "integer"
+          }
+        },
+        "title": "RejectionCounts",
+        "type": "object"
+      },
+      "SceneSelection": {
+        "properties": {
+          "acquisition_date": {
+            "format": "date",
+            "title": "Acquisition Date",
+            "type": "string"
+          },
+          "acquisition_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Datetime"
+          },
+          "cloud_cover_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cloud Cover Percent"
+          },
+          "data_present_overlap_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Present Overlap Count"
+          },
+          "discarded_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscardedCandidate"
+            },
+            "title": "Discarded Candidates",
+            "type": "array"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/StacItemFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Item Ids",
+            "type": "array"
+          },
+          "masked_yielded_coverage_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masked Yielded Coverage Count"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          },
+          "valid_coverage_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Coverage Fraction"
+          }
+        },
+        "required": [
+          "acquisition_date",
+          "valid_coverage_fraction",
+          "selected",
+          "data_present_overlap_count",
+          "masked_yielded_coverage_count",
+          "discarded_candidates",
+          "failures"
+        ],
+        "title": "SceneSelection",
+        "type": "object"
+      },
+      "SourceCheck": {
+        "properties": {
+          "check_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Scope"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "reason_params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Reason Params",
+            "type": "object"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          }
+        },
+        "required": [
+          "status",
+          "checked_at",
+          "check_scope"
+        ],
+        "title": "SourceCheck",
+        "type": "object"
+      },
+      "SourceStatus": {
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/SourceCheck"
+          },
+          "collection": {
+            "title": "Collection",
+            "type": "string"
+          },
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "mandatory": {
+            "title": "Mandatory",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "temporal_or_static": {
+            "title": "Temporal Or Static",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "name",
+          "provider",
+          "collection",
+          "temporal_or_static",
+          "mandatory",
+          "configured",
+          "enabled",
+          "check"
+        ],
+        "title": "SourceStatus",
+        "type": "object"
+      },
+      "SourcesResponse": {
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sources"
+        ],
+        "title": "SourcesResponse",
+        "type": "object"
+      },
+      "StacItemFailure": {
+        "description": "A missing STAC asset requirement for one band of one item (D4, ratified text D). No\n`detail` key; `SOURCE_ITEM_INCOMPLETE` never appears here or anywhere else published.",
+        "properties": {
+          "acquisition_date": {
+            "format": "date",
+            "title": "Acquisition Date",
+            "type": "string"
+          },
+          "band": {
+            "enum": [
+              "red",
+              "nir",
+              "scl"
+            ],
+            "title": "Band",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "asset_missing",
+              "asset_href_missing",
+              "asset_scale_missing"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "tile_id": {
+            "title": "Tile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tile_id",
+          "band",
+          "reason",
+          "item_id",
+          "acquisition_date"
+        ],
+        "title": "StacItemFailure",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "AquaLedger Backend",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/analyses": {
+      "post": {
+        "operationId": "create_analysis_analyses_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "INPUT_INVALID | LIMIT_EXCEEDED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "IDEMPOTENCY_CONFLICT"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
+          }
+        },
+        "summary": "Create Analysis",
+        "tags": [
+          "analyses"
+        ]
+      }
+    },
+    "/analyses/{analysis_id}": {
+      "get": {
+        "operationId": "get_analysis_status_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
+          }
+        },
+        "summary": "Get Analysis Status",
+        "tags": [
+          "analyses"
+        ]
+      }
+    },
+    "/analyses/{analysis_id}/result": {
+      "get": {
+        "operationId": "get_analysis_result_analyses__analysis_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AnalysisResult"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorEnvelope"
+                    }
+                  ],
+                  "title": "Response Get Analysis Result Analyses  Analysis Id  Result Get"
+                }
+              }
+            },
+            "description": "The committed AnalysisResult. At the same 200 status (freeze B4: 'GET /analyses/{id}/result (NOT_READY while uncommitted)'), an analysis with no committed result yet instead returns the frozen ErrorEnvelope with code NOT_READY and typed params {execution_status}."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "SOURCE_UNAVAILABLE"
+          }
+        },
+        "summary": "Get Analysis Result",
+        "tags": [
+          "analyses"
+        ]
+      }
+    },
+    "/sources": {
+      "get": {
+        "operationId": "get_sources_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "PROCESSING_FAILED"
+          }
+        },
+        "summary": "Get Sources",
+        "tags": [
+          "sources"
+        ]
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Web implementation contract
 
-Documentation-only foundation. Full product/science/acceptance authority is in the central repository, not duplicated here. Until the correction is merged, read https://github.com/AmeenBinBisher/aqualedger/pull/1; then record its merged baseline SHA.
+Full product/science/acceptance authority is in the central repository, not duplicated here. The current merged central baseline is `AmeenBinBisher/aqualedger@db404bffe536fc969eb0069deba1acaf3d4b1707` (central PR #4). The ratified M1 contract is pinned separately at `AmeenBinBisher/aqualedger@413dc884a22b05e9f8ed239eb8236e230c640937`, document `docs/current/11-M1-CONTRACT-FREEZE.md` revision 8. Central PR #5 is an open governance proposal and is not part of the merged baseline. Read central documents 00–10 at the merged baseline and the frozen contract at its ratified SHA before changing behavior.
 
 ## Page and locale structure
 
@@ -12,9 +12,9 @@ Display Gregorian dates consistently with the backend ISO/UTC interval contract.
 
 ## API consumer
 
-Backend generates `contracts/openapi.json`. Store the consumed artifact or generated client/types with metadata recording backend commit SHA, contract version and hash. A small `contracts/BACKEND-REF.json` or equivalent is sufficient; create it only with the real artifact, not placeholder hashes. Reproducible web CI must not fetch an unpinned latest backend branch or import a sibling backend source tree.
+Backend generates `contracts/openapi.json`. The consumed artifact is pinned in `contracts/BACKEND-REF.json` to backend commit `998453aad0c446908e57aab0edc473cbe388b6cc` (the single Council-sequenced re-pin recorded on `AmeenBinBisher/aqualedger#8`), contract version `0.1.0`, and its Git blob/SHA-256 hashes. `src/lib/api/generated.ts` is generated from that checked-in artifact with `openapi-typescript`; `npm run contracts:check` checks the recorded identity and generated-file drift. Reproducible web builds never fetch a moving backend branch or import a sibling backend source tree.
 
-Implement the central request/status/result/source-status/error contract. Stable machine codes map to localized messages; do not parse English error prose. Known missing translations fail checks; unknown server codes display a safe localized generic error with correlation ID. Caching is scoped to actual authorization and run identity.
+Implement the central request/status/result/source-status/error contract. Stable machine codes map to localized messages; do not parse English error prose. Known missing translations fail checks; unknown server codes display a safe localized generic error with correlation ID. Caching is scoped to actual authorization and run identity. See `docs/CONTRACT-RECONCILIATION.md` for the exact current artifact/freeze differences and blocked UI paths.
 
 Map/AOI/date interaction is client-side where necessary. API owns job creation; no analytical duplicate in Next.js routes/server actions. Request on explicit user action with idempotency handling, not on mount/locale navigation. Poll saved status at a bounded rate and stop on terminal states/unmount. Late responses cannot replace the selected run with another result.
 
@@ -26,10 +26,32 @@ M2: evidence layers/series/baseline/quality disclosures. M3: eligible priorities
 
 A basemap library does not supply unlimited hosted tiles or rights; document the chosen provider/attribution. Do not use a permanent fake raster when real data is missing. State exact source/render failures instead.
 
+**M1 basemap (Council DP-4 P2, central issue #8): self-hosted, no external provider.** `public/basemap/style.json` is a minimal MapLibre style served from this app's own origin — a background color plus an inline WGS84 30° graticule, with no fetched tile/vector/raster provider and no browser request leaving the app's origin for the map. Its own `attribution` names the self-hosted style in the map's attribution control. Adding an external basemap data provider (with its own attribution and availability caveat) is a later, separately recorded decision, not implied by this one.
+
+**M1 NDVI preview delivery (Council DP-4 P1, central issue #8): same-origin route plus client-side decode of the backend's own RGBA artifact.** `GET /api/analyses/{id}/preview` resolves the frozen signed `preview_url` server-side (never in the browser) and streams the bytes; the browser decodes the RGBA GeoTIFF (one new runtime dependency, `geotiff`) and renders it as a MapLibre overlay positioned from the artifact's recorded `bounds`/`crs`, rendering the artifact's own already-colormapped RGB unchanged rather than re-applying a palette. This is a Council-ratified, scoped exception to freeze document 11 section B9's "no client-side COG decoding" clause for M1's own preview artifact specifically — not a general reopening of B9.
+
+The route's status set is documented in exactly one place — here — so `src/app/api/analyses/[id]/preview/route.ts` and the browser-side mapping in `src/lib/preview/geotiff-overlay.ts` (`statusFromPreviewErrorCode`) cannot silently drift apart. Every failure answers a small `{error: {code, params, request_id}}` JSON body, distinguished from a successful artifact response by `Content-Type: application/json` (never treated as image bytes just because the status is `200`):
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| 503 | `PREVIEW_NOT_CONFIGURED` | The relay itself is not configured (mirrors `API_NOT_CONFIGURED`). |
+| 200 | `PREVIEW_NOT_READY` | The backend's own frozen `200 NOT_READY` envelope (freeze B4): the analysis has no committed result yet, including a `FAILED` run — `params.execution_status` distinguishes an in-progress run from a failed one. |
+| 502 | `PREVIEW_RESULT_UNAVAILABLE` | The result request itself failed: a network error, or the backend answered a non-`200` (e.g. `NOT_FOUND`) instead of a committed result or the frozen `NOT_READY` envelope. |
+| 404 | `PREVIEW_ARTIFACT_MISSING` | The committed result carries no `ndvi_preview` artifact at all. |
+| 409 | `PREVIEW_ARTIFACT_NOT_READY` | The artifact itself is not yet `ready`. |
+| 503 | `PREVIEW_URL_UNAVAILABLE` | The artifact is `ready`, but the backend minted no signed `preview_url` for it — conditional on the backend's own storage configuration (`analyses.py` `build_storage_client`), not a property of the artifact's readiness. |
+| 502 | `PREVIEW_FETCH_FAILED` | The signed URL could not be fetched, or the fetch returned a failure. |
+
+Each of these maps to its own distinct, user-visible `PreviewOverlayStatus` and message key; no two different causes are ever collapsed onto the same string.
+
 ## First implementation PR and tests
 
 Add minimal working Next.js setup, supported pinned versions/lockfile, real tested README commands and public/server environment distinction without secrets. No production EO secrets or Supabase service/database keys in NEXT_PUBLIC variables.
 
 CI: reproducible install, lint, strict typecheck, build, relevant behavior tests, catalog parity and pinned contract compatibility. Browser acceptance covers both locales, invalid inputs, missing/outage data, refresh/reopen, locale switching and small-screen keyboard/focus behavior. Full M1 gate requires real paired backend runs and independent sample verification, not only mocked client tests.
+
+`npm run test:e2e:unconfigured` must prove the app fails closed (`API_NOT_CONFIGURED`) with no server-only env configured, in any checkout — including one that legitimately keeps a `.env.local` for the acceptance run below. Next.js loads `.env`/`.env.local`/etc. itself, at both `next build` and `next start`, independent of what env a parent process passes down, so a config that only edits the spawned process's env cannot stop that file being read. `scripts/test-e2e-unconfigured.mjs` makes the gate deterministic instead: it moves aside every local `.env*` file (except the committed `.env.example`) before building and running Playwright, and restores them unconditionally afterward — including on failure or SIGINT/SIGTERM — printing what it moved and restored. Run it exactly like any other npm script; no manual env cleanup is required or expected.
+
+`npm run check-relay-log-leak` exercises the relay module against the labelled backend double with a synthetic operator token while capturing every stdout/stderr write and console call, and fails if the token or the outbound Authorization value ever appears in that capture. This is a distinct gate from `npm run check-no-token-leak`, which scans build artifacts, not runtime/log output.
 
 Each PR links the central mission and any backend dependency, names the tested counterpart SHA and contract/migration state, and distinguishes web checks from integrated checks. Do not mark an end-to-end mission done until both merged dev revisions pass together. No new hosting/accounts/spending or public deployment during setup.

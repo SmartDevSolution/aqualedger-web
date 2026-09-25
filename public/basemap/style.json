@@ -1,0 +1,379 @@
+{
+  "version": 8,
+  "name": "aqualedger-m1-self-hosted-minimal",
+  "metadata": {
+    "aqualedger:description": "M1 self-hosted minimal basemap (Council DP-4 P2, issue #8): a background colour plus an inline WGS84 30-degree graticule for geographic orientation. No external tile, vector or raster data provider is used. Adding a real basemap data provider is a later, separately recorded decision."
+  },
+  "sources": {
+    "graticule": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  -80
+                ],
+                [
+                  -180,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -150,
+                  -80
+                ],
+                [
+                  -150,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -120,
+                  -80
+                ],
+                [
+                  -120,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -90,
+                  -80
+                ],
+                [
+                  -90,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -60,
+                  -80
+                ],
+                [
+                  -60,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -30,
+                  -80
+                ],
+                [
+                  -30,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  0,
+                  -80
+                ],
+                [
+                  0,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  30,
+                  -80
+                ],
+                [
+                  30,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  60,
+                  -80
+                ],
+                [
+                  60,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  90,
+                  -80
+                ],
+                [
+                  90,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  120,
+                  -80
+                ],
+                [
+                  120,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  150,
+                  -80
+                ],
+                [
+                  150,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "meridian"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  180,
+                  -80
+                ],
+                [
+                  180,
+                  80
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "parallel"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  -60
+                ],
+                [
+                  180,
+                  -60
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "parallel"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  -30
+                ],
+                [
+                  180,
+                  -30
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "parallel"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  0
+                ],
+                [
+                  180,
+                  0
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "parallel"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  30
+                ],
+                [
+                  180,
+                  30
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "kind": "parallel"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  -180,
+                  60
+                ],
+                [
+                  180,
+                  60
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "attribution": "AquaLedger self-hosted minimal basemap — no external map data provider (M1)"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#dbe9f0"
+      }
+    },
+    {
+      "id": "graticule-lines",
+      "type": "line",
+      "source": "graticule",
+      "paint": {
+        "line-color": "#9db8c4",
+        "line-width": 0.75,
+        "line-opacity": 0.8
+      }
+    }
+  ]
+}
