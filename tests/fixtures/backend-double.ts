@@ -107,6 +107,30 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
       masked_yielded_coverage_count: 1200,
       discarded_candidates: [],
       failures: []
+    }, {
+      // Eligible but lost the B2 rule 5 total order to the winner above: a real, non-error
+      // `rejection_reason: null` on a non-selected date (W11 / R1).
+      acquisition_date: '2026-08-25',
+      valid_coverage_fraction: 0.6,
+      selected: false,
+      item_ids: ['Sentinel-2 item B'],
+      rejection_reason: null,
+      data_present_overlap_count: 1400,
+      masked_yielded_coverage_count: 900,
+      discarded_candidates: [],
+      failures: []
+    }, {
+      // A non-null reason this web version's catalogue does not recognize (simulates a backend
+      // code added after this build), so the fallback still needs the honest "unrecognized" text.
+      acquisition_date: '2026-08-20',
+      valid_coverage_fraction: 0.3,
+      selected: false,
+      item_ids: ['Sentinel-2 item C'],
+      rejection_reason: 'FUTURE_UNRECOGNIZED_REASON',
+      data_present_overlap_count: 1200,
+      masked_yielded_coverage_count: 300,
+      discarded_candidates: [],
+      failures: []
     }],
     provenance: {
       source_id: 'sentinel2_l2a_earth_search',
@@ -149,7 +173,12 @@ export function resultFixture(id: string, previewUrl = `https://private.invalid/
       ready: true,
       preview_url: previewUrl
     }],
-    limitations: [{code: 'EFFECTIVE_QUALITY_RESOLUTION_20M', params: {}}]
+    limitations: [
+      {code: 'EFFECTIVE_QUALITY_RESOLUTION_20M', params: {}},
+      // A limitation code this web version's catalogue does not recognize, so the limitation
+      // fallback needs its own assertion distinct from the scene-reason fallback (W11 gap #4).
+      {code: 'FUTURE_UNRECOGNIZED_LIMITATION', params: {}}
+    ]
   };
 }
 

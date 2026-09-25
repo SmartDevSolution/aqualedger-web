@@ -243,51 +243,59 @@ test('small width keeps workspace controls in the viewport and keyboard focus vi
   await expect(page.getByLabel('تاريخ البداية')).toBeVisible();
 });
 
+// Widths 641-1364 were measured against a local production build (`npm run start`) with this
+// harness's own tabUntilFocused keyboard path: the sticky header's rendered height briefly exceeds
+// the 84px `--header-height` reserved by `scroll-padding-top` at 641px (two-line header content,
+// ~86.6px), yet the focused start/end date fields still land far below the header's actual bottom
+// edge at every width below, so all clear and are covered here (W11 gap #5).
+const stickyHeaderWidths = [641, 768, 900, 1024, 1364, 1365] as const;
+
 for (const locale of ['en', 'ar'] as const) {
-  test(`desktop keyboard focus into the date fields is never obscured by the sticky header in ${locale}`, async ({page}) => {
-    // Forced regardless of project viewport (this file also runs under small-width-chromium),
-    // because the finding is specifically about the 1365x900 desktop breakpoint.
-    await page.setViewportSize({width: 1365, height: 900});
-    await page.goto(`/${locale}/analysis`);
+  for (const width of stickyHeaderWidths) {
+    test(`desktop keyboard focus into the date fields is never obscured by the sticky header at ${width}px in ${locale}`, async ({page}) => {
+      // Forced regardless of project viewport (this file also runs under small-width-chromium).
+      await page.setViewportSize({width, height: 900});
+      await page.goto(`/${locale}/analysis`);
 
-    // Reaches the GeoJSON drawer, textarea and "Use polygon" button purely by real Tab/Enter/type
-    // key presses from page load, instead of Playwright's click()/fill() (which auto-scroll the
-    // target into view and mask the defect): the browser's own native scroll-into-view-on-focus,
-    // triggered when a later Tab needs to bring an off-screen field into view, is what lands a
-    // field under the sticky header — that only happens on this unassisted keyboard path.
-    const summary = page.locator('.coordinate-entry summary');
-    await tabUntilFocused(page, summary);
-    await page.keyboard.press('Enter');
-    const textarea = page.getByLabel(locale === 'en' ? 'Polygon GeoJSON' : 'GeoJSON للمضلع');
-    await expect(textarea).toBeVisible();
-    await tabUntilFocused(page, textarea);
-    await page.keyboard.type(polygonText);
-    const usePolygonButton = page.getByRole('button', {name: locale === 'en' ? 'Use polygon' : 'استخدم المضلع'});
-    await tabUntilFocused(page, usePolygonButton);
-    await page.keyboard.press('Enter');
+      // Reaches the GeoJSON drawer, textarea and "Use polygon" button purely by real Tab/Enter/type
+      // key presses from page load, instead of Playwright's click()/fill() (which auto-scroll the
+      // target into view and mask the defect): the browser's own native scroll-into-view-on-focus,
+      // triggered when a later Tab needs to bring an off-screen field into view, is what lands a
+      // field under the sticky header — that only happens on this unassisted keyboard path.
+      const summary = page.locator('.coordinate-entry summary');
+      await tabUntilFocused(page, summary);
+      await page.keyboard.press('Enter');
+      const textarea = page.getByLabel(locale === 'en' ? 'Polygon GeoJSON' : 'GeoJSON للمضلع');
+      await expect(textarea).toBeVisible();
+      await tabUntilFocused(page, textarea);
+      await page.keyboard.type(polygonText);
+      const usePolygonButton = page.getByRole('button', {name: locale === 'en' ? 'Use polygon' : 'استخدم المضلع'});
+      await tabUntilFocused(page, usePolygonButton);
+      await page.keyboard.press('Enter');
 
-    const headerBottom = await page.locator('.site-header').evaluate((element) => element.getBoundingClientRect().bottom);
+      const headerBottom = await page.locator('.site-header').evaluate((element) => element.getBoundingClientRect().bottom);
 
-    const startDate = page.getByLabel(locale === 'en' ? 'Start date' : 'تاريخ البداية');
-    await tabUntilFocused(page, startDate);
-    // The browser's scroll-into-view-on-focus animates (unless scroll-behavior is not smooth); a
-    // measurement taken immediately can still show the correct in-progress position even when the
-    // animation later overshoots and settles the field back under the header, so this waits out
-    // the animation before asserting the position that actually persists.
-    await page.waitForTimeout(1000);
-    const startBox = await startDate.boundingBox();
-    expect(startBox).not.toBeNull();
-    expect(startBox!.y).toBeGreaterThanOrEqual(headerBottom);
+      const startDate = page.getByLabel(locale === 'en' ? 'Start date' : 'تاريخ البداية');
+      await tabUntilFocused(page, startDate);
+      // The browser's scroll-into-view-on-focus animates (unless scroll-behavior is not smooth); a
+      // measurement taken immediately can still show the correct in-progress position even when the
+      // animation later overshoots and settles the field back under the header, so this waits out
+      // the animation before asserting the position that actually persists.
+      await page.waitForTimeout(1000);
+      const startBox = await startDate.boundingBox();
+      expect(startBox).not.toBeNull();
+      expect(startBox!.y).toBeGreaterThanOrEqual(headerBottom);
 
-    // The native date input exposes several internal segments (month/day/year) that Tab moves
-    // through before leaving the control, so reaching end-date takes more than one further Tab.
-    const endDate = page.getByLabel(locale === 'en' ? 'End date' : 'تاريخ النهاية');
-    await tabUntilFocused(page, endDate);
-    await page.waitForTimeout(1000);
-    const endBox = await endDate.boundingBox();
-    expect(endBox).not.toBeNull();
-    expect(endBox!.y).toBeGreaterThanOrEqual(headerBottom);
-  });
+      // The native date input exposes several internal segments (month/day/year) that Tab moves
+      // through before leaving the control, so reaching end-date takes more than one further Tab.
+      const endDate = page.getByLabel(locale === 'en' ? 'End date' : 'تاريخ النهاية');
+      await tabUntilFocused(page, endDate);
+      await page.waitForTimeout(1000);
+      const endBox = await endDate.boundingBox();
+      expect(endBox).not.toBeNull();
+      expect(endBox!.y).toBeGreaterThanOrEqual(headerBottom);
+    });
+  }
 }
 
 async function tabUntilFocused(page: Page, locator: ReturnType<Page['locator']>, max = 20) {
@@ -299,7 +307,7 @@ async function tabUntilFocused(page: Page, locator: ReturnType<Page['locator']>,
 }
 
 for (const locale of ['en', 'ar'] as const) {
-  test(`provenance shows the real scale/offset value and the resolution limitation is shown honestly in ${locale}`, async ({page}) => {
+  test(`provenance shows the real scale/offset value and evaluated-scene/limitation rows are shown honestly in ${locale}`, async ({page}) => {
     await page.goto(`/${locale}/analysis/${SUCCEEDED_ID}`);
 
     const scaleOffset = page.locator('.result-fact', {hasText: locale === 'en' ? 'Scale / offset' : 'المقياس / الإزاحة'});
@@ -313,7 +321,29 @@ for (const locale of ['en', 'ar'] as const) {
     const unrecognizedFailureText = locale === 'en'
       ? 'The backend reported a failure reason that this web version does not recognize.'
       : 'أبلغت الواجهة الخلفية عن سبب فشل لا يتعرف عليه هذا الإصدار من التطبيق.';
-    await expect(page.getByText(unrecognizedFailureText)).toHaveCount(0);
+
+    // A limitation code this catalogue does not recognize renders the limitation fallback, never
+    // the (differently worded) scene failure-reason fallback (W11 gap #4).
+    const unrecognizedLimitationText = locale === 'en'
+      ? 'The backend reported a limitation that this web version does not recognize.'
+      : 'أبلغت الواجهة الخلفية عن قيد لا يتعرف عليه هذا الإصدار من التطبيق.';
+    await expect(page.getByText(unrecognizedLimitationText)).toBeVisible();
+
+    // R1: the selected date reads "Selected", never a failure sentence.
+    const selectedRow = page.locator('.scene-list li', {hasText: '2026-08-30'});
+    await expect(selectedRow.getByText(locale === 'en' ? 'Selected' : 'مختار')).toBeVisible();
+    await expect(selectedRow.getByText(unrecognizedFailureText)).toHaveCount(0);
+
+    // R1: an eligible-but-not-selected date with rejection_reason === null must not claim the
+    // backend reported any failure or unrecognized reason — only that it was not selected.
+    const nullReasonRow = page.locator('.scene-list li', {hasText: '2026-08-25'});
+    await expect(nullReasonRow.getByText(locale === 'en' ? 'Not selected' : 'لم يُختر')).toBeVisible();
+    await expect(nullReasonRow.getByText(unrecognizedFailureText)).toHaveCount(0);
+
+    // A genuinely unrecognized non-null reason code still shows the honest unknown-reason
+    // fallback, distinct from the null case directly above (W11 gap #4).
+    const unknownReasonRow = page.locator('.scene-list li', {hasText: '2026-08-20'});
+    await expect(unknownReasonRow.getByText(unrecognizedFailureText)).toBeVisible();
   });
 }
 

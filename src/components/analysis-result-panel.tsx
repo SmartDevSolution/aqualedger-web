@@ -124,7 +124,13 @@ function LoadedAnalysisResult({
               <li key={`${scene.acquisition_date}:${scene.item_ids?.join('|') ?? ''}`}>
                 <bdi dir="ltr">{scene.acquisition_date}</bdi>
                 <span>{scene.valid_coverage_fraction === null ? t('notReturned') : formatPercent(scene.valid_coverage_fraction, locale)}</span>
-                <span>{scene.selected ? t('selectedDate') : errors(reasonMessageKey(scene.rejection_reason ?? null))}</span>
+                <span>
+                  {scene.selected
+                    ? t('selectedDate')
+                    : scene.rejection_reason === null || scene.rejection_reason === undefined
+                      ? t('notSelectedDate')
+                      : errors(reasonMessageKey(scene.rejection_reason))}
+                </span>
               </li>
             ))}
           </ul>

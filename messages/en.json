@@ -110,6 +110,7 @@
     "statisticsUnavailable": "The result contains no AOI-level NDVI statistics.",
     "evaluatedDates": "Evaluated acquisition dates",
     "selectedDate": "Selected",
+    "notSelectedDate": "Not selected",
     "limitationsHeading": "Limitations and exclusions",
     "provenanceHeading": "Provenance",
     "schemaVersion": "Result schema version",

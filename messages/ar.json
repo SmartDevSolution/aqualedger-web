@@ -110,6 +110,7 @@
     "statisticsUnavailable": "لا تتضمن النتيجة إحصاءات NDVI على مستوى منطقة الاهتمام.",
     "evaluatedDates": "تواريخ الالتقاط التي جرى تقييمها",
     "selectedDate": "مختار",
+    "notSelectedDate": "لم يُختر",
     "limitationsHeading": "القيود والاستبعادات",
     "provenanceHeading": "مصدر البيانات والمنهج",
     "schemaVersion": "إصدار مخطط النتيجة",
