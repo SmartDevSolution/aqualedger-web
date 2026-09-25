@@ -38,7 +38,7 @@ function statusFixture(id: string, executionStatus: string, evidenceStatus?: str
   return executionStatus === 'FAILED' ? base : {...base, evidence_status: evidenceStatus};
 }
 
-function resultFixture(id: string): Record<string, unknown> {
+export function resultFixture(id: string): Record<string, unknown> {
   return {
     analysis_id: id,
     schema_version: '1',

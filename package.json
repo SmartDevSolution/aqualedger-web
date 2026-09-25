@@ -19,10 +19,11 @@
     "contracts:check": "node scripts/check-contract.mjs",
     "messages:check": "node scripts/check-messages.mjs",
     "check-no-token-leak": "node scripts/check-no-token-leak.mjs",
+    "check-relay-log-leak": "node scripts/check-relay-log-leak.mjs",
     "build:e2e": "node scripts/build-e2e.mjs",
     "test:e2e": "npm run build:e2e && playwright test",
-    "test:e2e:unconfigured": "node scripts/build-unconfigured.mjs && playwright test --config playwright.unconfigured.config.ts",
-    "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run test:e2e && npm run test:e2e:unconfigured"
+    "test:e2e:unconfigured": "node scripts/test-e2e-unconfigured.mjs",
+    "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run check-relay-log-leak && npm run test:e2e && npm run test:e2e:unconfigured"
   },
   "dependencies": {
     "@turf/area": "7.4.0",

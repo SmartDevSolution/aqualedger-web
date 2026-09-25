@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {randomUUID} from 'node:crypto';
-import {FAILED_ID, SUCCEEDED_ID, TEST_OPERATOR_TOKEN} from '../fixtures/backend-double';
+import {FAILED_ID, resultFixture, SUCCEEDED_ID, TEST_OPERATOR_TOKEN} from '../fixtures/backend-double';
 
 // These call the app's own same-origin relay routes directly (bypassing the browser UI) so each
 // assertion is precise about one relay behavior, per the Council DP-2 verdict (issue #8):
@@ -88,6 +88,9 @@ test.describe('same-origin relay (Council DP-2 access model)', () => {
     const readyBody = await ready.json();
     expect(readyBody.execution_status).toBe('SUCCEEDED');
     expect(readyBody.artifacts[0].preview_url).toBe('https://private.invalid/signed');
+    // Deep-equals the double's own fixture body, not just selected fields, so an unintended
+    // change to any other result field fails this test.
+    expect(readyBody).toEqual(resultFixture(id));
     expect(await ready.text()).not.toContain(TEST_OPERATOR_TOKEN);
 
     const entries = (await doubleRequests()).filter((candidate) => candidate.path === `/analyses/${id}/result`);
