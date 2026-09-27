@@ -7,6 +7,15 @@
   --surface-tint: #eaf1ef;
   --line: #d5e0dc;
   --line-strong: #aebfba;
+  /* Identifies the form controls (.coordinate-entry textarea, .field-group input) against the
+     #ffffff panel they sit on. `--line-strong` is 1.915868:1 there, below the 3:1 minimum for the
+     visual information that identifies a control (WCAG 2.2 SC 1.4.11, applied to acceptance row
+     A30 for non-text cues by both designated Council seats). This token is the same hue
+     (162.35deg) and saturation (11.72%) as `--line-strong`, darkened to 50% lightness:
+     3.549942610036715:1 against #ffffff. Kept separate from `--line-strong` so that its other three users
+     (.button-tertiary, .result-empty-state, .status-tag) are not restyled — only these controls
+     were ruled on, and this is not a general contrast restyle. */
+  --line-control: #718e86;
   --brand: #075f62;
   --brand-dark: #06474c;
   --brand-bright: #18a592;
@@ -432,7 +441,7 @@ h3 {
   min-height: 7rem;
   margin-block-end: 0.65rem;
   resize: vertical;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: 0.7rem;
   padding: 0.75rem;
   color: #18343a;
@@ -465,7 +474,7 @@ h3 {
   display: block;
   width: 100%;
   min-height: 3rem;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-control);
   border-radius: 0.75rem;
   padding: 0.5rem 0.75rem;
   color: var(--ink);

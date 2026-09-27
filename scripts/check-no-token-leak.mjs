@@ -32,14 +32,56 @@ if (build.status !== 0) {
 // browser, so it is out of scope for a "build artifact under the browser bundle" check.
 const cacheDir = path.join(nextDir, 'cache');
 
+// Walk fails closed: an entry that cannot be stat'd (e.g. a broken symlink) or that stats as
+// neither a file nor a directory (e.g. a symlink to a socket/FIFO/device) is recorded as a
+// classification failure rather than silently dropped, unless it is inside the already-excluded
+// cache dir. A regular symlink to a file or directory is followed, since statSync (unlike
+// lstatSync) resolves symlinks.
+function walk(dir, excludeDir, issues, scannableFiles) {
+  let filesExcluded = 0;
+  for (const entry of readdirSync(dir)) {
+    const entryPath = path.join(dir, entry);
+    const isExcluded = entryPath === excludeDir || entryPath.startsWith(`${excludeDir}${path.sep}`);
+    let stats;
+    try {
+      stats = statSync(entryPath);
+    } catch (error) {
+      if (isExcluded) {
+        filesExcluded += 1;
+      } else {
+        issues.push(`${path.relative(root, entryPath)}: cannot stat (${error.message})`);
+      }
+      continue;
+    }
+    if (stats.isDirectory()) {
+      filesExcluded += walk(entryPath, excludeDir, issues, scannableFiles);
+    } else if (stats.isFile()) {
+      if (isExcluded) {
+        filesExcluded += 1;
+      } else {
+        scannableFiles.push(entryPath);
+      }
+    } else if (isExcluded) {
+      filesExcluded += 1;
+    } else {
+      issues.push(`${path.relative(root, entryPath)}: neither a regular file nor a directory, cannot classify`);
+    }
+  }
+  return filesExcluded;
+}
+
 const markers = [probeToken, 'NEXT_PUBLIC_AQUALEDGER'];
+const issues = [];
+const scannableFiles = [];
+const filesExcluded = walk(nextDir, cacheDir, issues, scannableFiles);
+
 const hits = [];
-for (const filePath of walk(nextDir)) {
-  if (filePath.startsWith(`${cacheDir}${path.sep}`)) continue;
+for (const filePath of scannableFiles) {
   let content;
   try {
     content = readFileSync(filePath, 'utf8');
-  } catch {
+  } catch (error) {
+    issues.push(`${path.relative(root, filePath)}: cannot read (${error.message})`);
     continue;
   }
   for (const marker of markers) {
@@ -49,21 +91,21 @@ for (const filePath of walk(nextDir)) {
   }
 }
 
-if (hits.length > 0) {
-  process.stderr.write(`Token-leak probe failed:\n${hits.join('\n')}\n`);
+if (issues.length > 0) {
+  process.stderr.write(
+    `check-no-token-leak: failed closed — ${issues.length} in-scope entr${issues.length === 1 ? 'y' : 'ies'} under ` +
+    `${path.relative(root, nextDir)} could not be scanned and cannot be ruled out:\n${issues.join('\n')}\n`
+  );
   process.exit(1);
 }
 
-process.stdout.write(`Token-leak probe passed: neither the probe token nor NEXT_PUBLIC_AQUALEDGER appears anywhere under ${path.relative(root, nextDir)}.\n`);
-
-function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
-    const entryPath = path.join(dir, entry);
-    const stats = statSync(entryPath);
-    if (stats.isDirectory()) {
-      yield* walk(entryPath);
-    } else if (stats.isFile()) {
-      yield entryPath;
-    }
-  }
+if (hits.length > 0) {
+  process.stderr.write(`check-no-token-leak: token-leak probe failed:\n${hits.join('\n')}\n`);
+  process.exit(1);
 }
+
+process.stdout.write(
+  `check-no-token-leak: passed — scanned ${scannableFiles.length} file(s) under ${path.relative(root, nextDir)} for the ` +
+  `probe token and NEXT_PUBLIC_AQUALEDGER, excluding ${filesExcluded} file(s) under ${path.relative(root, cacheDir)} ` +
+  `(Next's local incremental-build cache, never deployed or served to a browser); 0 unreadable or unclassifiable file(s).\n`
+);
