@@ -21,8 +21,10 @@
     "check-no-token-leak": "node scripts/check-no-token-leak.mjs",
     "check-relay-log-leak": "node scripts/check-relay-log-leak.mjs",
     "check-preview-decode": "node scripts/check-preview-decode.mjs",
+    "prebuild:e2e": "node scripts/copy-maplibre-worker.mjs",
     "build:e2e": "node scripts/build-e2e.mjs",
     "test:e2e": "npm run build:e2e && playwright test",
+    "pretest:e2e:unconfigured": "node scripts/copy-maplibre-worker.mjs",
     "test:e2e:unconfigured": "node scripts/test-e2e-unconfigured.mjs",
     "test": "npm run messages:check && npm run contracts:check && npm run check-no-token-leak && npm run check-relay-log-leak && npm run check-preview-decode && npm run test:e2e && npm run test:e2e:unconfigured"
   },

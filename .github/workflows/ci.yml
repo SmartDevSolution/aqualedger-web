@@ -10,9 +10,25 @@ permissions:
   contents: read
 
 jobs:
+  # Full published web gate set (docs/IMPLEMENTATION.md "CI:" line / central
+  # 10-ENGINEERING-STANDARDS.md "CI and review gates"): reproducible install, lint, strict
+  # typecheck, build, behaviour tests, catalog parity and pinned contract compatibility, browser
+  # acceptance in both directions. `npm test` is the single source of truth for the behaviour/
+  # parity/contract/browser-acceptance portion (messages:check, contracts:check,
+  # check-no-token-leak, check-relay-log-leak, check-preview-decode, test:e2e,
+  # test:e2e:unconfigured) so this workflow cannot hand-copy a step list that drifts from
+  # package.json; lint/typecheck/build are separate npm scripts outside that chain and are listed
+  # explicitly. `npm run build` is kept as its own step, distinct from the `next build` that
+  # `npm test` performs internally (via build:e2e, check-no-token-leak, check-relay-log-leak and
+  # test:e2e:unconfigured): it exercises the plain production build path named by the docs' "build"
+  # gate as a fast, isolated signal before the slower full `npm test` chain runs.
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Several npm scripts inside `npm test` each perform their own `next build`
+    # (build:e2e, check-no-token-leak, check-relay-log-leak, test:e2e:unconfigured), on top of the
+    # explicit `npm run build` step, plus two full Playwright runs; a clean GitHub-hosted runner
+    # needs more headroom for that than the previous partial gate set did.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,7 +38,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run messages:check
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm test
