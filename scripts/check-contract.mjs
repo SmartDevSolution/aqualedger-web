@@ -21,7 +21,7 @@ assert(reference.artifact_git_blob_sha === blobSha, 'OpenAPI Git blob hash does 
 assert(reference.artifact_sha256 === sha256, 'OpenAPI SHA-256 does not match BACKEND-REF.json.');
 assert(reference.openapi_version === spec.openapi, 'OpenAPI version does not match BACKEND-REF.json.');
 assert(reference.contract_version === spec.info?.version, 'Contract version does not match BACKEND-REF.json.');
-assert(reference.backend_commit === '998453aad0c446908e57aab0edc473cbe388b6cc', 'Backend commit pin changed.');
+assert(reference.backend_commit === '198987c1cbe8f6472972b90d09d86ad3822143e3', 'Backend commit pin changed.');
 assert(reference.generator === 'openapi-typescript@7.6.1', 'Generated type tool pin changed.');
 
 const expectedOperations = new Map([

@@ -1,6 +1,6 @@
 {
   "backend_repository": "AmeenBinBisher/aqualedger-backend",
-  "backend_commit": "998453aad0c446908e57aab0edc473cbe388b6cc",
+  "backend_commit": "198987c1cbe8f6472972b90d09d86ad3822143e3",
   "artifact_path": "contracts/openapi.json",
   "artifact_git_blob_sha": "bcd2a43be9599c6f999a9ea78887cd0cec3e9222",
   "artifact_sha256": "ee75088327647ef82da33b10db0ebbcc26ea1dd59f93ad0fc9a5247d84255476",
