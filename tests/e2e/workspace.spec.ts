@@ -350,6 +350,17 @@ for (const locale of ['en', 'ar'] as const) {
     const scaleOffset = page.locator('.result-fact', {hasText: locale === 'en' ? 'Scale / offset' : 'المقياس / الإزاحة'});
     await expect(scaleOffset).toContainText('0.0001 / 0');
 
+    // M2 quality evidence is presented as returned evidence, not as a fabricated score.
+    const qualityHeading = locale === 'en' ? 'Quality evidence' : 'أدلة الجودة';
+    await expect(page.getByRole('heading', {name: qualityHeading})).toBeVisible();
+    await expect(page.locator('.evidence-chart')).toHaveAttribute('aria-label', locale === 'en'
+      ? 'Valid AOI coverage by evaluated acquisition date'
+      : 'التغطية الصالحة لمنطقة الاهتمام حسب تاريخ الالتقاط المقيّم');
+    await expect(page.getByText(locale === 'en'
+      ? 'Bars show returned coverage only; they are not a quality score, ranking, or scientific suitability claim.'
+      : 'تعرض الأشرطة التغطية المعادة فقط؛ وليست درجة جودة أو ترتيباً أو ادعاءً بالملاءمة العلمية.')).toBeVisible();
+    await expect(page.locator('.result-fact', {hasText: locale === 'en' ? 'Contract version' : 'إصدار العقد'})).toContainText('0.1.0');
+
     const limitationText = locale === 'en'
       ? 'The effective analysis resolution was 20 m due to a lower-resolution source band.'
       : 'كانت الدقة الفعلية للتحليل 20 متراً بسبب نطاق مصدر أقل دقة.';
