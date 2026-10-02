@@ -11,7 +11,30 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Analyses
+         * @description The authorized principal's own analyses, newest first (M3-2, DR-M3-01 §4).
+         *
+         *     The only new M3 route. Authorization is the same principal dependency as every other analyses
+         *     route and is also the query boundary: `repo.list_analyses_page` filters `principal_id`
+         *     explicitly, so another principal's items are never listed, and an id is never accepted here at
+         *     all — a foreign id is only reachable through `GET /analyses/{id}`, which keeps its frozen
+         *     404/403 semantics.
+         *
+         *     Pagination is keyset on `(created_at DESC, analysis_id DESC)`: the response's `next_cursor` is
+         *     opaque and is the only paging input. Item fields are bounded to
+         *     `{analysis_id, created_at, start_date, end_date, aoi_sha256, execution_status, evidence_status,
+         *     method_version, ranked_count, unranked_count, result_sha256}` — no geometry, no result body.
+         *     A value that does not exist for a row is omitted rather than emitted as `null` (same convention
+         *     as `GET /analyses/{id}`). There is no search, filter or sort beyond the cursor.
+         *
+         *     Frozen status semantics: `401 UNAUTHENTICATED` (unconfigured/unauthenticated request) and
+         *     `403 FORBIDDEN` (a valid token whose subject is not the authorized principal) come from the
+         *     principal dependency; a malformed cursor or a `limit` below 1 is `400 INPUT_INVALID`, and a
+         *     `limit` above the configured maximum is `400 LIMIT_EXCEEDED` (never a silent clamp). A
+         *     collection route can never produce `404`, so that status is deliberately not documented here.
+         */
+        get: operations["list_analyses_analyses_get"];
         put?: never;
         /** Create Analysis */
         post: operations["create_analysis_analyses_post"];
@@ -105,6 +128,51 @@ export interface components {
             /** Status Url */
             status_url: string;
         };
+        /**
+         * AnalysisHistoryItem
+         * @description One bounded history row. No geometry, no result body, no provenance.
+         */
+        AnalysisHistoryItem: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /** Aoi Sha256 */
+            aoi_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            evidence_status?: components["schemas"]["EvidenceStatus"] | null;
+            execution_status: components["schemas"]["ExecutionStatus"];
+            /** Method Version */
+            method_version: string;
+            /** Ranked Count */
+            ranked_count?: number | null;
+            /** Result Sha256 */
+            result_sha256?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Unranked Count */
+            unranked_count?: number | null;
+        };
+        /** AnalysisHistoryResponse */
+        AnalysisHistoryResponse: {
+            /** Items */
+            items: components["schemas"]["AnalysisHistoryItem"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** AnalysisResult */
         AnalysisResult: {
             /**
@@ -114,6 +182,8 @@ export interface components {
             analysis_id: string;
             /** Artifacts */
             artifacts?: components["schemas"]["ArtifactReference"][];
+            /** Assessment */
+            assessment?: components["schemas"]["ZoneAssessment"][] | null;
             baseline: components["schemas"]["Baseline"];
             effective_coverage: components["schemas"]["EffectiveCoverage"];
             evidence_status: components["schemas"]["EvidenceStatus"];
@@ -122,16 +192,19 @@ export interface components {
             limitations?: {
                 [key: string]: unknown;
             }[];
+            m2?: components["schemas"]["M2ResultAdditions"] | null;
             /** Method Version */
             method_version: string;
             /** Pipeline Version */
             pipeline_version: string;
             provenance: components["schemas"]["ProvenanceRecord"] | null;
             request: components["schemas"]["AnalysisCreateRequest"];
+            result_identity?: components["schemas"]["ResultIdentity"] | null;
             /** Scenes Evaluated */
             scenes_evaluated?: components["schemas"]["SceneSelection"][];
             /** Schema Version */
             schema_version: string;
+            scoring?: components["schemas"]["RunScoring"] | null;
             statistics: components["schemas"]["NdviStatistics"] | null;
         };
         /** AnalysisStatusResponse */
@@ -240,6 +313,48 @@ export interface components {
          * @enum {string}
          */
         CheckStatus: "NOT_CHECKED" | "reachable" | "failed" | "deferred" | "not_configured";
+        /** Confounder */
+        Confounder: {
+            /** Assessed */
+            assessed: boolean;
+            code: components["schemas"]["ConfounderCode"];
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ConfounderCode
+         * @description DR-M3-01 §6 confounders: a disclosure of an alternative explanation, never a diagnosis.
+         * @enum {string}
+         */
+        ConfounderCode: "GROWTH_STAGE" | "CROP_TYPE" | "SALINITY" | "WEATHER" | "MANAGEMENT" | "MASK_UNCERTAINTY" | "MIXED_LAND_COVER" | "PROVISIONAL_AOI";
+        /** CoverageGap */
+        CoverageGap: {
+            /** Coverage Fraction */
+            coverage_fraction?: number | null;
+            /** Expected Count */
+            expected_count?: number | null;
+            /**
+             * Observed Count
+             * @default 0
+             */
+            observed_count: number;
+            /** Reason Code */
+            reason_code: string;
+            /** Source Id */
+            source_id: string;
+            /**
+             * Window End
+             * Format: date
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date
+             */
+            window_start: string;
+        };
         /**
          * DiscardedCandidate
          * @description A per-tile duplicate discarded by B2 rule 2's tie-break (D1, final ratified pass-4 text
@@ -294,6 +409,63 @@ export interface components {
             error: components["schemas"]["ErrorDetail"];
         };
         /**
+         * EvidenceQualityBlock
+         * @description The recovered scorecard's output. `c`/`class`/`display` are omitted — not zeroed — when the
+         *     zone never reached the scorecard (DR-M3-01 §3: `C` absent, not zero, for a gate-failed zone).
+         *
+         *     `quality_class` travels on the wire as `class` (the frozen name the decision record, the
+         *     persisted payload and the web all use). Both names validate (`validate_by_alias` +
+         *     `validate_by_name`), so a body written with `by_alias=True` — which is what
+         *     `scorecard.result_payload` persists and what `result_sha256` covers — reads back losslessly;
+         *     without that, a round-trip would silently drop the evidence-quality class.
+         */
+        EvidenceQualityBlock: {
+            /** C */
+            c?: string | null;
+            class?: components["schemas"]["EvidenceQualityClass"] | null;
+            /** Display */
+            display?: string | null;
+            /** Display Decimals */
+            display_decimals?: number | null;
+            /** Factors */
+            factors: components["schemas"]["FactorRow"][];
+            /** Label */
+            label?: string | null;
+            /**
+             * Label Code
+             * @default EVIDENCE_QUALITY_UNCALIBRATED
+             */
+            label_code: string;
+            /** M */
+            m?: string | null;
+            /** O */
+            o?: string | null;
+            /** Top Reasons */
+            top_reasons?: components["schemas"]["Reason"][] | null;
+        };
+        /**
+         * EvidenceQualityClass
+         * @description The recovered evidence-quality class — never a priority class (§5, Q3(a)).
+         * @enum {string}
+         */
+        EvidenceQualityClass: "HIGH" | "MEDIUM" | "LOW";
+        /**
+         * EvidenceRef
+         * @description The evidence actually read for the zone (product/revision/dates), disclosed per source.
+         */
+        EvidenceRef: {
+            /** Dates */
+            dates?: string[];
+            /** Family */
+            family: string;
+            /** Product */
+            product?: string | null;
+            /** Revision */
+            revision?: string | null;
+            /** Source Id */
+            source_id: string;
+        };
+        /**
          * EvidenceStatus
          * @description M1 is deliberately blunt (freeze rev.3): every completed run is NOT_ASSESSED except a
          *     zero-valid-observation run, which is INSUFFICIENT. SUFFICIENT/LIMITED exist in the enum for
@@ -307,6 +479,21 @@ export interface components {
          */
         ExecutionStatus: "QUEUED" | "RUNNING" | "RETRY_WAIT" | "SUCCEEDED" | "FAILED";
         /**
+         * FactorRow
+         * @description One scorecard row: the quantized score, whether it applies, whether it was assessed.
+         */
+        FactorRow: {
+            /** Applicable */
+            applicable: boolean;
+            /** Assessed */
+            assessed: boolean;
+            /** Factor Id */
+            factor_id: string;
+            reason?: components["schemas"]["Reason"] | null;
+            /** Score */
+            score: string;
+        };
+        /**
          * GeoJSONPolygon
          * @description A single-ring or ring-with-holes WGS84 Polygon. MultiPolygon is explicitly unsupported.
          */
@@ -319,6 +506,82 @@ export interface components {
              */
             type: "Polygon";
         };
+        /**
+         * IndependentFamily
+         * @description DR-M3-01 §5 item 7: physics/pathway-distinct families, with why one is (not) counted.
+         */
+        IndependentFamily: {
+            /** Adverse Signal */
+            adverse_signal: boolean;
+            /** Counted */
+            counted: boolean;
+            /** Eligible */
+            eligible: boolean;
+            /** Family */
+            family: string;
+            reason?: components["schemas"]["Reason"] | null;
+            /** Source Ids */
+            source_ids: string[];
+        };
+        /** M2ResultAdditions */
+        M2ResultAdditions: {
+            /**
+             * Agricultural Eligibility
+             * @default BLOCKED
+             * @enum {string}
+             */
+            agricultural_eligibility: "ELIGIBLE" | "ELIGIBLE_ZERO_CROPLAND" | "BLOCKED" | "UNKNOWN";
+            baseline?: components["schemas"]["SeasonalBaseline"] | null;
+            /** Config Version */
+            config_version: string;
+            /** Coverage */
+            coverage?: components["schemas"]["CoverageGap"][];
+            /** Limitations */
+            limitations?: {
+                [key: string]: unknown;
+            }[];
+            /** Mask Semantics */
+            mask_semantics?: {
+                [key: string]: unknown;
+            } | null;
+            /** Method Version */
+            method_version: string;
+            /** Observations */
+            observations?: components["schemas"]["Observation"][];
+            persistence?: components["schemas"]["PersistenceAssessment"];
+            /** Pipeline Version */
+            pipeline_version: string;
+            /** Provenance */
+            provenance?: {
+                [key: string]: unknown;
+            };
+            /** Source Checks */
+            source_checks?: components["schemas"]["M2SourceCheck"][];
+            /** Source Manifest */
+            source_manifest?: components["schemas"]["SourceEvidence"][];
+            /** Zones */
+            zones?: components["schemas"]["Zone"][];
+        };
+        /** M2SourceCheck */
+        M2SourceCheck: {
+            /** Check Scope */
+            check_scope: string;
+            /** Checked At */
+            checked_at?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Reason Code */
+            reason_code?: string | null;
+            /** Source Id */
+            source_id: string;
+            status: components["schemas"]["SourceCheckStatus"];
+        };
+        /**
+         * M3ReasonCode
+         * @description The closed M3 vocabulary (DR-M3-01 §6). Adding a code is a contract change.
+         * @enum {string}
+         */
+        M3ReasonCode: "MANDATORY_INPUT_MISSING" | "ZONE_FULLY_MASKED" | "NO_OBSERVATION_IN_WINDOW" | "RESOLUTION_INADEQUATE" | "AGRI_MASK_BLOCKED" | "NOT_AGRICULTURAL" | "PERSISTENCE_INELIGIBLE" | "PERSISTENCE_UNKNOWN" | "PERSISTENCE_NOT_ASSESSED" | "EVIDENCE_LIMITED" | "EVIDENCE_NOT_ASSESSED" | "INDEPENDENT_SUPPORT" | "PERSISTENT_ANOMALY" | "RECURRENT_ANOMALY" | "ANOMALY_STRENGTH" | "NO_PERSISTENT_ANOMALY" | "TIED_RANK" | "PRIORITY_CLASS_NOT_ESTABLISHED" | "FACTOR_SCORE" | "HAZE_CLOUD_DUST_MASKED" | "PROVISIONAL_AOI" | "NO_INDEPENDENT_CORROBORATION" | "SAME_FAMILY_NOT_INDEPENDENT" | "CONTEXT_ONLY_SOURCE" | "RESOLUTION_CONTEXT_ONLY" | "REVISION_INCOMPATIBLE" | "BASELINE_NOT_SEASON_MATCHED" | "TEMPORAL_GAPS" | "FACTOR_NOT_APPLICABLE" | "FACTOR_NOT_ASSESSED" | "EVIDENCE_QUALITY_UNCALIBRATED";
         /** NdviStatistics */
         NdviStatistics: {
             /** Masked Fraction */
@@ -341,6 +604,83 @@ export interface components {
             /** Valid Observation Count */
             valid_observation_count: number;
         };
+        /** Observation */
+        Observation: {
+            /**
+             * Indicator
+             * @enum {string}
+             */
+            indicator: "NDVI" | "NDMI" | "RAINFALL" | "RADAR_CONTEXT";
+            /** Missing Reason */
+            missing_reason?: string | null;
+            observation_class: components["schemas"]["ObservationClass"];
+            /** Source Refs */
+            source_refs?: string[];
+            /** Unit */
+            unit?: string | null;
+            /** Valid Area Fraction */
+            valid_area_fraction?: number | null;
+            /**
+             * Valid Count
+             * @default 0
+             */
+            valid_count: number;
+            /** Value */
+            value?: number | null;
+            /**
+             * Window End
+             * Format: date
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date
+             */
+            window_start: string;
+            /** Zone Id */
+            zone_id: string;
+        };
+        /**
+         * ObservationClass
+         * @enum {string}
+         */
+        ObservationClass: "OBSERVED" | "DERIVED" | "MISSING";
+        /** PersistenceAssessment */
+        PersistenceAssessment: {
+            eligibility: components["schemas"]["PersistenceEligibility"];
+            /** Explanation Ar */
+            explanation_ar: string;
+            /** Explanation En */
+            explanation_en: string;
+            /** Reason Code */
+            reason_code: string;
+        };
+        /**
+         * PersistenceEligibility
+         * @enum {string}
+         */
+        PersistenceEligibility: "NOT_ASSESSED" | "ELIGIBLE" | "INELIGIBLE" | "UNKNOWN";
+        /**
+         * PriorityBlock
+         * @description `rank`/`rank_group`/`rank_key` are omitted for an UNRANKED zone; `class` never appears
+         *     here.
+         */
+        PriorityBlock: {
+            /** Rank */
+            rank?: number | null;
+            /** Rank Group */
+            rank_group?: number | null;
+            rank_key?: components["schemas"]["RankKey"] | null;
+            /** Reasons */
+            reasons?: components["schemas"]["Reason"][];
+            status: components["schemas"]["PriorityStatus"];
+        };
+        /**
+         * PriorityStatus
+         * @description Whether the zone sits on the priority axis at all (§3).
+         * @enum {string}
+         */
+        PriorityStatus: "RANKED" | "UNRANKED";
         /** ProvenanceRecord */
         ProvenanceRecord: {
             /**
@@ -394,6 +734,33 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * RankKey
+         * @description The deterministic rank key (DR-M3-01 §5). `anomaly_strength` travels as a decimal string.
+         */
+        RankKey: {
+            /** Anomaly Strength */
+            anomaly_strength: string;
+            /** Independent Family Count */
+            independent_family_count: number;
+            /** Persistence Windows */
+            persistence_windows: number;
+            /** Recurrence Windows */
+            recurrence_windows: number;
+            /** Zone Id */
+            zone_id: string;
+        };
+        /**
+         * Reason
+         * @description A closed-vocabulary code with typed parameters. The backend emits no prose for M3 codes.
+         */
+        Reason: {
+            code: components["schemas"]["M3ReasonCode"];
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+        };
         /** RejectionCounts */
         RejectionCounts: {
             /**
@@ -416,6 +783,47 @@ export interface components {
              * @default 0
              */
             out_of_range: number;
+        };
+        /**
+         * ResultIdentity
+         * @description Run-level identity of a committed scored result (DR-M3-01 §4/§8).
+         */
+        ResultIdentity: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Result Sha256 */
+            result_sha256: string;
+        };
+        /**
+         * RunScoring
+         * @description Run-level identity and counts. `priority_class_status` is always NOT_ESTABLISHED under v1.
+         */
+        RunScoring: {
+            /** Computed At */
+            computed_at?: string | null;
+            /** Method Version */
+            method_version: string;
+            /** Operationalization Version */
+            operationalization_version: string;
+            /**
+             * Priority Class Status
+             * @default NOT_ESTABLISHED
+             */
+            priority_class_status: string;
+            /** Ranked Count */
+            ranked_count: number;
+            /** Scorecard Source Sha256 */
+            scorecard_source_sha256: string;
+            /** Unranked Count */
+            unranked_count: number;
         };
         /** SceneSelection */
         SceneSelection: {
@@ -445,6 +853,29 @@ export interface components {
             /** Valid Coverage Fraction */
             valid_coverage_fraction: number | null;
         };
+        /** SeasonalBaseline */
+        SeasonalBaseline: {
+            /** Completeness */
+            completeness?: number | null;
+            /** Method */
+            method: string;
+            /**
+             * Observation Count
+             * @default 0
+             */
+            observation_count: number;
+            /** Reference End */
+            reference_end?: string | null;
+            /** Reference Start */
+            reference_start?: string | null;
+            /** Source Revision */
+            source_revision?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "AVAILABLE" | "UNAVAILABLE" | "INCOMPATIBLE";
+        };
         /** SourceCheck */
         SourceCheck: {
             /** Check Scope */
@@ -462,6 +893,59 @@ export interface components {
             };
             status: components["schemas"]["CheckStatus"];
         };
+        /**
+         * SourceCheckStatus
+         * @enum {string}
+         */
+        SourceCheckStatus: "NOT_CHECKED" | "REACHABLE" | "FAILED" | "DEFERRED_NOT_CONFIGURED";
+        /** SourceEvidence */
+        SourceEvidence: {
+            /** Acquisition Date */
+            acquisition_date?: string | null;
+            /** Crs */
+            crs?: string | null;
+            /** Intersection */
+            intersection?: boolean | null;
+            /** Native Resolution M */
+            native_resolution_m?: number | null;
+            /** Processing */
+            processing?: {
+                [key: string]: unknown;
+            };
+            /** Product */
+            product: string;
+            /** Provenance */
+            provenance?: {
+                [key: string]: unknown;
+            };
+            /** Reason Code */
+            reason_code?: string | null;
+            /** Represented Date */
+            represented_date?: string | null;
+            /** Resource Bytes */
+            resource_bytes?: number | null;
+            /** Revision */
+            revision?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "TEMPORAL" | "STATIC" | "MASK";
+            /** Sample */
+            sample?: {
+                [key: string]: unknown;
+            } | null;
+            /** Source Id */
+            source_id: string;
+            status: components["schemas"]["SourceEvidenceStatus"];
+            /** Version */
+            version?: string | null;
+        };
+        /**
+         * SourceEvidenceStatus
+         * @enum {string}
+         */
+        SourceEvidenceStatus: "NOT_RUN" | "READ" | "EMPTY" | "BLOCKED" | "FAILED";
         /** SourceStatus */
         SourceStatus: {
             check: components["schemas"]["SourceCheck"];
@@ -513,6 +997,62 @@ export interface components {
             /** Tile Id */
             tile_id: string;
         };
+        /**
+         * SufficiencyBlock
+         * @description File 03 §6 gate outcome for the zone, with the failed mandatory factors.
+         */
+        SufficiencyBlock: {
+            /** Failed Factors */
+            failed_factors?: string[];
+            /** Reasons */
+            reasons?: components["schemas"]["Reason"][];
+            status: components["schemas"]["SufficiencyStatus"];
+        };
+        /**
+         * SufficiencyStatus
+         * @description File 03 §6 gate outcome. `INSUFFICIENT DATA` has a space: it is the recovered literal.
+         * @enum {string}
+         */
+        SufficiencyStatus: "PASS" | "INSUFFICIENT DATA";
+        /** Zone */
+        Zone: {
+            /** Area M2 */
+            area_m2: number;
+            /** Covered Area M2 */
+            covered_area_m2?: number | null;
+            /** Geometry */
+            geometry: {
+                [key: string]: unknown;
+            };
+            /** Geometry Hash */
+            geometry_hash: string;
+            /** Geometry Version */
+            geometry_version: string;
+            /** Zone Id */
+            zone_id: string;
+        };
+        /**
+         * ZoneAssessment
+         * @description One zone's assessment: eligibility verdict, scorecard rows and priority status.
+         */
+        ZoneAssessment: {
+            /** Confounders */
+            confounders?: components["schemas"]["Confounder"][];
+            evidence_quality: components["schemas"]["EvidenceQualityBlock"];
+            /** Evidence Refs */
+            evidence_refs?: components["schemas"]["EvidenceRef"][];
+            evidence_status: components["schemas"]["EvidenceStatus"];
+            /** Geometry Hash */
+            geometry_hash?: string | null;
+            /** Geometry Version */
+            geometry_version?: number | string | null;
+            /** Independent Families */
+            independent_families?: components["schemas"]["IndependentFamily"][];
+            priority: components["schemas"]["PriorityBlock"];
+            sufficiency: components["schemas"]["SufficiencyBlock"];
+            /** Zone Id */
+            zone_id: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -522,6 +1062,69 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_analyses_analyses_get: {
+        parameters: {
+            query?: {
+                /** @description Page size; defaults to the configured limit. */
+                limit?: number | null;
+                /** @description Opaque cursor from a previous page's `next_cursor`. */
+                cursor?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisHistoryResponse"];
+                };
+            };
+            /** @description INPUT_INVALID | LIMIT_EXCEEDED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     create_analysis_analyses_post: {
         parameters: {
             query?: never;

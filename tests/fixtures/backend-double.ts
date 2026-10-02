@@ -61,6 +61,14 @@ export const NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID = 'aaaaaaaa-aaaa-4aaa
 // all. Proves `NO_VALID_PIXEL_IN_SELECTED_DATE` now renders its own catalogue text instead of the
 // unknown-limitation fallback (W13, independent review BLOCK point 2).
 export const NO_VALID_PIXEL_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac';
+// A SUCCEEDED result carrying the complete M3 scoring envelope (contract 0.2.0): `scoring`,
+// two per-zone `assessment` entries (one RANKED with an evidence-quality class, one UNRANKED
+// with a reason) and `result_identity`. Labelled test double content — not a production claim.
+export const M3_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1';
+// A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the gates, so the
+// backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
+// under this method", never as UNRANKED.
+export const M3_NOT_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaf1';
 // A FAILED run whose single `errors[].code` is a real per-date-only rejection code
 // (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
 // `failure_reason_code` path can actually publish (`SOURCE_READ_FAILED`, `SOURCE_UNAVAILABLE`,
@@ -356,6 +364,165 @@ function noValidPixelResultFixture(id: string): Record<string, unknown> {
   };
 }
 
+// A SUCCEEDED result carrying the complete M3 scoring envelope (contract 0.2.0): run-level
+// `scoring`, two per-zone `assessment` entries and `result_identity`. All numbers are labelled
+// test-double content quoted from the M3 shape, never a production claim. The UNRANKED zone
+// carries a real typed reason; the RANKED zone carries rank/rank_group/rank_key and the
+// uncalibrated evidence-quality class with its label code.
+function m3ScoredResultFixture(id: string): Record<string, unknown> {
+  return {
+    analysis_id: id,
+    schema_version: '1',
+    pipeline_version: 'm3-pipeline-test',
+    method_version: 'ndvi-test',
+    execution_status: 'SUCCEEDED',
+    evidence_status: 'SUFFICIENT',
+    request: {
+      aoi_geojson: {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]},
+      start_date: '2026-08-01',
+      end_date: '2026-08-30',
+      locale: 'en'
+    },
+    effective_coverage: {acquisition_date: '2026-08-30', valid_coverage_fraction: 0.9, min_valid_coverage_fraction_guard: 0.5},
+    statistics: {
+      valid_observation_count: 2400,
+      valid_area_m2: 240000,
+      ndvi_min: -0.1,
+      ndvi_max: 0.8,
+      ndvi_mean: 0.45,
+      ndvi_median: 0.46,
+      ndvi_p05: 0.1,
+      ndvi_p95: 0.75,
+      masked_fraction: 0.1,
+      rejection_counts: {masked_class: 30, missing_data: 5, non_positive_denominator: 0, out_of_range: 0}
+    },
+    scenes_evaluated: [],
+    provenance: null,
+    baseline: {
+      contract_version: '0.2.0',
+      collection: 'sentinel-2-l2a',
+      offset_rule: 'boa_offset_applied',
+      mask_policy_version: 'scl-m1-v1',
+      grid_crs: 'EPSG:32638',
+      grid_resolution_m: 10,
+      pipeline_version: 'm3-pipeline-test'
+    },
+    artifacts: [],
+    limitations: [],
+    scoring: {
+      method_version: 'aq-scorecard-1',
+      operationalization_version: 'aq-scorecard-1-op1',
+      scorecard_source_sha256: '457093d9b38347d4d0102bc29fea47ce4376c7a74c2cd0a7315096d1566b468b',
+      computed_at: '2026-10-03T00:00:00Z',
+      ranked_count: 1,
+      unranked_count: 1,
+      priority_class_status: 'NOT_ESTABLISHED'
+    },
+    assessment: [
+      {
+        zone_id: 'Z-1',
+        geometry_version: 3,
+        geometry_hash: 'fixture-zone-hash',
+        evidence_status: 'SUFFICIENT',
+        sufficiency: {status: 'PASS', failed_factors: [], reasons: []},
+        evidence_quality: {
+          m: '0.8500',
+          o: '0.7750',
+          c: '0.8125',
+          class: 'HIGH',
+          display: '0.81',
+          display_decimals: 2,
+          label_code: 'EVIDENCE_QUALITY_UNCALIBRATED',
+          factors: [],
+          top_reasons: []
+        },
+        priority: {
+          status: 'RANKED',
+          rank: 1,
+          rank_group: 1,
+          rank_key: {
+            independent_family_count: 2,
+            persistence_windows: 3,
+            recurrence_windows: 3,
+            anomaly_strength: '0.4210',
+            zone_id: 'Z-1'
+          },
+          reasons: [
+            {code: 'INDEPENDENT_SUPPORT', params: {family_count: 2, families: ['OPTICAL', 'RAINFALL']}},
+            {code: 'PRIORITY_CLASS_NOT_ESTABLISHED', params: {method_version: 'aq-scorecard-1'}}
+          ]
+        },
+        confounders: [],
+        independent_families: [
+          {family: 'OPTICAL', source_ids: ['sentinel2_l2a_earth_search'], eligible: true, adverse_signal: true, counted: true, reason: null},
+          {family: 'RAINFALL', source_ids: ['chirps'], eligible: true, adverse_signal: true, counted: true, reason: null}
+        ],
+        evidence_refs: []
+      },
+      {
+        zone_id: 'Z-2',
+        geometry_version: 3,
+        geometry_hash: 'fixture-zone-hash-2',
+        evidence_status: 'INSUFFICIENT',
+        sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: ['M2'], reasons: []},
+        evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
+        priority: {
+          status: 'UNRANKED',
+          reasons: [
+            {code: 'MANDATORY_INPUT_MISSING', params: {source_id: 'chirps'}}
+          ]
+        },
+        confounders: [],
+        independent_families: [],
+        evidence_refs: []
+      }
+    ],
+    result_identity: {
+      analysis_id: id,
+      attempt_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      result_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+    }
+  };
+}
+
+// A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the scoring gates,
+// so the backend emitted no scoring envelope at all (DR-M3-01 §4 all-or-nothing): no `scoring`,
+// no `assessment`, no `result_identity`. The client must render this as "not scored under this
+// method", never as UNRANKED.
+function m3NotScoredResultFixture(id: string): Record<string, unknown> {
+  return {
+    analysis_id: id,
+    schema_version: '1',
+    pipeline_version: 'm3-pipeline-test',
+    method_version: 'ndvi-test',
+    execution_status: 'SUCCEEDED',
+    evidence_status: 'LIMITED',
+    request: {
+      aoi_geojson: {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]},
+      start_date: '2026-08-01',
+      end_date: '2026-08-30',
+      locale: 'en'
+    },
+    effective_coverage: {acquisition_date: '2026-08-30', valid_coverage_fraction: 0.4, min_valid_coverage_fraction_guard: 0.5},
+    statistics: null,
+    scenes_evaluated: [],
+    provenance: null,
+    baseline: {
+      contract_version: '0.2.0',
+      collection: 'sentinel-2-l2a',
+      offset_rule: 'boa_offset_applied',
+      mask_policy_version: 'scl-m1-v1',
+      grid_crs: 'EPSG:32638',
+      grid_resolution_m: 10,
+      pipeline_version: 'm3-pipeline-test'
+    },
+    artifacts: [],
+    limitations: [
+      {code: 'EVIDENCE_LIMITED', params: {cause_code: 'LIMITED'}}
+    ]
+  };
+}
+
 function errorEnvelope(code: string, params: Record<string, unknown> = {}, requestId = 'req-fixture-1'): Record<string, unknown> {
   return {error: {code, params, request_id: requestId}};
 }
@@ -502,7 +669,9 @@ export function startBackendDouble(
         NO_SCENES_FOUND_ID,
         NO_ELIGIBLE_ACQUISITION_ID,
         NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
-        NO_VALID_PIXEL_ID
+        NO_VALID_PIXEL_ID,
+        M3_SCORED_ID,
+        M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
@@ -566,6 +735,14 @@ export function startBackendDouble(
       }
       if (id === NO_VALID_PIXEL_ID) {
         respondJson(res, 200, noValidPixelResultFixture(id));
+        return;
+      }
+      if (id === M3_SCORED_ID) {
+        respondJson(res, 200, m3ScoredResultFixture(id));
+        return;
+      }
+      if (id === M3_NOT_SCORED_ID) {
+        respondJson(res, 200, m3NotScoredResultFixture(id));
         return;
       }
       if (id === NO_ARTIFACT_ID) {

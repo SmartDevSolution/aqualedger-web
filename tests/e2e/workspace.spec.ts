@@ -3,6 +3,8 @@ import {
   CONFLICT_START_DATE,
   FAILED_ID,
   FAILED_WRONG_PATH_CODE_ID,
+  M3_NOT_SCORED_ID,
+  M3_SCORED_ID,
   NO_ELIGIBLE_ACQUISITION_ID,
   NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
   NO_SCENES_FOUND_ID,
@@ -488,6 +490,49 @@ for (const locale of ['en', 'ar'] as const) {
     // pixels, so the selected-date row must read "Selected", never a failure/unknown sentence.
     const selectedRow = page.locator('.scene-list li', {hasText: '2026-08-30'});
     await expect(selectedRow.getByText(locale === 'en' ? 'Selected' : 'مختار')).toBeVisible();
+  });
+}
+
+for (const locale of ['en', 'ar'] as const) {
+  test(`an M3-scored result renders the scoring envelope, and a result with no envelope is "not scored", never UNRANKED, in ${locale}`, async ({page}) => {
+    await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
+
+    // The envelope section exists for a scored result, with the run facts and the priority-class
+    // ruling stated truthfully.
+    const scoringHeading = locale === 'en' ? 'Zone priority scoring' : 'ترتيب أولويات المناطق';
+    await expect(page.getByRole('heading', {name: scoringHeading})).toBeVisible();
+    const notEstablished = locale === 'en'
+      ? 'Not established under method aq-scorecard-1'
+      : 'غير محددة بطريقة aq-scorecard-1';
+    await expect(page.getByText(notEstablished)).toBeVisible();
+
+    // RANKED zone: rank/rank_group and the uncalibrated class, never a priority class.
+    const rankedRow = page.locator('.scoring-zone-row', {hasText: 'Z-1'});
+    await expect(rankedRow.getByText(locale === 'en'
+      ? 'Rank 1 (group 1) — evidence-quality class HIGH (uncalibrated)'
+      : 'المرتبة 1 (المجموعة 1) — فئة جودة الأدلة HIGH (غير معايرة)')).toBeVisible();
+
+    // UNRANKED zone: neutral wording with its typed reason, never a class, never a rank.
+    const unrankedRow = page.locator('.scoring-zone-row', {hasText: 'Z-2'});
+    await expect(unrankedRow.getByText(locale === 'en'
+      ? 'Unranked — see the reason below; no class is shown'
+      : 'غير مرتبة — انظر السبب أدناه؛ لا تُعرض فئة')).toBeVisible();
+    await expect(unrankedRow.getByText(locale === 'en'
+      ? 'A mandatory input for scoring was not available for this zone.'
+      : 'لم يتوفر أحد المدخلات الإلزامية للتقييم لهذه المنطقة.')).toBeVisible();
+    await expect(unrankedRow.getByText(/UNRANKED/)).toHaveCount(0);
+
+    // The uncalibrated disclosure ships on every scored render, both locales.
+    await expect(page.getByText(locale === 'en'
+      ? 'Decision support for field verification — not enforcement, not a confirmed diagnosis. The evidence-quality class is an uncalibrated rule-based class, not a priority class.'
+      : 'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا. فئة جودة الأدلة فئة قاعدية غير معايرة، وليست فئة أولويات.')).toBeVisible();
+
+    // The no-envelope result: "not scored under this method", never the word UNRANKED.
+    await page.goto(`/${locale}/analysis/${M3_NOT_SCORED_ID}`);
+    await expect(page.getByText(locale === 'en'
+      ? 'This result was not scored under method aq-scorecard-1. Priority scoring does not apply to it.'
+      : 'لم تُقيَّم هذه النتيجة بطريقة aq-scorecard-1. لا ينطبق عليها ترتيب الأولويات.')).toBeVisible();
+    await expect(page.getByText(locale === 'en' ? 'Unranked zones' : 'مناطق غير مرتبة')).toHaveCount(0);
   });
 }
 

@@ -1,4 +1,6 @@
 import type {components} from './generated';
+import {isM3Assessment, isM3ResultIdentity, isM3Scoring} from './m3';
+import {isM2ResultAdditions} from './m2';
 
 export type AnalysisCreateRequest = components['schemas']['AnalysisCreateRequest'];
 export type AnalysisCreateResponse = components['schemas']['AnalysisCreateResponse'];
@@ -179,6 +181,21 @@ function isAnalysisResult(value: unknown): value is AnalysisResult {
   if (value.artifacts !== undefined && (!Array.isArray(value.artifacts) || !value.artifacts.every(isArtifactReference))) return false;
   if (value.scenes_evaluated !== undefined && (!Array.isArray(value.scenes_evaluated) || !value.scenes_evaluated.every(isSceneSelection))) return false;
   if (value.limitations !== undefined && (!Array.isArray(value.limitations) || !value.limitations.every(isRecord))) return false;
+  // M2 additions (contract 0.2.0): validated in m2.ts when present; absent/null stays a valid
+  // pre-M2 result. A malformed block fails closed (the body is rejected, never partially read).
+  if (value.m2 !== undefined && value.m2 !== null && !isM2ResultAdditions(value.m2)) return false;
+  // M3 scoring envelope (DR-M3-01 §4): all-or-nothing. A result without scoring/assessment is
+  // "not scored under this method"; a body carrying only one of them, or a malformed member, is
+  // contract-invalid and rejected.
+  const hasScoring = value.scoring !== undefined && value.scoring !== null;
+  const hasAssessment = value.assessment !== undefined && value.assessment !== null;
+  if (hasScoring !== hasAssessment) return false;
+  if (hasScoring) {
+    if (!isM3Scoring(value.scoring) || !isM3Assessment(value.assessment)) return false;
+    // A scored result must carry its identity block (§4: scoring+assessment+result_identity).
+    if (!isM3ResultIdentity(value.result_identity)) return false;
+  }
+  if (value.result_identity !== undefined && value.result_identity !== null && !isM3ResultIdentity(value.result_identity)) return false;
   return true;
 }
 

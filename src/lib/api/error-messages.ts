@@ -38,6 +38,20 @@ const runFailureMessages = new Set<ErrorMessageKey>([
 
 const sourceReasonMessages = new Set<ErrorMessageKey>(['UNREACHABLE', 'UNEXPECTED_STATUS']);
 
+// The M3 reason vocabulary (M3ReasonCode in the pinned 0.2.0 artifact, DR-M3-01 §6) — a closed,
+// backend-owned enumeration. Every code here has an en+ar catalog entry; an unrecognized code
+// (a backend code added after this build) falls back to the safe generic message.
+const m3ReasonMessages = new Set<ErrorMessageKey>([
+  'MANDATORY_INPUT_MISSING', 'ZONE_FULLY_MASKED', 'NO_OBSERVATION_IN_WINDOW', 'RESOLUTION_INADEQUATE',
+  'AGRI_MASK_BLOCKED', 'NOT_AGRICULTURAL', 'PERSISTENCE_INELIGIBLE', 'PERSISTENCE_UNKNOWN',
+  'PERSISTENCE_NOT_ASSESSED', 'EVIDENCE_LIMITED', 'EVIDENCE_NOT_ASSESSED', 'INDEPENDENT_SUPPORT',
+  'PERSISTENT_ANOMALY', 'RECURRENT_ANOMALY', 'ANOMALY_STRENGTH', 'NO_PERSISTENT_ANOMALY', 'TIED_RANK',
+  'PRIORITY_CLASS_NOT_ESTABLISHED', 'FACTOR_SCORE', 'HAZE_CLOUD_DUST_MASKED', 'PROVISIONAL_AOI',
+  'NO_INDEPENDENT_CORROBORATION', 'SAME_FAMILY_NOT_INDEPENDENT', 'CONTEXT_ONLY_SOURCE',
+  'RESOLUTION_CONTEXT_ONLY', 'REVISION_INCOMPATIBLE', 'BASELINE_NOT_SEASON_MATCHED', 'TEMPORAL_GAPS',
+  'FACTOR_NOT_APPLICABLE', 'FACTOR_NOT_ASSESSED', 'EVIDENCE_QUALITY_UNCALIBRATED'
+]);
+
 // The pinned contract has no separate enum for `limitations[].code`; it is a free-form object
 // (see contracts/openapi.json AnalysisResult.limitations). Enumerated directly from every place
 // the pinned backend actually constructs a top-level limitation
@@ -75,4 +89,8 @@ export function limitationMessageKey(code: string | null): ErrorMessageKey {
 
 export function sourceReasonMessageKey(code: string | null): ErrorMessageKey {
   return code && sourceReasonMessages.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownSourceReason';
+}
+
+export function m3ReasonMessageKey(code: string | null | undefined): ErrorMessageKey {
+  return code && m3ReasonMessages.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendReason';
 }
