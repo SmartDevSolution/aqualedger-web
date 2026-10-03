@@ -11,9 +11,10 @@ import type {M3ZoneAssessment} from '@/lib/api/m3';
 // method" — never UNRANKED, never a zero, never a substituted class. A zone whose priority
 // status is UNRANKED is shown in the neutral vocabulary the contract already carries (status +
 // reason codes); RANKED shows the rank/rank_group the backend computed. The evidence-quality
-// class is the recovered, explicitly uncalibrated axis and is always shown with its uncalibrated
-// label — it is never presented as a priority class, and priority_class_status is always
-// "not established" under v1.
+// class is the recovered, explicitly uncalibrated axis and is shown on RANKED rows with its
+// uncalibrated label — it is never presented as a priority class, and an UNRANKED row carries no
+// class at all (gated structurally below, not merely because the backend emits none for it);
+// priority_class_status is always "not established" under v1.
 
 type ScoringSectionProps = {
   result: import('@/lib/api/client').AnalysisResult;
@@ -78,8 +79,10 @@ function ZoneRow({zone, ranked}: {
   const zoneClass = zone.evidence_quality.class;
   const classValue = zone.evidence_quality.c;
   // The backend pins the display string for boundary cases (DR-M3-01 §5/A1.1); the web never
-  // re-formats the quantized decimal itself.
-  const classDisplay = zone.evidence_quality.display ?? classValue ?? null;
+  // re-formats the quantized decimal itself and never re-derives a class. Rendered only for
+  // RANKED rows so the "UNRANKED zones are classless" invariant is structural rather than
+  // dependent on the backend's `_unranked` emission.
+  const classDisplay = ranked ? zone.evidence_quality.display ?? classValue ?? null : null;
   // Ranks travel into the message as literal strings so the digit policy is fixed once (A38):
   // ICU would otherwise re-format the number per locale (Eastern Arabic numerals under ar).
   const rank = zone.priority.rank === null || zone.priority.rank === undefined ? '—' : String(zone.priority.rank);
