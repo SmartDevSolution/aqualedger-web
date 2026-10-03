@@ -98,9 +98,14 @@ export const M3_SLOW_DELAY_MS = 2500;
 // F1 regression doubles (stage-⑥ Council BLOCK at web PR #10 head 00e44802): two SUCCEEDED
 // scored results whose single UNRANKED zone carries a `PERSISTENCE_INELIGIBLE` reason with the M2
 // prerequisite cause the pinned backend publishes in `params.m2_reason_code` (NO_COMPATIBLE_BASELINE
-// m2.py:85, EXCESSIVE_GAPS m2.py:92). Labelled test-double content.
+// m2.py:85, EXCESSIVE_GAPS m2.py:92, AGRICULTURAL_MASK_BLOCKED m2.py:385). Labelled test-double
+// content.
 export const M3_PERSISTENCE_INELIGIBLE_BASELINE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2';
 export const M3_PERSISTENCE_INELIGIBLE_GAPS_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae3';
+// The prerequisite the pinned backend's wired path actually publishes: m2.py:382-391
+// `build_m2_additions` -> scorecard.py `_persistence_reason` assigns AGRICULTURAL_MASK_BLOCKED
+// when the accepted agricultural mask is missing. Labelled test-double content.
+export const M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae5';
 export const M3_NOT_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaf1';
 // A FAILED run whose single `errors[].code` is a real per-date-only rejection code
 // (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
@@ -830,6 +835,7 @@ export function startBackendDouble(
         M3_SLOW_ID,
         M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
         M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
+        M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
         M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
@@ -906,6 +912,10 @@ export function startBackendDouble(
       }
       if (id === M3_PERSISTENCE_INELIGIBLE_GAPS_ID) {
         respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'EXCESSIVE_GAPS'));
+        return;
+      }
+      if (id === M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID) {
+        respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'AGRICULTURAL_MASK_BLOCKED'));
         return;
       }
       if (id === M3_SLOW_ID) {

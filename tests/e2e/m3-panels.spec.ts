@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {expect, test, type Page} from '@playwright/test';
 import {
   M3_NOT_SCORED_ID,
+  M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
   M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
   M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
   M3_SCORED_ID,
@@ -220,7 +221,8 @@ for (const locale of ['en', 'ar'] as const) {
   // so the zone states the gate plus the sourced M2 cause and never a "not persistent" claim.
   for (const {label, id, cause} of [
     {label: 'NO_COMPATIBLE_BASELINE', id: M3_PERSISTENCE_INELIGIBLE_BASELINE_ID, cause: L('No compatible seasonal baseline is available.', 'لا يتوفر خط أساس موسمي متوافق.')},
-    {label: 'EXCESSIVE_GAPS', id: M3_PERSISTENCE_INELIGIBLE_GAPS_ID, cause: L('The requested history has excessive gaps.', 'تحتوي السلسلة المطلوبة على فجوات مفرطة.')}
+    {label: 'EXCESSIVE_GAPS', id: M3_PERSISTENCE_INELIGIBLE_GAPS_ID, cause: L('The requested history has excessive gaps.', 'تحتوي السلسلة المطلوبة على فجوات مفرطة.')},
+    {label: 'AGRICULTURAL_MASK_BLOCKED', id: M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID, cause: L('Persistence is unavailable until an accepted agricultural mask and compatible baseline are available.', 'لا تتوفر الاستمرارية حتى يتوفر قناع زراعي مقبول وخط أساس متوافق.')}
   ]) {
     test(`PERSISTENCE_INELIGIBLE states the eligibility gate and cause, never a non-persistence claim in ${locale} (${label})`, async ({page}) => {
       await page.goto(`/${locale}/analysis/${id}`);
@@ -234,6 +236,13 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(row).not.toContainText('UNRANKED');
       await expect(row.getByTestId('unranked-chip')).toBeVisible();
       await expect(row.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'none');
+      // Condition 5 (F1 gate, fable51): every scored render keeps the ordering-only banner and
+      // the decision-support guardrail; an UNRANKED zone never gains an implied class.
+      await expect(page.getByTestId('priority-class-banner')).toContainText('aq-scorecard-1');
+      await expect(page.getByTestId('priority-class-banner')).toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+      await expect(page.getByTestId('zone-guardrail')).toHaveText(L(
+        'Decision support for field verification — not enforcement, not a confirmed diagnosis.',
+        'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا.'));
     });
   }
 
