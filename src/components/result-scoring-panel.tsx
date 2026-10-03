@@ -11,6 +11,13 @@ import type {ResultIdentityState} from '@/lib/api/use-result-identity';
 // Rendering rules come from DR-M3-01: a result without the envelope is "not scored under this
 // method" — never UNRANKED, never a zero, never a substituted class. A scored result is rendered
 // from the single `ScoredResultView` the workspace built once per (analysis_id, result_sha256).
+// A zone whose priority status is UNRANKED is shown in the neutral vocabulary the contract
+// already carries (status + reason codes); RANKED shows the rank/rank_group the backend computed.
+// The evidence-quality class is the recovered, explicitly uncalibrated axis and is shown on
+// RANKED rows with its uncalibrated label — it is never presented as a priority class, and an
+// UNRANKED row carries no class at all (gated structurally in `zone-priority-panel.tsx`, not
+// merely because the backend emits none for it); priority_class_status is always "not
+// established" under v1.
 
 export type ScoringSectionProps = {
   /** null = the committed result carries no scoring envelope. */

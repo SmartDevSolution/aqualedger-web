@@ -45,18 +45,6 @@ export function isRankableZone(evidenceStatus: unknown, priorityStatus: unknown)
   return priorityStatus !== 'RANKED' || evidenceStatus === 'SUFFICIENT';
 }
 
-/**
- * Presentation value for a decimal-string score. The backend is the single formatting
- * authority (DR-M3-01 §5/A1.1): `display` is the pinned rounding of `raw`, shown when the
- * displayed decimal count differs from the raw quantization. The web never re-formats the
- * number itself.
- */
-export type ScorePresentation = {
-  raw: string;
-  display: string;
-  displayDecimals: number;
-};
-
 export function isM3ResultIdentity(value: unknown): value is M3ResultIdentity {
   return isRecord(value)
     && isUuid(value.analysis_id)
@@ -80,13 +68,20 @@ export function isM3Assessment(value: unknown): value is NonNullable<components[
 }
 
 /**
- * Total all-or-nothing check for the M3 envelope. `scoring` and `assessment` travel together:
- * a body with only one of them is contract-invalid (§4 envelope rule), so neither is consumed.
+ * Total all-or-nothing check for the M3 envelope. `scoring`, `assessment` and
+ * `result_identity` travel together (§4 envelope rule): a body carrying only some of them is
+ * contract-invalid, so none of them is consumed. The contract-level rejection happens once in
+ * `isAnalysisResult` (`client.ts`), which rejects such a body before any consumer sees it; this
+ * predicate is the presentation-level check and now asserts the same three fields, so a consumer
+ * holding an `AnalysisResult` from another source cannot bypass the identity requirement either.
  */
 export function isM3Envelope(result: AnalysisResult): result is M3ScoredResult {
   if (result.scoring === undefined || result.scoring === null) return false;
   if (result.assessment === undefined || result.assessment === null) return false;
-  return isM3Scoring(result.scoring) && isM3Assessment(result.assessment);
+  if (result.result_identity === undefined || result.result_identity === null) return false;
+  return isM3Scoring(result.scoring)
+    && isM3Assessment(result.assessment)
+    && isM3ResultIdentity(result.result_identity);
 }
 
 export function isZoneAssessment(value: unknown): value is M3ZoneAssessment {
@@ -192,18 +187,6 @@ function isEvidenceRef(value: unknown): boolean {
 function isReason(value: unknown): boolean {
   if (!isRecord(value) || typeof value.code !== 'string') return false;
   return value.params === undefined || isRecord(value.params);
-}
-
-/**
- * Presentation for a backend decimal-string score: null stays null (absent means never
- * computed — C is absent, not zero, for a zone that never reached the scorecard). The display
- * string is used when the backend pinned a specific decimal count for the boundary cases
- * (§5: shown to 3 decimals near a cutoff).
- */
-export function scorePresentation(value: unknown): ScorePresentation | null {
-  if (typeof value !== 'string') return null;
-  const presentation: ScorePresentation = {raw: value, display: value, displayDecimals: value.includes('.') ? value.length - value.indexOf('.') - 1 : 0};
-  return presentation;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
