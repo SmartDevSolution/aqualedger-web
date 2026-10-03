@@ -245,8 +245,14 @@ for (const locale of ['en', 'ar'] as const) {
         'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا.'));
       // The UNRANKED group heading is part of the scored render too: it must state the
       // eligibility gate and never resurrect the pre-F1 non-persistence claim.
-      const group = page.locator('[data-testid="unranked-group"][data-reason="PERSISTENCE_INELIGIBLE"]');
-      await expect(group.locator('h5')).toContainText(L('Persistence not eligible for ranking', 'الاستمرارية غير مؤهلة للترتيب'));
+      // `> h5` so the assertion lands on the group heading, not on the h5 headings nested inside
+      // the rows it contains.
+      const groupHeadings = page.locator('[data-testid="unranked-group"][data-reason="PERSISTENCE_INELIGIBLE"] > h5');
+      // The decision card renders the same group block but stays hidden until opened, so read the
+      // text content of every heading rather than the visible-only innerText.
+      const groupTexts = await groupHeadings.evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''));
+      expect(groupTexts.length).toBeGreaterThan(0);
+      for (const text of groupTexts) expect(text).toContain(L('Persistence not eligible for ranking', 'الاستمرارية غير مؤهلة للترتيب'));
       expect(await page.locator('.result-panel').innerText()).not.toMatch(/stress not persistent|الإجهاد غير مستمر|لم يكن الإجهاد مستمرًا/i);
     });
   }
