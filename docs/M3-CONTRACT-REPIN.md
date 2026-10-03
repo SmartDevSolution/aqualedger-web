@@ -82,14 +82,29 @@ artifact to the previous pin fails the guard on the blob hash; restoring it pass
 ## Verification boundary
 
 Static gates (lint, strict typecheck, build, catalog parity, contract identity + generated
-types drift, no-token-leak, relay-log-leak, preview-decode) were run locally at this head
+types drift, no-token-leak, relay-log-leak, preview-decode) were run locally at the re-pin head
 (commit `2e2c80f` on `aqualedger/t_911976a5-m3-4-contract-repin`), together with the full
-browser suite: 124 configured e2e tests pass (the 120 pre-existing plus the new M3
-scored / not-scored cases in both locales and both viewports) and the 6 unconfigured-mode
-tests pass. Browser tests exercise the relay and rendering
+browser suite. That head carried **124** configured e2e instances (the 120 pre-existing plus the
+new M3 scored / not-scored cases in both locales and both viewports). The later F1 correction
+(`f1426c2`) added the 8 bilingual prerequisite-failure instances, so the counts at the merged
+head (`f1426c2`, merged to `dev` as `0b48dae`) are **132 configured + 6 unconfigured** tests
+passing — corrected here from the earlier "124", which was true only at the pre-correction head
+(the `f1426c2` commit message already carried 132). Browser tests exercise the relay and rendering
 against the labelled test double (`tests/fixtures/backend-double.ts`), which now carries an
 M3-scored and an M3-not-scored result fixture; they are labelled test content, not production
 claims. No hosted backend run, no hosted paired web/backend acceptance, and no live
 `aq-scorecard-1` result were available to this web-only slice: those belong to M3-6 paired
 verification on merged paired dev SHAs, which this PR does not attempt to establish. The
 unconfigured-mode e2e gate still proves the app fails closed without server config.
+
+## Backend re-pin re-check — persistence-cause coverage
+
+Fact recorded at the pinned backend `6ba3f13d…`, to be re-established at the **next backend
+re-pin**: the only wired persistence path is `build_m2_additions`
+(`src/aqualedger/analysis/m2.py:382-391`), which publishes `AGRICULTURAL_MASK_BLOCKED` and
+`NO_COMPATIBLE_BASELINE`; `EXCESSIVE_GAPS` (`m2.py:92`) is dormant there because
+`assess_persistence` has no production call site. If such a call site appears, or the wired path
+changes, the bilingual prerequisite-failure regression (`tests/e2e/workspace.spec.ts`) must gain
+the matching case. That regression currently covers `NO_COMPATIBLE_BASELINE` + `EXCESSIVE_GAPS`;
+`AGRICULTURAL_MASK_BLOCKED` — the cause the wired path actually publishes — has a catalog entry
+and code path but no browser regression yet (carried as M3-5 condition 1, card `t_5225bb3c`).
