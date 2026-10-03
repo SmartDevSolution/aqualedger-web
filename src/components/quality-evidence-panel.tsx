@@ -37,6 +37,8 @@ export function QualityEvidencePanel({result}: QualityEvidencePanelProps) {
             return (
               <div className="evidence-chart-row" key={`${scene.acquisition_date}-${scene.item_ids?.join('|') ?? ''}`}>
                 <bdi dir="ltr" className="evidence-chart-label">{scene.acquisition_date}</bdi>
+                {/* Round-5 C-03: same direction isolation as the zone evidence chart — the coverage
+                    plot is a magnitude axis and never mirrors under RTL. */}
                 <div className="evidence-chart-track" aria-hidden="true">
                   <span className={`evidence-chart-bar${scene.selected ? ' is-selected' : ''}`} style={{width: `${width}%`}} />
                 </div>

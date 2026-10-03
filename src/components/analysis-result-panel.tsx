@@ -6,16 +6,18 @@ import {limitationMessageKey, perDateReasonMessageKey} from '@/lib/api/error-mes
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
 import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {QualityEvidencePanel} from './quality-evidence-panel';
-import {ResultScoringSection} from './result-scoring-panel';
+import {ResultScoringSection, type ScoringSectionProps} from './result-scoring-panel';
 
 export function AnalysisResultPanel({
   analysisId,
   state,
-  previewStatus
+  previewStatus,
+  scoring
 }: {
   analysisId?: string | undefined;
   state: AnalysisRunState;
   previewStatus: PreviewOverlayStatus;
+  scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
 }) {
   const locale = useLocale();
   const t = useTranslations('workspace');
@@ -50,7 +52,7 @@ export function AnalysisResultPanel({
       {analysisId && state.kind === 'blocked' ? <p className="notice notice-neutral">{t('resultBlocked')}</p> : null}
       {analysisId && state.kind === 'timedOut' ? <p className="notice notice-neutral">{t('resultTimedOut')}</p> : null}
       {analysisId && state.kind === 'complete' ? (
-        <LoadedAnalysisResult result={state.result} locale={locale} previewStatus={previewStatus} />
+        <LoadedAnalysisResult result={state.result} locale={locale} previewStatus={previewStatus} scoring={scoring} />
       ) : null}
     </section>
   );
@@ -59,11 +61,13 @@ export function AnalysisResultPanel({
 function LoadedAnalysisResult({
   result,
   locale,
-  previewStatus
+  previewStatus,
+  scoring
 }: {
   result: import('@/lib/api/client').AnalysisResult;
   locale: string;
   previewStatus: PreviewOverlayStatus;
+  scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
 }) {
   const t = useTranslations('workspace');
   const errors = useTranslations('errors');
@@ -120,7 +124,7 @@ function LoadedAnalysisResult({
 
       <QualityEvidencePanel result={result} />
 
-      <ResultScoringSection result={result} />
+      <ResultScoringSection {...scoring} hasProvenance={provenance !== null && provenance !== undefined} />
 
       {(result.scenes_evaluated?.length ?? 0) > 0 ? (
         <section className="result-detail-section" aria-labelledby="result-scenes-heading">

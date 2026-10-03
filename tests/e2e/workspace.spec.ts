@@ -4,9 +4,6 @@ import {
   FAILED_ID,
   FAILED_WRONG_PATH_CODE_ID,
   M3_NOT_SCORED_ID,
-  M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
-  M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
-  M3_SCORED_ID,
   NO_ELIGIBLE_ACQUISITION_ID,
   NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
   NO_SCENES_FOUND_ID,
@@ -496,105 +493,16 @@ for (const locale of ['en', 'ar'] as const) {
 }
 
 for (const locale of ['en', 'ar'] as const) {
-  test(`an M3-scored result renders the scoring envelope, and a result with no envelope is "not scored", never UNRANKED, in ${locale}`, async ({page}) => {
-    await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
-
-    // The envelope section exists for a scored result, with the run facts and the priority-class
-    // ruling stated truthfully.
-    const scoringHeading = locale === 'en' ? 'Zone priority scoring' : 'ترتيب أولويات المناطق';
-    await expect(page.getByRole('heading', {name: scoringHeading})).toBeVisible();
-    const notEstablished = locale === 'en'
-      ? 'Not established under method aq-scorecard-1'
-      : 'غير محددة بطريقة aq-scorecard-1';
-    await expect(page.getByText(notEstablished)).toBeVisible();
-
-    // RANKED zone: rank/rank_group and the uncalibrated class, never a priority class.
-    const rankedRow = page.locator('.scoring-zone-row', {hasText: 'Z-1'});
-    await expect(rankedRow.getByText(locale === 'en'
-      ? 'Rank 1 (group 1) — evidence-quality class HIGH (uncalibrated)'
-      : 'المرتبة 1 (المجموعة 1) — فئة جودة الأدلة HIGH (غير معايرة)')).toBeVisible();
-
-    // UNRANKED zone: neutral wording with its typed reason, never a class, never a rank.
-    const unrankedRow = page.locator('.scoring-zone-row', {hasText: 'Z-2'});
-    await expect(unrankedRow.getByText(locale === 'en'
-      ? 'Unranked — see the reason below; no class is shown'
-      : 'غير مرتبة — انظر السبب أدناه؛ لا تُعرض فئة')).toBeVisible();
-    await expect(unrankedRow.getByText(locale === 'en'
-      ? 'A mandatory input for scoring was not available for this zone.'
-      : 'لم يتوفر أحد المدخلات الإلزامية للتقييم لهذه المنطقة.')).toBeVisible();
-    await expect(unrankedRow.getByText(/UNRANKED/)).toHaveCount(0);
-
-    // The uncalibrated disclosure ships on every scored render, both locales.
-    await expect(page.getByText(locale === 'en'
-      ? 'Decision support for field verification — not enforcement, not a confirmed diagnosis. The evidence-quality class is an uncalibrated rule-based class, not a priority class.'
-      : 'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا. فئة جودة الأدلة فئة قاعدية غير معايرة، وليست فئة أولويات.')).toBeVisible();
-
-    // The no-envelope result: "not scored under this method", never the word UNRANKED.
+  // The full scored-panel behaviour is covered in tests/e2e/m3-panels.spec.ts; this keeps the
+  // original M3-4 contract: a no-envelope result is "not scored", never UNRANKED.
+  test(`a result with no M3 envelope is "not scored", never UNRANKED, in ${locale}`, async ({page}) => {
     await page.goto(`/${locale}/analysis/${M3_NOT_SCORED_ID}`);
     await expect(page.getByText(locale === 'en'
       ? 'This result was not scored under method aq-scorecard-1. Priority scoring does not apply to it.'
       : 'لم تُقيَّم هذه النتيجة بطريقة aq-scorecard-1. لا ينطبق عليها ترتيب الأولويات.')).toBeVisible();
-    await expect(page.getByText(locale === 'en' ? 'Unranked zones' : 'مناطق غير مرتبة')).toHaveCount(0);
+    await expect(page.getByText(locale === 'en' ? 'Unranked zones' : 'المناطق غير المرتبة')).toHaveCount(0);
+    await expect(page.getByTestId('decision-card')).toHaveCount(0);
   });
-}
-
-// F1 regression (stage-⑥ Council BLOCK at web PR #10 head 00e44802): `PERSISTENCE_INELIGIBLE` is
-// an eligibility gate — the pinned backend emits it only when persistence could not be assessed
-// because a prerequisite was unavailable (m2.py:85 NO_COMPATIBLE_BASELINE, m2.py:92
-// EXCESSIVE_GAPS, m2.py:385 AGRICULTURAL_MASK_BLOCKED), which establishes no persistence
-// outcome. The catalog used to assert the opposite ("The stress was not persistent …"), an
-// invented scientific conclusion. This runs in both locale passes and both viewport projects.
-for (const locale of ['en', 'ar'] as const) {
-  const persistenceCases = [
-    {
-      label: 'NO_COMPATIBLE_BASELINE',
-      id: M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
-      cause: locale === 'en'
-        ? 'No compatible seasonal baseline is available.'
-        : 'لا يتوفر خط أساس موسمي متوافق.'
-    },
-    {
-      label: 'EXCESSIVE_GAPS',
-      id: M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
-      cause: locale === 'en'
-        ? 'The requested history has excessive gaps.'
-        : 'تحتوي السلسلة المطلوبة على فجوات مفرطة.'
-    }
-  ] as const;
-
-  for (const {label, id, cause} of persistenceCases) {
-    test(`a PERSISTENCE_INELIGIBLE zone states the eligibility gate and its M2 prerequisite cause, never a non-persistence claim, in ${locale} (${label})`, async ({page}) => {
-      await page.goto(`/${locale}/analysis/${id}`);
-      const row = page.locator('.scoring-zone-row', {hasText: 'Z-9'});
-      await expect(row).toBeVisible();
-
-      // The eligibility statement itself — true to DR-M3-01 §3: the failed stage short-circuits
-      // with its own typed reason, and eligibility is separate from an assessed outcome.
-      await expect(row).toContainText(locale === 'en'
-        ? 'Persistence is not eligible for ranking for this zone.'
-        : 'الاستمرارية غير مؤهلة للترتيب لهذه المنطقة.');
-
-      // The specific prerequisite cause disclosed from `params.m2_reason_code` (sourced, never
-      // invented). The preceding sentence is the eligibility statement, not a persistence claim.
-      await expect(row).toContainText(cause);
-
-      // F1: neither prerequisite failure establishes that the stress was not persistent, so no
-      // such claim may be rendered anywhere.
-      await expect(row).not.toContainText(locale === 'en' ? 'not persistent' : 'لم يكن الإجهاد مستمرًا');
-      await expect(page.getByText(locale === 'en'
-        ? 'The stress was not persistent'
-        : 'لم يكن الإجهاد مستمرًا')).toHaveCount(0);
-
-      // Still the neutral UNRANKED vocabulary: no priority class, no rank, no literal UNRANKED.
-      await expect(row).not.toContainText('UNRANKED');
-      await expect(row.getByText(locale === 'en' ? 'Rank 1' : 'المرتبة 1')).toHaveCount(0);
-
-      // The uncalibrated disclosure ships on every scored render (unchanged by this correction).
-      await expect(page.getByText(locale === 'en'
-        ? 'Decision support for field verification — not enforcement, not a confirmed diagnosis. The evidence-quality class is an uncalibrated rule-based class, not a priority class.'
-        : 'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا. فئة جودة الأدلة فئة قاعدية غير معايرة، وليست فئة أولويات.')).toBeVisible();
-    });
-  }
 }
 
 async function prepareDraft(page: Page, locale: 'en' | 'ar') {

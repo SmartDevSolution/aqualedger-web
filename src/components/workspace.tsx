@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRouter} from '@/i18n/navigation';
 import {createAnalysis, type ApiFailure} from '@/lib/api/client';
 import {clearIdempotencyKey, getIdempotencyKey} from '@/lib/api/idempotency';
@@ -12,7 +12,12 @@ import {parseAoiGeoJson, validateAnalysisInput, type AoiPolygon, type InputProbl
 import {emptyWorkspaceDraft, readWorkspaceDraft, writeWorkspaceDraft, type WorkspaceDraft} from '@/lib/workspace-draft';
 import type {PreviewOverlayRequest, PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {AnalysisResultPanel} from './analysis-result-panel';
+import {useResultIdentity} from '@/lib/api/use-result-identity';
+import {patchUrlState, useWorkspaceUrlState} from '@/lib/url-state';
+import {buildScoredResultView, isPolygonal, rankGroupStep, type ScoredResultView} from '@/lib/zone-model';
+import type {ZoneLayerRequest} from './workspace-map';
 import {AnalysisStagePanel} from './analysis-stage-panel';
+import {HistoryDrawer} from './history-drawer';
 import {BackendErrorNotice} from './backend-error-notice';
 
 type WorkspaceProps = {
@@ -31,6 +36,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
   const router = useRouter();
   const t = useTranslations('workspace');
   const errorText = useTranslations('errors');
+  const historyText = useTranslations('history');
   const [draft, setDraft] = useState<WorkspaceDraft>(emptyWorkspaceDraft);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [draftStorageFailed, setDraftStorageFailed] = useState(false);
@@ -43,6 +49,31 @@ export function Workspace({analysisId}: WorkspaceProps) {
   const [previewStatus, setPreviewStatus] = useState<PreviewOverlayStatus>('idle');
   const submitController = useRef<AbortController | null>(null);
   const {state: runState, retry: retryStatus} = useAnalysisRun(analysisId);
+  const urlState = useWorkspaceUrlState();
+
+  // ONE in-memory scored result per route id (A25/A39): the map, panel, chart and card all read
+  // this view. It is built from the committed result of THIS id only and is keyed by
+  // (analysis_id, result_sha256); form state (`draft`) is never an input to it.
+  const scoredView = useMemo<ScoredResultView | null>(() => {
+    if (!analysisId || runState.kind !== 'complete') return null;
+    return buildScoredResultView(runState.result, analysisId);
+  }, [analysisId, runState]);
+  const identity = useResultIdentity(scoredView);
+  const selectedZoneId = scoredView && urlState.zone && scoredView.zones.some((zone) => zone.zoneId === urlState.zone)
+    ? urlState.zone
+    : null;
+  const cardOpen = scoredView !== null && urlState.card;
+  const selectZone = useCallback((zoneId: string) => patchUrlState({zone: zoneId}), []);
+  const toggleCard = useCallback(() => patchUrlState({panel: urlState.card ? null : 'card'}), [urlState.card]);
+  const closeHistory = useCallback(() => patchUrlState({history: null}), []);
+
+  const zoneLayer = useMemo<ZoneLayerRequest | null>(() => {
+    if (!scoredView) return null;
+    const zones = scoredView.zones.flatMap((zone) => zone.geometry && isPolygonal(zone.geometry)
+      ? [{zoneId: zone.zoneId, geometry: zone.geometry, ranked: zone.ranked, fill: rankGroupStep(zone.rankGroup).fill}]
+      : []);
+    return {key: `${scoredView.analysisId}|${scoredView.resultSha256}`, zones};
+  }, [scoredView]);
 
   // DP-4 P1: the map renders the NDVI preview only for a committed result, and only when the
   // result actually carries a ready, georeferenced ndvi_preview artifact — never on a partial or
@@ -167,6 +198,15 @@ export function Workspace({analysisId}: WorkspaceProps) {
         <p className="eyebrow"><bdi dir="ltr">AquaLedger</bdi> · {t('title')}</p>
         <h1>{t('title')}</h1>
         <p className="page-intro">{t('intro')}</p>
+        <button
+          type="button"
+          className="button button-secondary history-toggle"
+          aria-expanded={urlState.history}
+          aria-controls="history-drawer"
+          onClick={() => patchUrlState({history: urlState.history ? null : '1'})}
+        >
+          {historyText('toggleOpen')}
+        </button>
       </header>
 
       {draftLoaded && draftStorageFailed ? <p className="notice notice-warning" role="alert">{errorText('draftStorageUnavailable')}</p> : null}
@@ -204,6 +244,9 @@ export function Workspace({analysisId}: WorkspaceProps) {
               onStatusChange={setMapStatus}
               previewOverlay={previewOverlay}
               onPreviewOverlayStatusChange={setPreviewStatus}
+              zoneLayer={zoneLayer}
+              selectedZoneId={selectedZoneId}
+              onZoneSelect={selectZone}
             />
           </div>
           <p className="map-attribution">{t('mapAttribution')}</p>
@@ -280,7 +323,26 @@ export function Workspace({analysisId}: WorkspaceProps) {
         </section>
       </div>
 
-      <AnalysisResultPanel analysisId={analysisId} state={runState} previewStatus={effectivePreviewStatus} />
+      <HistoryDrawer
+        open={urlState.history}
+        onClose={closeHistory}
+        currentAnalysisId={analysisId}
+        hasDraftArea={draft.aoi !== null}
+      />
+
+      <AnalysisResultPanel
+        analysisId={analysisId}
+        state={runState}
+        previewStatus={effectivePreviewStatus}
+        scoring={{
+          view: scoredView,
+          selectedZoneId,
+          onSelectZone: selectZone,
+          identity,
+          cardOpen,
+          onToggleCard: toggleCard
+        }}
+      />
     </main>
   );
 }

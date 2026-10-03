@@ -26,7 +26,24 @@ import type {AnalysisResult} from './client';
 const EVIDENCE_QUALITY_CLASSES = ['HIGH', 'MEDIUM', 'LOW'] as const;
 const PRIORITY_STATUSES = ['RANKED', 'UNRANKED'] as const;
 const SUFFICIENCY_STATUSES = ['PASS', 'INSUFFICIENT DATA'] as const;
+// The per-zone `evidence_status` is the pinned contract's closed `EvidenceStatus` enum. The
+// analysis-level M1/M2 semantics are not reinterpreted; the zone-level field is M3's own
+// categorical verdict (DR-M3-01 §3).
+const ZONE_EVIDENCE_STATUSES = ['SUFFICIENT', 'LIMITED', 'INSUFFICIENT', 'NOT_ASSESSED'] as const;
 export const EVIDENCE_QUALITY_UNCALIBRATED_CODE = 'EVIDENCE_QUALITY_UNCALIBRATED';
+
+/**
+ * The rankability precondition, enforced on the wire (DR-M3-01 §3): *Rankable ⇔ stages 0–3 pass
+ * and persistence is ELIGIBLE and per-zone `evidence_status = SUFFICIENT`* — "`LIMITED` is not
+ * rankable, and that is enforced by test". The pinned backend publishes LIMITED ⇔ UNRANKED
+ * (`analysis/scorecard.py`: the UNRANKED return for a LIMITED zone, SUFFICIENT only on the ranked
+ * path), so a body that both ranks a zone and marks it anything other than SUFFICIENT is
+ * semantically invalid. The web fail-closes on it here: the whole result is refused (never
+ * partially read, never re-derived), so no surface can bless the contradictory combination.
+ */
+export function isRankableZone(evidenceStatus: unknown, priorityStatus: unknown): boolean {
+  return priorityStatus !== 'RANKED' || evidenceStatus === 'SUFFICIENT';
+}
 
 export function isM3ResultIdentity(value: unknown): value is M3ResultIdentity {
   return isRecord(value)
@@ -71,9 +88,18 @@ export function isZoneAssessment(value: unknown): value is M3ZoneAssessment {
   if (!isRecord(value)) return false;
   if (typeof value.zone_id !== 'string') return false;
   if (typeof value.evidence_status !== 'string') return false;
+  // Closed vocabulary: an absent or unknown zone evidence status is refused rather than being
+  // read as "not ranked but usable" (the field is a categorical verdict, DR-M3-01 §3).
+  if (!ZONE_EVIDENCE_STATUSES.includes(value.evidence_status as never)) return false;
   if (!isSufficiencyBlock(value.sufficiency)) return false;
   if (!isEvidenceQualityBlock(value.evidence_quality)) return false;
   if (!isPriorityBlock(value.priority)) return false;
+  // Fail closed on the contradictory combination (DR-M3-01 §3): a zone the method ranked must
+  // carry the rankability verdict SUFFICIENT. LIMITED/INSUFFICIENT/NOT_ASSESSED + RANKED is
+  // refused as a contract-invalid body; `zone-model.ts` repeats the guard on the presentation
+  // side so no surface can rank such a zone even if a body bypassed this validator.
+  const priorityStatus = (value.priority as {status: unknown}).status;
+  if (!isRankableZone(value.evidence_status, priorityStatus)) return false;
   if (value.confounders !== undefined && !isList(value.confounders, isConfounder)) return false;
   if (value.evidence_refs !== undefined && !isList(value.evidence_refs, isEvidenceRef)) return false;
   if (value.independent_families !== undefined && !isList(value.independent_families, isIndependentFamily)) return false;
@@ -93,7 +119,7 @@ function isSufficiencyBlock(value: unknown): boolean {
 
 function isEvidenceQualityBlock(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  if (!isList(value.factors ?? [], isFactorRow)) return false;
+  if (!isList(value.factors, isFactorRow)) return false;
   if (value.class !== undefined && !(value.class === null
     || (typeof value.class === 'string' && EVIDENCE_QUALITY_CLASSES.includes(value.class as never)))) return false;
   for (const field of ['c', 'm', 'o', 'display', 'label'] as const) {
