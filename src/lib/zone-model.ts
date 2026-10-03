@@ -84,7 +84,7 @@ export function buildScoredResultView(result: AnalysisResult, expectedAnalysisId
 
   const m2Zones = result.m2?.zones ?? [];
   const zones: ZoneView[] = result.assessment.map((assessment) => {
-    const ranked = assessment.priority.status === 'RANKED';
+    const ranked = isRankedAssessment(assessment);
     const match = m2Zones.find((zone) => zone.zone_id === assessment.zone_id
       && sameVersion(zone.geometry_version, assessment.geometry_version)
       && sameHash(zone.geometry_hash, assessment.geometry_hash));
@@ -110,6 +110,26 @@ export function buildScoredResultView(result: AnalysisResult, expectedAnalysisId
     unrankedGroups: groupUnranked(unranked),
     unrankedCount: unranked.length
   };
+}
+
+/**
+ * A zone belongs on the priority (ranked) axis only when the method both ranked it AND the
+ * rankability precondition holds (DR-M3-01 §3: Rankable ⇔ … per-zone `evidence_status =
+ * SUFFICIENT`; "`LIMITED` is not rankable"). `m3.ts` already refuses such a body, so this is the
+ * view-side guard: even a body that reached the view without validation is presented neutrally
+ * (no rank, no rank-group ramp, no evidence-quality class or composite) instead of as a
+ * scientific ranking. An absent or non-positive `rank`/`rank_group` is likewise never invented
+ * into a ramp step. Nothing here recomputes or re-derives a ranking.
+ */
+function isRankedAssessment(assessment: ZoneAssessment): boolean {
+  return assessment.priority.status === 'RANKED'
+    && assessment.evidence_status === 'SUFFICIENT'
+    && isPositiveInteger(assessment.priority.rank)
+    && isPositiveInteger(assessment.priority.rank_group);
+}
+
+function isPositiveInteger(value: unknown): boolean {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
 }
 
 function sameVersion(left: unknown, right: unknown): boolean {

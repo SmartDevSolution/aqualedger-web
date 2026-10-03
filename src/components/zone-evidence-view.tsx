@@ -2,7 +2,7 @@
 
 import {useLocale, useTranslations} from 'next-intl';
 import {formatGregorianDate, formatPercent, formatValue} from '@/lib/format';
-import {isolate} from '@/lib/reason-text';
+import {isolate, useMissingReasonText} from '@/lib/reason-text';
 import {zoneObservations, type ZoneView, type M2Observation} from '@/lib/zone-model';
 import type {M3ScoredResult} from '@/lib/api/m3';
 
@@ -33,6 +33,7 @@ export function ZoneEvidenceView({result, zone, analysisId}: {result: M3ScoredRe
 function IndicatorSeries({indicator, rows, zoneId}: {indicator: (typeof INDICATORS)[number]; rows: M2Observation[]; zoneId: string}) {
   const t = useTranslations('zoneEvidence');
   const locale = useLocale();
+  const missingReason = useMissingReasonText();
   const label = t(`indicator.${indicator}`);
   const numeric = rows.filter((row) => typeof row.value === 'number') as (M2Observation & {value: number})[];
   const max = numeric.reduce((largest, row) => Math.max(largest, Math.abs(row.value)), 0);
@@ -84,7 +85,7 @@ function IndicatorSeries({indicator, rows, zoneId}: {indicator: (typeof INDICATO
               </td>
               <td>{typeof row.valid_area_fraction === 'number' ? formatPercent(row.valid_area_fraction, locale) : '—'}</td>
               <td>{formatValue(row.valid_count, locale, 0)}</td>
-              <td>{row.missing_reason ? <bdi dir="ltr">{row.missing_reason}</bdi> : '—'}</td>
+              <td>{row.missing_reason ? <span data-missing-reason={row.missing_reason}>{missingReason(row.missing_reason)}</span> : '—'}</td>
             </tr>
           ))}
         </tbody>

@@ -1,6 +1,8 @@
 import {createHash} from 'node:crypto';
 import {expect, test, type Page} from '@playwright/test';
 import {
+  M3_CONTRADICTORY_LIMITED_RANKED_ID,
+  M3_LIMITED_UNRANKED_ID,
   M3_NOT_SCORED_ID,
   M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
   M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
@@ -46,6 +48,20 @@ async function servedSha(page: Page, id: string): Promise<{body: Record<string, 
   return {body, sha: (body.result_identity as {result_sha256: string}).result_sha256};
 }
 
+// Serve one analysis result with a mutation applied, keeping the emitted identity truthful: the
+// digest is recomputed from the mutated payload with the web's own canonicalization, so the test
+// exercises the reader's rules on a body that is self-consistent apart from the mutation itself.
+async function serveMutated(page: Page, id: string, mutate: (body: Record<string, unknown>) => void) {
+  await page.route(`**/api/analyses/${id}/result`, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json() as Record<string, unknown>;
+    mutate(body);
+    const identity = body.result_identity as Record<string, unknown> | undefined;
+    if (identity) identity.result_sha256 = (await computeResultSha256(body)) ?? '';
+    await route.fulfill({response, json: body});
+  });
+}
+
 for (const locale of ['en', 'ar'] as const) {
   const L = (en: string, ar: string) => (locale === 'en' ? en : ar);
 
@@ -85,8 +101,14 @@ for (const locale of ['en', 'ar'] as const) {
         return {chipBg, badgeBg};
       });
       expect(colours.chipBg).not.toBe(colours.badgeBg);
-      // Z-3: a LOW evidence class sits next to a rank-2 chip of a DIFFERENT ramp step, and neither is a priority.
+      // Z-3: the VALID ranked-LOW case (DR-M3-01 §3: a RANKED zone carries `SUFFICIENT`) — a LOW
+      // evidence class next to a rank-2 chip of a DIFFERENT ramp step, and neither is a priority.
+      // The row's own evidence status is cross-checked here: a ranked zone that is not SUFFICIENT is
+      // the contradictory combination that must never be presented as a ranking (see the LIMITED
+      // and contradictory-body regressions below).
       const z3 = panel.locator('.zone-row[data-zone-id="Z-3"]');
+      await expect(z3).toHaveAttribute('data-ranked', 'true');
+      await expect(z3).toContainText(`${L('Zone evidence', 'أدلة المنطقة')}: ${L('Sufficient', 'كافية')}`);
       await expect(z3.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'LOW');
       const bg1 = await chip.evaluate((node) => getComputedStyle(node).backgroundColor);
       const bg3 = await z3.locator('.rank-chip').evaluate((node) => getComputedStyle(node).backgroundColor);
@@ -149,7 +171,11 @@ for (const locale of ['en', 'ar'] as const) {
       const evidence = page.getByTestId('zone-evidence');
       await expect(evidence).toHaveAttribute('data-zone-id', 'Z-1');
       await expect(evidence.locator('[data-indicator="NDVI"] tbody tr')).toHaveCount(3);
-      await expect(evidence.locator('[data-observation-class="MISSING"]')).toContainText('NO_OBSERVATION_IN_WINDOW');
+      // A missing window is explained in the reader's language; the raw M2 code is a diagnostic on
+      // the localized sentence, never the whole cell (see the dedicated missing-reason test).
+      await expect(evidence.locator('[data-indicator="NDVI"] tbody tr[data-observation-class="MISSING"]')).toContainText(L(
+        'The source payload contained no valid pixel.',
+        'لم تتضمن بيانات المصدر أي بكسل صالح.'));
       await expect(evidence.locator('[data-indicator="RAINFALL"]')).toBeVisible();
 
       await page.locator('.zone-row[data-zone-id="Z-3"] .zone-select').click();
@@ -178,17 +204,115 @@ for (const locale of ['en', 'ar'] as const) {
     });
 
     test('the not-established sentence is bound to the body priority_class_status', async ({page}) => {
-      await page.route(`**/api/analyses/${M3_SCORED_ID}/result`, async (route) => {
-        const response = await route.fetch();
-        const body = await response.json() as {scoring: Record<string, unknown>};
-        body.scoring.priority_class_status = 'ESTABLISHED_FUTURE';
-        await route.fulfill({response, json: body});
+      await serveMutated(page, M3_SCORED_ID, (body) => {
+        (body.scoring as Record<string, unknown>).priority_class_status = 'ESTABLISHED_FUTURE';
       });
       await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
       const banner = page.getByTestId('priority-class-banner');
       await expect(banner).toHaveAttribute('data-status', 'unrecognised');
+      // The reported value is quoted verbatim...
       await expect(banner).toContainText('ESTABLISHED_FUTURE');
-      await expect(banner).toContainText(L('No class is shown', 'لا تُعرض أي فئة'));
+      // ...and the notice states that no class is shown, without restating the unrecognized status
+      // as the method's concluded "not established" (the v1 ruling belongs to NOT_ESTABLISHED only).
+      await expect(banner).toContainText(L('no priority class is shown', 'لا تُعرض أي فئة أولوية'));
+      await expect(banner).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+      // Nothing on the page gains a class from an unrecognized status.
+      await expect(page.locator('.zone-panel').getByText(/priority:\s*(high|medium|low)/i)).toHaveCount(0);
+      await page.getByRole('button', {name: L('Open decision card', 'فتح بطاقة القرار')}).click();
+      const limitation = page.locator('[data-limitation="priority-class"]');
+      await expect(limitation).toContainText('ESTABLISHED_FUTURE');
+      await expect(limitation).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+    });
+
+    test('an absent priority_class_status is reported as absent, never restated as not established', async ({page}) => {
+      await serveMutated(page, M3_SCORED_ID, (body) => {
+        delete (body.scoring as Record<string, unknown>).priority_class_status;
+      });
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
+      const banner = page.getByTestId('priority-class-banner');
+      await expect(banner).toHaveAttribute('data-status', 'absent');
+      await expect(banner).toContainText(L('no priority status', 'بأي حالة أولوية'));
+      await expect(banner).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+      await page.getByRole('button', {name: L('Open decision card', 'فتح بطاقة القرار')}).click();
+      const limitation = page.locator('[data-limitation="priority-class"]');
+      await expect(limitation).toContainText(L('reported no priority status', 'لم تُبلّغ الطريقة'));
+      await expect(limitation).not.toContainText(L('not established', 'غير محددة'));
+    });
+
+    // DR-M3-01 §3, fail-closed: "LIMITED is not rankable". A body that ranks a zone the method did
+    // not deem rankable is contract-invalid, so the whole result is refused — never partially read,
+    // never rendered as a ranking.
+    test('a body that ranks a zone with a non-SUFFICIENT evidence status is refused, never rendered', async ({page}) => {
+      await page.goto(`/${locale}/analysis/${M3_CONTRADICTORY_LIMITED_RANKED_ID}?panel=card`);
+      const contractNotice = page.locator('.notice[role="alert"]').filter({hasText: L(
+        'The backend response did not match the pinned result contract.',
+        'لا تطابق استجابة الواجهة الخلفية عقد النتيجة المثبت.')});
+      await expect(contractNotice).toBeVisible();
+      // No M3 surface renders, so the contradictory combination can never be blessed anywhere.
+      await expect(page.getByTestId('decision-card')).toHaveCount(0);
+      await expect(page.locator('.zone-panel')).toHaveCount(0);
+      await expect(page.locator('.zone-row')).toHaveCount(0);
+      await expect(page.locator('.rank-chip')).toHaveCount(0);
+      await expect(page.getByTestId('evidence-quality-badge')).toHaveCount(0);
+      await expect(page.getByText('Z-1')).toHaveCount(0);
+    });
+
+    test('a LIMITED zone the method left UNRANKED stays neutral on the panel, the map and the card', async ({page}) => {
+      await page.goto(`/${locale}/analysis/${M3_LIMITED_UNRANKED_ID}?zone=Z-LIM&panel=card`);
+      // Panel: no rank, no rank-group ramp, no class and no composite — even though the payload
+      // carries `class: 'LOW'` and `c: '0.3000'`.
+      const row = page.locator('.zone-row[data-zone-id="Z-LIM"]');
+      await expect(row).toBeVisible();
+      await expect(row).toHaveAttribute('data-ranked', 'false');
+      await expect(row.getByTestId('unranked-chip')).toBeVisible();
+      await expect(row.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'none');
+      await expect(row.locator('[data-rank-group]')).toHaveCount(0);
+      expect(await row.innerText()).not.toContain('0.3000');
+      // Map: the zone is in the zone source, marked unranked, so the ranked layer's filter
+      // (`ranked == true`) can never draw it.
+      await page.waitForFunction(() => {
+        const map = (window as unknown as {__AQUALEDGER_TEST_MAP__?: {getLayer: (id: string) => unknown}}).__AQUALEDGER_TEST_MAP__;
+        return Boolean(map?.getLayer('scored-zones-unranked'));
+      }, null, {timeout: 60_000});
+      const mapState = await page.evaluate(() => {
+        const map = (window as unknown as {__AQUALEDGER_TEST_MAP__: {
+          getFilter: (id: string) => unknown;
+          querySourceFeatures: (id: string) => {properties: Record<string, unknown>}[];
+        }}).__AQUALEDGER_TEST_MAP__;
+        return {
+          rankedFilter: JSON.stringify(map.getFilter('scored-zones-ranked')),
+          features: map.querySourceFeatures('scored-zones-source')
+            .map((feature) => ({zoneId: feature.properties.zone_id, ranked: feature.properties.ranked}))
+        };
+      });
+      expect(mapState.features).toContainEqual({zoneId: 'Z-LIM', ranked: false});
+      expect(mapState.rankedFilter).toContain('ranked');
+      // Card: the same neutrality, and no composite number.
+      const cardZone = page.locator('.decision-card .card-zone[data-zone-id="Z-LIM"]');
+      await expect(cardZone).toHaveAttribute('data-ranked', 'false');
+      await expect(cardZone.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'none');
+      await expect(cardZone.getByTestId('card-zone-rank-key')).toHaveCount(0);
+      await expect(cardZone.getByTestId('card-zone-families')).toHaveCount(0);
+      expect(await cardZone.innerText()).not.toContain('0.3000');
+    });
+
+    test('a missing-value reason is explained in the reader language, the raw code only as a diagnostic', async ({page}) => {
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?zone=Z-1`);
+      const evidence = page.getByTestId('zone-evidence');
+      await expect(evidence).toBeVisible();
+      // A known pinned M2 code renders its localized explanation, not the bare code.
+      const known = evidence.locator('[data-missing-reason="NO_VALID_PIXELS"]');
+      await expect(known).toHaveText(L(
+        'The source payload contained no valid pixel.',
+        'لم تتضمن بيانات المصدر أي بكسل صالح.'));
+      // An unknown reason is still explained in the reader's language and may carry the raw code
+      // only as an ADDITIONAL isolated diagnostic.
+      const unknown = evidence.locator('[data-missing-reason="FUTURE_MISSING_REASON"]');
+      await expect(unknown).toContainText(L(
+        'does not recognize the missing-value reason',
+        'لا تتعرف هذه النسخة على سبب القيمة المفقودة'));
+      await expect(unknown).toContainText('FUTURE_MISSING_REASON');
+      expect(await unknown.innerText()).not.toBe('FUTURE_MISSING_REASON');
     });
 
     test('the map draws the zone layer and does not mirror under RTL', async ({page}) => {
@@ -284,6 +408,91 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(card).toHaveAttribute('data-result-sha256', sha);
       await expect(page.getByTestId('card-result-sha256')).toHaveText(sha.slice(0, 12));
       await expect(page.getByTestId('card-guardrail')).toContainText(L('not enforcement', 'ليس إنفاذًا'));
+      expect(await card.innerText()).not.toMatch(DENYLIST);
+    });
+
+    // DR-M3-01 §8: the card projects the committed identity, the committed versions, the AOI with
+    // its inset, sources with product/version/revision and dates, ranked zones with their rank-key
+    // components and independent families, the unranked zones grouped by reason, the
+    // class/limitations statements — and states explicitly which field the result does not carry.
+    test('card projects identity, AOI, sources and per-zone detail without dropping a field', async ({page}) => {
+      const {body} = await servedSha(page, M3_SCORED_ID);
+      const request = body.request as {aoi_geojson: {coordinates: number[][][]}};
+      const m2 = body.m2 as {
+        pipeline_version: string;
+        config_version: string;
+        source_manifest: unknown[];
+        observations: {observation_class: string}[];
+      };
+      // Expectations computed here from the served body, not read back off the page: the AOI hash
+      // is re-derived independently with Node's crypto over the same canonical form.
+      const aoiSha = createHash('sha256').update(canonicalJson(request.aoi_geojson), 'utf8').digest('hex');
+      const outerRing = request.aoi_geojson.coordinates[0] as number[][];
+      const observed = m2.observations.filter((row) => row.observation_class === 'OBSERVED').length;
+
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?panel=card`);
+      const card = page.getByTestId('decision-card');
+      await expect(card).toBeVisible();
+
+      // Identity: the committed pipeline/config versions the card must print.
+      await expect(page.getByTestId('card-pipeline-version')).toHaveText(body.pipeline_version as string);
+      await expect(page.getByTestId('card-m2-pipeline-version')).toHaveText(m2.pipeline_version);
+      await expect(page.getByTestId('card-m2-config-version')).toHaveText(m2.config_version);
+
+      // AOI identity: re-derived hash, committed vertex count and bounds; labelled as re-derived.
+      await expect(page.getByTestId('card-aoi-hash')).toHaveText(aoiSha.slice(0, 12));
+      await expect(page.getByTestId('card-aoi-vertices')).toHaveText(String(outerRing.length - 1));
+      await expect(page.getByTestId('card-aoi-bounds')).toContainText('0.01');
+      await expect(card).toContainText(L('re-derived in this browser', 'معاد اشتقاقها في هذا المتصفح'));
+
+      // Inset: inline SVG drawn from the committed geometry — no basemap, no raster, no image.
+      const inset = page.getByTestId('card-inset');
+      await expect(inset.locator('svg')).toBeVisible();
+      await expect(inset.locator('[data-testid="card-inset-aoi"]')).toHaveCount(1);
+      await expect(inset.locator('path[data-zone-id="Z-1"]')).toHaveCount(1);
+      expect(await inset.locator('image').count()).toBe(0);
+      await expect(inset).toContainText(L('Not a basemap', 'وليس خلفية خرائط'));
+
+      // Sources: localized role and status, product version/revision and dates; the entry that
+      // carries no version/revision/dates says so instead of dropping the fields.
+      const sources = card.locator('.card-source-list li');
+      await expect(sources).toHaveCount(m2.source_manifest.length);
+      // Dates are rendered through the app's single date policy (Gregorian, Latin digits), so the
+      // expectation is computed with the same policy here instead of an ISO string.
+      const sourceDate = new Intl.DateTimeFormat(`${locale}-u-ca-gregory-nu-latn`, {dateStyle: 'medium', timeZone: 'UTC'})
+        .format(new Date('2026-08-30T00:00:00Z'));
+      const opticalSource = sources.filter({hasText: 'sentinel2_l2a_earth_search'});
+      await expect(opticalSource).toContainText(L('Temporal', 'زمني'));
+      await expect(opticalSource).toContainText(L('Read', 'مقروء'));
+      await expect(opticalSource).toContainText('sentinel-2-l2a');
+      await expect(opticalSource).toContainText('05.11');
+      await expect(opticalSource).toContainText(sourceDate);
+      await expect(sources.filter({hasText: 'chirps'}))
+        .toContainText(L('No product version, revision or dates', 'لا يوجد إصدار منتج أو مراجعة أو تواريخ'));
+
+      // Observations: counts and recorded gaps.
+      await expect(card).toContainText(`${observed} ${L('observed', 'مرصودة')}`);
+      await expect(card).toContainText(L('Coverage gaps recorded', 'فجوات التغطية المسجلة'));
+
+      // Ranked zone detail: rank key components, independent families, confounders, evidence refs.
+      const z1 = card.locator('.card-zone[data-zone-id="Z-1"]');
+      await expect(z1).toHaveAttribute('data-ranked', 'true');
+      await expect(z1.getByTestId('card-zone-rank-key')).toContainText('0.4210');
+      const families = z1.getByTestId('card-zone-families');
+      await expect(families).toContainText(L('Optical: counted', 'بصرية: محتسبة'));
+      await expect(families).toContainText(L('Radar (SAR): not counted', 'رادار (SAR): غير محتسبة'));
+      await expect(z1.getByTestId('card-zone-confounders').locator('[data-confounder="GROWTH_STAGE"]')).toBeVisible();
+      const refs = z1.getByTestId('card-zone-evidence-refs');
+      await expect(refs).toContainText('sentinel-2-l2a');
+      await expect(refs).toContainText('05.11');
+
+      // Unranked zones stay counted, grouped by reason and listed with their reasons.
+      await expect(card).toContainText(L('Unranked zones', 'المناطق غير المرتبة'));
+      await expect(card.locator('.card-zone[data-zone-id="Z-2"]')).toBeVisible();
+      // Limitations: the standing set always prints, including the mask/validation statements.
+      await expect(card).toContainText(L('Masked pixels are excluded', 'تُستبعد البكسلات المحجوبة'));
+      await expect(card).toContainText(L('not validated against in-basin field measurements', 'مقابل قياسات ميدانية داخل الحوض'));
+      await expect(card).toContainText(L('provisional', 'مؤقتة'));
       expect(await card.innerText()).not.toMatch(DENYLIST);
     });
 

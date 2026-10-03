@@ -88,6 +88,55 @@ function m3PersistenceIneligibleResultFixture(id: string, m2ReasonCode: string):
   return fixture;
 }
 
+// The LIMITED/UNRANKED case (DR-M3-01 §3): a zone whose rankability precondition fails is UNRANKED
+// with per-zone `evidence_status: 'LIMITED'` (the more specific persistence code stays its UNRANKED
+// reason). It must be neutral on EVERY surface — no rank, no rank-group ramp, no evidence-quality
+// class and no composite — in the panel, on the map and in the decision card/print. Its payload
+// deliberately also carries `class: 'LOW'` / `c` so the suppression is observable rather than a
+// by-product of an empty block. Labelled test-double content.
+export const M3_LIMITED_UNRANKED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae6';
+function m3LimitedUnrankedResultFixture(id: string): Record<string, unknown> {
+  const fixture = m3ScoredResultFixture(id);
+  fixture.scoring = {...(fixture.scoring as Record<string, unknown>), ranked_count: 0, unranked_count: 1};
+  fixture.assessment = [
+    {
+      zone_id: 'Z-LIM',
+      geometry_version: 3,
+      geometry_hash: 'fixture-zone-hash-limited',
+      evidence_status: 'LIMITED',
+      sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: ['M2'], reasons: []},
+      evidence_quality: {m: '0.4000', o: '0.2000', c: '0.3000', class: 'LOW', display: '0.30', display_decimals: 2, label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', factors: [], top_reasons: null},
+      priority: {status: 'UNRANKED', reasons: [{code: 'PERSISTENCE_INELIGIBLE', params: {m2_reason_code: 'NO_COMPATIBLE_BASELINE'}}]},
+      confounders: [],
+      independent_families: [],
+      evidence_refs: []
+    }
+  ];
+  // One M2 zone whose identity triple matches the assessment above, so the map draws the same
+  // neutral (hatched) zone the panel and card present.
+  const m2 = fixture.m2 as Record<string, unknown>;
+  m2.zones = [
+    {zone_id: 'Z-LIM', geometry: stripClassTest(0), geometry_version: '3', geometry_hash: 'fixture-zone-hash-limited', area_m2: 270000}
+  ];
+  m2.observations = [];
+  fixture.result_identity = {...(fixture.result_identity as Record<string, unknown>), result_sha256: fixtureResultSha256(fixture)};
+  return fixture;
+}
+
+// The contradictory LIMITED+RANKED body (DR-M3-01 §3), which the merged record says can never be
+// rankable: "LIMITED is not rankable, and that is enforced by test". The web refuses it at the
+// validator, so no surface renders it at all. Labelled test-double content — the pinned backend
+// never emits this combination; it exists so the fail-closed rule is exercised end to end.
+export const M3_CONTRADICTORY_LIMITED_RANKED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae7';
+function m3ContradictoryLimitedRankedResultFixture(id: string): Record<string, unknown> {
+  const fixture = m3ScoredResultFixture(id);
+  const rankedZone = (fixture.assessment as Record<string, unknown>[])[0] as Record<string, unknown>;
+  fixture.scoring = {...(fixture.scoring as Record<string, unknown>), ranked_count: 1, unranked_count: 0};
+  fixture.assessment = [{...rankedZone, evidence_status: 'LIMITED'}];
+  fixture.result_identity = {...(fixture.result_identity as Record<string, unknown>), result_sha256: fixtureResultSha256(fixture)};
+  return fixture;
+}
+
 // A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the gates, so the
 // backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
 // under this method", never as UNRANKED.
@@ -502,13 +551,23 @@ function m3ScoredResultFixture(id: string, variant: 'main' | 'slow' = 'main'): R
       observations: [
         {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-01', window_end: '2026-08-10', observation_class: 'OBSERVED', valid_count: 120, value: 0.42, unit: 'index', valid_area_fraction: 0.92},
         {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-11', window_end: '2026-08-20', observation_class: 'DERIVED', valid_count: 90, value: 0.38, unit: 'index', valid_area_fraction: 0.8},
-        {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-21', window_end: '2026-08-30', observation_class: 'MISSING', valid_count: 0, value: null, missing_reason: 'NO_OBSERVATION_IN_WINDOW'},
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-21', window_end: '2026-08-30', observation_class: 'MISSING', valid_count: 0, value: null, missing_reason: 'NO_VALID_PIXELS'},
         {zone_id: `Z-1${zoneSuffix}`, indicator: 'RAINFALL', window_start: '2026-08-01', window_end: '2026-08-30', observation_class: 'OBSERVED', valid_count: 30, value: 4.2, unit: 'mm'},
+        // A missing reason this build does not know (the M2 vocabulary is open: the pinned backend
+        // publishes NOT_CONFIGURED, the typed decode reasons and `READ_FAILED:<code>` composites).
+        // The table must still explain the missing value in the reader's language and may only
+        // carry the raw code as an ADDITIONAL isolated diagnostic.
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'RAINFALL', window_start: '2026-08-21', window_end: '2026-08-30', observation_class: 'MISSING', valid_count: 0, value: null, missing_reason: 'FUTURE_MISSING_REASON'},
         {zone_id: `Z-3${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-01', window_end: '2026-08-10', observation_class: 'OBSERVED', valid_count: 60, value: 0.5, unit: 'index', valid_area_fraction: 0.7}
       ],
+      // The pinned M2 `SourceEvidence` vocabulary: role ∈ {TEMPORAL, STATIC, MASK} (m2.py:165-170
+      // `specs`), status ∈ {NOT_RUN, READ, EMPTY, BLOCKED, FAILED}. One entry carries the committed
+      // product version/revision and represented/acquisition dates the decision card must project;
+      // the other deliberately omits them so the card's explicit "not returned" handling is
+      // exercised rather than the field being silently dropped.
       source_manifest: [
-        {source_id: 'sentinel2_l2a_earth_search', role: 'zone_measurement', status: 'READ', product: 'sentinel-2-l2a'},
-        {source_id: 'chirps', role: 'context', status: 'READ', product: 'chirps-daily'}
+        {source_id: 'sentinel2_l2a_earth_search', role: 'TEMPORAL', status: 'READ', product: 'sentinel-2-l2a', version: '05.11', revision: '05.11', represented_date: '2026-08-30', acquisition_date: '2026-08-30'},
+        {source_id: 'chirps', role: 'TEMPORAL', status: 'READ', product: 'chirps-daily'}
       ],
       coverage: [],
       baseline: {status: 'AVAILABLE', method: 'seasonal-median', reference_start: '2024-08-01', reference_end: '2025-08-30'}
@@ -586,7 +645,12 @@ function m3ScoredResultFixture(id: string, variant: 'main' | 'slow' = 'main'): R
         zone_id: `Z-3${zoneSuffix}`,
         geometry_version: 3,
         geometry_hash: 'fixture-zone-hash-3',
-        evidence_status: 'LIMITED',
+        // The genuine ranked-LOW case (the pinned backend's `Z-LOW-M2` semantics): a RANKED zone
+        // whose evidence-quality class is LOW. DR-M3-01 §3 ("Rankable ⇔ … per-zone evidence_status
+        // = SUFFICIENT"; "LIMITED is not rankable") makes SUFFICIENT the only per-zone evidence
+        // status a RANKED zone can carry, so this fixture is the valid ranked case, and the
+        // contradictory LIMITED+RANKED combination is covered by a separate id below.
+        evidence_status: 'SUFFICIENT',
         sufficiency: {status: 'PASS', failed_factors: [], reasons: []},
         evidence_quality: {m: '0.5000', o: '0.2500', c: '0.3750', class: 'LOW', display: '0.38', display_decimals: 2, label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', factors: factorRows().slice(0, 4), top_reasons: [{code: 'NO_INDEPENDENT_CORROBORATION', params: {}}]},
         priority: {
@@ -836,6 +900,8 @@ export function startBackendDouble(
         M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
         M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
         M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
+        M3_LIMITED_UNRANKED_ID,
+        M3_CONTRADICTORY_LIMITED_RANKED_ID,
         M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
@@ -916,6 +982,14 @@ export function startBackendDouble(
       }
       if (id === M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID) {
         respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'AGRICULTURAL_MASK_BLOCKED'));
+        return;
+      }
+      if (id === M3_LIMITED_UNRANKED_ID) {
+        respondJson(res, 200, m3LimitedUnrankedResultFixture(id));
+        return;
+      }
+      if (id === M3_CONTRADICTORY_LIMITED_RANKED_ID) {
+        respondJson(res, 200, m3ContradictoryLimitedRankedResultFixture(id));
         return;
       }
       if (id === M3_SLOW_ID) {

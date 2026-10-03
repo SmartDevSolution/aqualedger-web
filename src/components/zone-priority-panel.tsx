@@ -60,13 +60,19 @@ export function ZonePriorityPanel({view, selectedZoneId, onSelectZone, identity,
         <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner">
           {t('priorityClassBanner', {methodVersion: isolate(view.result.scoring.method_version)})}
         </p>
+      ) : view.result.scoring.priority_class_status === undefined || view.result.scoring.priority_class_status === null ? (
+        // Bound to the body's own value (Council condition 3): an ABSENT status is reported as
+        // absent and never restated as the concluded `NOT_ESTABLISHED`; no class is shown.
+        <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner" data-status="absent">
+          {t('priorityClassAbsent', {methodVersion: isolate(view.result.scoring.method_version)})}
+        </p>
       ) : (
-        // Bound to the body's own value (Council condition 3): any other or absent status is never
-        // restated as "not established" and never turned into a class; only the order is shown.
+        // Any other status is reported verbatim without asserting what the method concluded
+        // (Council condition 3): the notice states the reported value and that no class is shown.
         <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner" data-status="unrecognised">
           {t('priorityClassUnrecognised', {
             methodVersion: isolate(view.result.scoring.method_version),
-            status: isolate(view.result.scoring.priority_class_status ?? '—')
+            status: isolate(view.result.scoring.priority_class_status)
           })}
         </p>
       )}
@@ -261,9 +267,7 @@ function ZoneRow({view, zone, selected, onSelect}: {
 
       <div className="confounder-chips" aria-label={t('confoundersHeading')}>
         {confounders.length === 0 ? <span className="subtle-copy">{t('confoundersNone')}</span> : confounders.map((confounder, index) => (
-          <span key={`${confounder.code}-${index}`} className="chip chip-confounder" data-confounder={confounder.code}>
-            <ConfounderText code={confounder.code} assessed={confounder.assessed} />
-          </span>
+          <span key={`${confounder.code}-${index}`}><ConfounderChip code={confounder.code} assessed={confounder.assessed} /></span>
         ))}
       </div>
       <p className="subtle-copy">{t('confoundersHeading')}</p>
@@ -273,16 +277,21 @@ function ZoneRow({view, zone, selected, onSelect}: {
   );
 }
 
-function familyLabel(family: string, t: ReturnType<typeof useTranslations<'zones'>>): string {
+export function familyLabel(family: string, t: ReturnType<typeof useTranslations<'zones'>>): string {
   if (family === 'OPTICAL' || family === 'SAR' || family === 'RAINFALL') return t(`family.${family}`);
   return family;
 }
 
-function ConfounderText({code, assessed}: {code: string; assessed: boolean}) {
+/**
+ * One confounder disclosure chip. Exported so the decision card renders the SAME disclosure-only
+ * treatment (label + assessed/not-measured state) instead of a second wording.
+ */
+export function ConfounderChip({code, assessed}: {code: string; assessed: boolean}) {
   const t = useTranslations('zones');
   const c = useTranslations('confounders');
   const label = isKnownConfounderCode(code) ? c(code) : c('unknown', {code: isolate(code)});
-  return <>{assessed ? t('confounderAssessed', {label}) : t('confounderNotMeasured', {label})}</>;
+  const text = assessed ? t('confounderAssessed', {label}) : t('confounderNotMeasured', {label});
+  return <span className="chip chip-confounder" data-confounder={code}>{text}</span>;
 }
 
 export function EvidenceClassBadge({zone}: {zone: ZoneView}) {

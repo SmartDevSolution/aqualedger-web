@@ -44,6 +44,29 @@ export function isKnownReasonCode(code: string): code is ReasonKey {
   return KNOWN.has(code);
 }
 
+// The M2 `Observation.missing_reason` vocabulary is NOT the M3 reason enum: the pinned backend
+// publishes these typed codes (m2.py:195 `NOT_CONFIGURED`, :246/:277 `READ_FAILED:<cause>`,
+// :353 `proof_reason or "NO_DECODABLE_STATISTIC"`, sources_m2.py:377-417 the decode-proof
+// reasons, :1677 the coverage outcome). It is an open vocabulary — a `READ_FAILED:` composite
+// carries the underlying cause — so an unknown value is explained in the reader's language and
+// may only carry the raw code as an ADDITIONAL isolated diagnostic, never as the sole explanation.
+const MISSING_REASON_CODES = [
+  'NOT_CONFIGURED', 'NO_DECODE_PROOF', 'NO_VALID_PIXELS', 'NO_DECODABLE_STATISTIC', 'NO_INTERSECTING_BASIN'
+] as const;
+export type MissingReasonKey = (typeof MISSING_REASON_CODES)[number];
+const MISSING_REASONS: ReadonlySet<string> = new Set(MISSING_REASON_CODES);
+const READ_FAILED = 'READ_FAILED';
+
+/** Localized explanation of an `Observation.missing_reason`; null stays null (no cell content). */
+export function useMissingReasonText() {
+  const t = useTranslations('evidenceMissing');
+  return (code: string): string => {
+    if (MISSING_REASONS.has(code)) return t(code as MissingReasonKey);
+    if (code === READ_FAILED || code.startsWith(`${READ_FAILED}:`)) return t(READ_FAILED, {code: isolate(code)});
+    return t('_unknown', {code: isolate(code)});
+  };
+}
+
 const CONFOUNDER_KEYS = [
   'GROWTH_STAGE', 'CROP_TYPE', 'SALINITY', 'WEATHER', 'MANAGEMENT', 'MASK_UNCERTAINTY',
   'MIXED_LAND_COVER', 'PROVISIONAL_AOI'

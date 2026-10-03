@@ -1187,6 +1187,52 @@ h3 {
   break-inside: avoid;
 }
 
+/* Schematic AOI/zone inset on the decision card: committed geometry only, no tiles. */
+.card-inset {
+  margin: 0.7rem 0 0;
+}
+
+.card-inset svg {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 22rem;
+  block-size: auto;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.card-inset-aoi {
+  fill: none;
+  stroke: #16323c;
+  stroke-width: 1.4;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.card-inset-zone {
+  stroke: #16323c;
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.card-zone-detail {
+  margin-block-start: 0.4rem;
+  break-inside: avoid;
+}
+
+.card-zone-detail .reason-list {
+  margin-block-start: 0.2rem;
+}
+
+.card-source-detail {
+  display: inline-block;
+  margin-inline-start: 0.5rem;
+}
+
+.zone-status-line {
+  margin-block-start: 0.2rem;
+}
+
 .print-header,
 .print-footer {
   display: none;
@@ -1256,7 +1302,9 @@ h3 {
   }
 
   .rank-chip,
-  .quality-badge {
+  .quality-badge,
+  .card-inset svg,
+  .card-inset-zone {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
