@@ -42,7 +42,9 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
      gate ("Persistence is not eligible for ranking for this zone."), and the three sourced M2
      prerequisite causes (`NO_COMPATIBLE_BASELINE`, `EXCESSIVE_GAPS`, `AGRICULTURAL_MASK_BLOCKED`) are
      rendered from `params.m2_reason_code` by `useReasonText`. An absent or unrecognised cause adds no
-     sentence, and no "not persistent" claim is ever rendered. Other entries were reworded only to
+     sentence, and no "not persistent" claim is ever rendered (the UNRANKED group heading for that
+     reason carried the pre-F1 wording until it was corrected on this branch — see the rebase note
+     under "Carried conditions" below). Other entries were reworded only to
      take the typed `params` of DR-M3-01 §6 as placeholders; the F1 regression is ported to the new
      zone rows (both locales, both viewports).
    - Of the 12 `workspace.scoring*` keys, three remain in use (`scoringHeading`, `scoringNotScored`,
@@ -93,6 +95,15 @@ made twice:
   `scorePresentation` export in `src/lib/api/m3.ts`, the two Arabic gender-agreement slips
   (`AGRI_MASK_BLOCKED`, `PERSISTENCE_NOT_ASSESSED`) and the recorded next-re-pin re-check of the
   persistence call site.
+- **Found while preparing the rebase, fixed on this branch: the slice's own UNRANKED group heading
+  still carried the pre-F1 claim.** `zones.unrankedGroup.PERSISTENCE_INELIGIBLE` read
+  "Stress not persistent" (`ar` "الإجهاد غير مستمر") and is rendered — via `unrankedGroupHeading`,
+  `"{reason} ({count})"` — as the heading of every UNRANKED group for that reason, so the scored
+  surface asserted a non-persistence result for zones whose persistence is *unassessed*. That
+  contradicts the F1 correction and item 6 above. The heading now states the eligibility gate
+  ("Persistence not eligible for ranking" / "الاستمرارية غير مؤهلة للترتيب"), and the bilingual F1
+  regression asserts the group heading and asserts that no non-persistence claim appears anywhere in
+  the result panel, so the group surface cannot regress silently.
 
 Base for this slice: web `dev` at the M3-4 merge commit `0b48dae` (tree equal to the reviewed head
 `f1426c2`); the M3-4 branch is not a landing dependency.
