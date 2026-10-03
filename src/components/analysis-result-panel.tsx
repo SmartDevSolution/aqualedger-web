@@ -6,6 +6,7 @@ import {limitationMessageKey, perDateReasonMessageKey} from '@/lib/api/error-mes
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
 import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {QualityEvidencePanel} from './quality-evidence-panel';
+import {ResultScoringSection} from './result-scoring-panel';
 
 export function AnalysisResultPanel({
   analysisId,
@@ -118,6 +119,8 @@ function LoadedAnalysisResult({
       )}
 
       <QualityEvidencePanel result={result} />
+
+      <ResultScoringSection result={result} />
 
       {(result.scenes_evaluated?.length ?? 0) > 0 ? (
         <section className="result-detail-section" aria-labelledby="result-scenes-heading">
