@@ -14,9 +14,10 @@ import {ConfounderChip, EvidenceClassBadge, familyLabel} from './zone-priority-p
 // In-place decision card + print-ready localized view (plan §8, DR-M3-01 §8). Real text throughout
 // — no canvas, no image of text — so Arabic shaping and bidi survive printing. The print header and
 // footer repeat the analysis id, short result hash, method version and the committed scoring time on
-// every page (`position: fixed` in @media print). Values come from the one committed result only;
-// the scoring time is the backend's `computed_at`, so the same card prints the same stamp in either
-// language and no clock reading is involved.
+// every page (`position: fixed` in @media print); the printed @page margins reserve their bands on
+// every page so content never overlaps them (round-5 C-02). Values come from the one committed
+// result only; the scoring time is the backend's `computed_at`, so the same card prints the same
+// stamp in either language and no clock reading is involved.
 //
 // DR-M3-01 §8 content projection: the identity/content fields above, the committed pipeline and
 // config versions, the AOI identity with a small inset drawn from the committed geometry, sources
@@ -55,8 +56,15 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
   const shortSha = shortHash(view.resultSha256);
   const aoi = result.request.aoi_geojson as unknown as AoiPolygon;
   const areaKm2 = validatePolygon(aoi).areaKm2;
+  // Round-5 C-01 (F-01 completion): the two OPTIONAL M2 member arrays are distinguished ABSENT vs
+  // PRESENT, independently. An absent member (`m2` carries no `observations` / `coverage` key) is
+  // not evidence and must never be tallied into zeros; an explicitly empty array is the committed
+  // statement "no rows / no gaps", for which 0/0/0 and "gaps recorded: 0" are truthful. The former
+  // `?? []` read both identically.
+  const observations = m2?.observations;
+  const coverageGaps = m2?.coverage;
   const counts = {observed: 0, derived: 0, missing: 0};
-  for (const observation of m2?.observations ?? []) {
+  for (const observation of observations ?? []) {
     if (observation.observation_class === 'OBSERVED') counts.observed += 1;
     else if (observation.observation_class === 'DERIVED') counts.derived += 1;
     else counts.missing += 1;
@@ -201,7 +209,7 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
         <dl className="result-facts">
           <Fact label={t('observationRows')} value={
             <span data-testid="card-observation-rows">
-              {m2 === null ? t('notReturned') : t('observationCounts', {observed: String(counts.observed), derived: String(counts.derived), missing: String(counts.missing)})}
+              {observations === undefined ? t('notReturned') : t('observationCounts', {observed: String(counts.observed), derived: String(counts.derived), missing: String(counts.missing)})}
             </span>
           } />
           <Fact label={t('committedValidCount')} value={
@@ -232,10 +240,15 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
 
         {/* Per-observation valid counts carry their own zone/window scope, so a reader can tell a
             zone-window valid count from the whole-area committed count above. */}
+        {/* Round-5 C-01: an absent `observations` member reads "not returned"; an explicitly empty
+            array keeps its truthful "no rows" statement. The absent whole-block wording below is
+            unchanged for results that carry no M2 block at all. */}
         <h5>{t('observationListHeading')}</h5>
         {m2 === null ? (
           <p className="subtle-copy" data-testid="card-observations-unavailable">{t('observationsUnavailable')}</p>
-        ) : (m2.observations ?? []).length === 0 ? (
+        ) : observations === undefined ? (
+          <p className="subtle-copy" data-testid="card-observation-rows-not-returned">{t('observationRowsNotReturned')}</p>
+        ) : observations.length === 0 ? (
           <p className="subtle-copy" data-testid="card-observation-rows-none">{t('noObservationRows')}</p>
         ) : (
           <ul className="reason-list card-observation-list">
@@ -268,12 +281,15 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
         {/* The recorded gaps, each with its source/window scope and a localized explanation of the
             committed reason code (the M2 coverage vocabulary is open: READ_FAILED:<cause> and the
             typed decode reasons), never the raw code alone. */}
+        {/* Round-5 C-01: the gaps line distinguishes an absent `coverage` member ("not returned")
+            from an explicitly empty one ("recorded: 0" is the truthful statement there), and an
+            absent whole M2 block keeps its dedicated wording. */}
         <p data-testid="card-coverage-gaps">
-          {m2 === null ? t('coverageGapsUnavailable') : t('coverageGaps', {count: String(m2.coverage?.length ?? 0)})}
+          {m2 === null ? t('coverageGapsUnavailable') : coverageGaps === undefined ? t('coverageGapsNotReturned') : t('coverageGaps', {count: String(coverageGaps.length)})}
         </p>
-        {m2 !== null && (m2.coverage ?? []).length > 0 ? (
+        {coverageGaps !== undefined && coverageGaps.length > 0 ? (
           <ul className="reason-list card-coverage-gap-list">
-            {(m2.coverage ?? []).map((gap, index) => (
+            {coverageGaps.map((gap, index) => (
               <li key={`${gap.source_id}-${gap.window_start}-${index}`} data-gap-source={gap.source_id}>
                 <span>{t('gapScope', {
                   source: isolate(gap.source_id),

@@ -721,7 +721,12 @@ h3 {
   text-align: end;
 }
 
+/* Round-5 C-03: a chart track is a magnitude axis, not text, so it is direction-isolated: the bar
+   always grows from the track's left edge in every locale. Without this the bar
+   anchors to the right edge under RTL and the axis mirrors, which the engineering standards
+   prohibit for analytical plots. Localized labels around the track keep the document direction. */
 .evidence-chart-track {
+  direction: ltr;
   height: 0.7rem;
   overflow: hidden;
   border-radius: 999px;
@@ -1239,8 +1244,12 @@ h3 {
 }
 
 @media print {
+  /* Round-5 C-02: the repeated print header/footer are `position: fixed`. Chromium positions fixed
+     print elements from the page's content box; the 16mm cloned card padding together with the @page
+     margins reserves the top/bottom bands on every fragment. `box-decoration-break: clone` is
+     essential: ordinary card padding only affects first/last fragment. */
   @page {
-    margin: 18mm 14mm;
+    margin: 24mm 14mm;
   }
 
   body {
@@ -1273,7 +1282,9 @@ h3 {
   .decision-card {
     display: block;
     border: 0;
-    padding: 0;
+    padding-block: 16mm;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
 
   .print-header,
@@ -1295,10 +1306,6 @@ h3 {
   .print-footer {
     bottom: 0;
     border-block-start: 1px solid #444;
-  }
-
-  .decision-card {
-    padding-block: 12mm;
   }
 
   .rank-chip,

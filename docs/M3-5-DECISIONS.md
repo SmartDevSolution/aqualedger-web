@@ -213,7 +213,12 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
       zone/window/indicator scope; and every recorded `m2.coverage[]` gap with its source, window, a
       localized explanation of its `reason_code` (through `evidenceMissing.*`, which covers the open
       `READ_FAILED:<cause>` composite) and its `observed_count` / `expected_count` /
-      `coverage_fraction`. Absent/null stays absent: an absent optional `m2` block now reads "Not
+      `coverage_fraction`. **Optional M2 member arrays preserve absent-vs-empty semantics:** an
+      omitted `m2.observations` or `m2.coverage` member is "Not returned" independently on the card
+      and print surface (absence is not evidence and is never tallied as zero), while an explicitly
+      empty array is the truthful committed "no rows" / "no gaps" statement and remains `0/0/0` or
+      `Coverage gaps recorded: 0`. The absent whole `m2` block keeps its own no-block wording.
+      Absent/null stays absent: an absent optional `m2` block now reads "Not
       returned" for the row totals and the gap line (and "not returned" for the per-observation list)
       instead of tallying 0/0/0, and a null `expected_count` / `coverage_fraction` reads "not
       returned" rather than zero. The row totals are now visibly distinct from the committed valid

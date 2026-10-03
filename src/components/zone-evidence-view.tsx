@@ -49,6 +49,10 @@ function IndicatorSeries({indicator, rows, zoneId}: {indicator: (typeof INDICATO
             return (
               <div className="evidence-chart-row" key={`${row.window_start}-${row.window_end}`}>
                 <bdi dir="ltr" className="evidence-chart-label">{row.window_start}</bdi>
+                {/* Round-5 C-03: the plot is a magnitude axis, not text, so it never mirrors under
+                    RTL (`direction: ltr` on the track in globals.css; engineering standard 10 §27
+                    prohibits mirroring analytical axes). The surrounding labels/table keep the
+                    document direction and stay fully localized. */}
                 <div className="evidence-chart-track" aria-hidden="true">
                   <span className={`evidence-chart-bar obs-${row.observation_class.toLowerCase()}`} style={{width: `${width}%`}} />
                 </div>

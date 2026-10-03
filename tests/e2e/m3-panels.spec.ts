@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {Buffer} from 'node:buffer';
 import {expect, test, type Page} from '@playwright/test';
 import {
   M3_CARD_PROJECTION_ID,
@@ -185,6 +186,31 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByTestId('zone-evidence')).toHaveAttribute('data-zone-id', 'Z-3');
       await expect(page.getByTestId('zone-evidence').locator('[data-indicator="NDVI"] tbody tr')).toHaveCount(1);
       await expect(page.getByTestId('zone-evidence').locator('[data-indicator="RAINFALL"]')).toHaveCount(0);
+    });
+
+    test('the analytical evidence bar keeps the same visual edge when switching locale', async ({page}) => {
+      // Round-5 C-03: RTL changes the surrounding layout, never the plot axis. The second NDVI
+      // value is non-full-width and therefore exposes whether the bar anchored left or right.
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?zone=Z-1`);
+      const row = page.locator('.zone-evidence [data-indicator="NDVI"] .evidence-chart-row').nth(1);
+      await expect(row).toBeVisible();
+      const geometry = async () => page.locator('.zone-evidence [data-indicator="NDVI"] .evidence-chart-row').nth(1).evaluate((node) => {
+        const track = node.querySelector('.evidence-chart-track')!.getBoundingClientRect();
+        const bar = node.querySelector('.evidence-chart-bar')!.getBoundingClientRect();
+        return {direction: getComputedStyle(node.querySelector('.evidence-chart-track')!).direction, leftInset: bar.left - track.left, rightInset: track.right - bar.right, trackWidth: track.width, barWidth: bar.width};
+      });
+      const before = await geometry();
+      expect(before.direction).toBe('ltr');
+      expect(before.barWidth).toBeGreaterThan(0);
+      expect(before.barWidth).toBeLessThan(before.trackWidth);
+      await page.locator('.language-switcher').click();
+      const other = locale === 'en' ? 'ar' : 'en';
+      await expect(page).toHaveURL(new RegExp(`/${other}/analysis/${M3_SCORED_ID}`));
+      const after = await geometry();
+      expect(after.direction).toBe('ltr');
+      expect(after.barWidth / after.trackWidth).toBeCloseTo(before.barWidth / before.trackWidth, 2);
+      expect(after.leftInset / after.trackWidth).toBeCloseTo(before.leftInset / before.trackWidth, 2);
+      expect(after.rightInset / after.trackWidth).toBeCloseTo(before.rightInset / before.trackWidth, 2);
     });
 
     test('numbers and dates use Latin digits and Gregorian dates; ids stay LTR', async ({page}) => {
@@ -637,6 +663,71 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByTestId('card-observations-unavailable')).toContainText(L('not returned', 'لم تُعَد'));
     });
 
+    // Round-5 C-01 (Council BLOCK at ac59b67, both seats): `m2.observations` and `m2.coverage` are
+    // OPTIONAL members of an otherwise present M2 block. Absence (no key) means "not collected" and
+    // must read "not returned" on the card AND in print — never a zero tally. An explicitly empty
+    // array is the backend's committed "no rows / no gaps" statement, for which the zeros are
+    // truthful and stay. Each member is omitted independently, then both together.
+    for (const [label, mutate] of [
+      ['observations omitted', (body: Record<string, unknown>) => { delete (body.m2 as Record<string, unknown>).observations; }],
+      ['coverage omitted', (body: Record<string, unknown>) => { delete (body.m2 as Record<string, unknown>).coverage; }],
+      ['both omitted', (body: Record<string, unknown>) => {
+        const m2 = body.m2 as Record<string, unknown>;
+        delete m2.observations;
+        delete m2.coverage;
+      }]
+    ] as const) {
+      test(`an absent M2 member array is not returned, never a zero count (${label})`, async ({page}) => {
+        await serveMutated(page, M3_CARD_PROJECTION_ID, mutate);
+        await page.goto(`/${locale}/analysis/${M3_CARD_PROJECTION_ID}?panel=card`);
+        await expect(page.getByTestId('decision-card')).toBeVisible();
+        const rows = page.getByTestId('card-observation-rows');
+        const gaps = page.getByTestId('card-coverage-gaps');
+        if (label !== 'coverage omitted') {
+          await expect(rows).toHaveText(L('Not returned', 'لم يُعَد'));
+          await expect(rows).not.toContainText('0');
+          await expect(page.getByTestId('card-observation-rows-not-returned')).toContainText(L('not returned', 'لم تُعَد'));
+        } else {
+          await expect(rows).toContainText(L('observed', 'مرصودة'));
+        }
+        if (label !== 'observations omitted') {
+          await expect(gaps).toHaveText(L('Coverage gaps recorded: not returned — the result carries no gap list.', 'فجوات التغطية المسجلة: لم تُعَد — لا تحمل هذه النتيجة قائمة فجوات.'));
+        } else {
+          await expect(gaps).toContainText(L('Coverage gaps recorded: 1', 'فجوات التغطية المسجلة: 1'));
+        }
+        // The same distinction on the print surface (the card IS the print view; the repeated
+        // header/footer bands must not change the projection).
+        await page.emulateMedia({media: 'print'});
+        if (label !== 'coverage omitted') {
+          await expect(rows).toHaveText(L('Not returned', 'لم يُعَد'));
+          await expect(page.getByTestId('card-observation-rows-not-returned')).toBeVisible();
+        }
+        if (label !== 'observations omitted') {
+          await expect(gaps).toHaveText(L('Coverage gaps recorded: not returned — the result carries no gap list.', 'فجوات التغطية المسجلة: لم تُعَد — لا تحمل هذه النتيجة قائمة فجوات.'));
+        }
+      });
+    }
+
+    // Round-5 C-01 counterpart: explicitly EMPTY member arrays are the committed statement
+    // "no rows / no gaps" — the zeros are truthful there and must not be rewritten into
+    // "not returned" (no over-correction from the absent-member fix).
+    test('explicitly empty M2 member arrays keep their truthful zeros', async ({page}) => {
+      await serveMutated(page, M3_CARD_PROJECTION_ID, (mutated) => {
+        const m2 = mutated.m2 as Record<string, unknown>;
+        m2.observations = [];
+        m2.coverage = [];
+      });
+      await page.goto(`/${locale}/analysis/${M3_CARD_PROJECTION_ID}?panel=card`);
+      await expect(page.getByTestId('card-observation-rows')).toHaveText(L('0 observed · 0 derived · 0 missing', '0 مرصودة · 0 مشتقة · 0 مفقودة'));
+      await expect(page.getByTestId('card-observation-rows-none')).toBeVisible();
+      await expect(page.getByTestId('card-coverage-gaps')).toHaveText(L('Coverage gaps recorded: 0', 'فجوات التغطية المسجلة: 0'));
+      // The absent-member wording is not shown: the arrays are present, only empty.
+      await expect(page.getByTestId('card-observation-rows-not-returned')).toHaveCount(0);
+      await page.emulateMedia({media: 'print'});
+      await expect(page.getByTestId('card-observation-rows')).toHaveText(L('0 observed · 0 derived · 0 missing', '0 مرصودة · 0 مشتقة · 0 مفقودة'));
+      await expect(page.getByTestId('card-coverage-gaps')).toHaveText(L('Coverage gaps recorded: 0', 'فجوات التغطية المسجلة: 0'));
+    });
+
     test('print view repeats analysis id, short hash, method and scoring time as real text', async ({page}) => {
       const {sha} = await servedSha(page, M3_SCORED_ID);
       await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?panel=card`);
@@ -661,6 +752,31 @@ for (const locale of ['en', 'ar'] as const) {
       // The PDF is produced from the same text layer.
       const pdf = await page.pdf({format: 'A4', printBackground: true});
       expect(pdf.byteLength).toBeGreaterThan(2000);
+    });
+
+    // Round-5 C-02 (Council BLOCK at ac59b67, seat 1): the repeated header/footer paint at the
+    // top/bottom of EVERY page box (`position: fixed`), so the printed page margins must reserve a
+    // band for them on every page. This regression generates real multipage PDFs in both locales;
+    // the full text-box overlap receipt is independently re-verified with PyMuPDF in the gate run.
+    test('printed multipage card keeps repeated bands and real text in both locales', async ({page}) => {
+      test.setTimeout(120_000);
+      const {sha} = await servedSha(page, M3_SCORED_ID);
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?panel=card`);
+      await expect(page.getByTestId('decision-card')).toBeVisible();
+      await page.emulateMedia({media: 'print'});
+      const header = page.locator('.print-header');
+      const footer = page.locator('.print-footer');
+      await expect(header).toBeVisible();
+      await expect(footer).toBeVisible();
+      await expect(header).toContainText(M3_SCORED_ID);
+      await expect(footer).toContainText(sha.slice(0, 12));
+      await expect(footer).toContainText('aq-scorecard-1');
+      const pdf = await page.pdf({format: 'A4', printBackground: true});
+      const pageCount = (Buffer.from(pdf).toString('latin1').match(/\/Type\s*\/Page\b/g) ?? []).length;
+      expect(pageCount, `${locale}: expected a multipage decision-card PDF`).toBeGreaterThanOrEqual(2);
+      expect(pdf.byteLength).toBeGreaterThan(2000);
+      await expect(page.getByRole('heading', {name: L('Ranked zones', 'المناطق المرتبة')}).last()).toBeVisible();
+      await expect(page.getByTestId('decision-card')).toContainText('Z-1');
     });
 
     test('a not-scored result offers no card', async ({page}) => {
