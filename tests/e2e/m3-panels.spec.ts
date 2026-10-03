@@ -243,6 +243,11 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByTestId('zone-guardrail')).toHaveText(L(
         'Decision support for field verification — not enforcement, not a confirmed diagnosis.',
         'دعم قرار للتحقق الميداني — ليس إنفاذًا ولا تشخيصًا مؤكدًا.'));
+      // The UNRANKED group heading is part of the scored render too: it must state the
+      // eligibility gate and never resurrect the pre-F1 non-persistence claim.
+      const group = page.locator('[data-testid="unranked-group"][data-reason="PERSISTENCE_INELIGIBLE"]');
+      await expect(group.locator('h5')).toContainText(L('Persistence not eligible for ranking', 'الاستمرارية غير مؤهلة للترتيب'));
+      expect(await page.locator('.result-panel').innerText()).not.toMatch(/stress not persistent|الإجهاد غير مستمر|لم يكن الإجهاد مستمرًا/i);
     });
   }
 

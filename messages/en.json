@@ -348,7 +348,7 @@
       "RESOLUTION_INADEQUATE": "Source resolution too coarse",
       "AGRI_MASK_BLOCKED": "Agricultural mask not accepted",
       "NOT_AGRICULTURAL": "No accepted agricultural area",
-      "PERSISTENCE_INELIGIBLE": "Stress not persistent",
+      "PERSISTENCE_INELIGIBLE": "Persistence not eligible for ranking",
       "PERSISTENCE_UNKNOWN": "Persistence unknown",
       "PERSISTENCE_NOT_ASSESSED": "Persistence not assessed",
       "EVIDENCE_LIMITED": "Evidence limited",
