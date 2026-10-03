@@ -89,7 +89,8 @@ new M3 scored / not-scored cases in both locales and both viewports). The later 
 (`f1426c2`) added the 8 bilingual prerequisite-failure instances, so the counts at the merged
 head (`f1426c2`, merged to `dev` as `0b48dae`) are **132 configured + 6 unconfigured** tests
 passing — corrected here from the earlier "124", which was true only at the pre-correction head
-(the `f1426c2` commit message already carried 132). Browser tests exercise the relay and rendering
+(the contemporaneous 132 + 6 execution record is
+`evidence/reviews/GATE-MINUTES-web-pr10-f1426c2.md`). Browser tests exercise the relay and rendering
 against the labelled test double (`tests/fixtures/backend-double.ts`), which now carries an
 M3-scored and an M3-not-scored result fixture; they are labelled test content, not production
 claims. No hosted backend run, no hosted paired web/backend acceptance, and no live
