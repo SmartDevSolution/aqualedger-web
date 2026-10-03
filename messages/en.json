@@ -150,7 +150,6 @@
     "resultBlocked": "The saved analysis could not be loaded. See the execution status above.",
     "scoringHeading": "Zone priority scoring",
     "scoringNotScored": "This result was not scored under method aq-scorecard-1. Priority scoring does not apply to it.",
-    "scoringUncalibratedDisclosure": "Decision support for field verification — not enforcement, not a confirmed diagnosis. The evidence-quality class is an uncalibrated rule-based class, not a priority class.",
     "resultTimedOut": "The saved result is still unavailable. Check status again to continue.",
     "provenanceUnavailable": "Coverage and provenance facts appear here after a real result is loaded.",
     "workspaceDisclosure": "This workspace does not calculate or simulate satellite analysis in the browser."

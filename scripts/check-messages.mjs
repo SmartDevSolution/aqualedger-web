@@ -42,11 +42,92 @@ for (const locale of locales) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Unsupported-outcome (F1) class gate — the SECOND key family.
+//
+// F1 (web PR #10, f1426c2) corrected the rendered sentence in `reasons.*` only. M3-5 then
+// reintroduced the same defect in `zones.unrankedGroup.*` — a family this script parity-checked
+// but never checked for MEANING — where "Stress not persistent" was rendered as an UNRANKED group
+// heading (zone-priority-panel.tsx:168 interposes it into `{reason} ({count})`). Both families
+// render the SAME `PERSISTENCE_INELIGIBLE` code, so a wording denylist must be applied to every
+// family the panel renders from that code, not to a hand-maintained list of keys.
+//
+// Denylisted tokens are claims the pinned backend never establishes for these codes: the F1
+// eligibility gate (analysis/m2.py:73-104 "never invent a value when baseline/history is
+// inadequate"; NO_COMPATIBLE_BASELINE :85, EXCESSIVE_GAPS :92, AGRICULTURAL_MASK_BLOCKED :383-391)
+// emits no persistence OUTCOME, so no rendered string may assert "not persistent".
+// Substring, case-insensitive — the exact-text absence check in the F1 regression missed the
+// shorter duplicate wording.
+const DENY_TOKENS = ['not persistent', 'غير مستمر'];
+const RENDERED_REASON_FAMILIES = [
+  {name: 'reasons', entries: (catalog) => catalog.reasons ?? {}},
+  {name: 'zones.unrankedGroup', entries: (catalog) => catalog.zones?.unrankedGroup ?? {}}
+];
+for (const locale of locales) {
+  const catalog = catalogs.get(locale);
+  for (const family of RENDERED_REASON_FAMILIES) {
+    for (const [key, value] of Object.entries(family.entries(catalog))) {
+      if (typeof value !== 'string') continue;
+      const lowered = value.toLowerCase();
+      for (const token of DENY_TOKENS) {
+        if (lowered.includes(token.toLowerCase())) {
+          failures.push(`${locale}: ${family.name}.${key} contains the unsupported-claim token "${token}"; the pinned backend establishes no persistence outcome for this code (F1 class)`);
+        }
+      }
+    }
+  }
+}
+
+// The panel's own group keys (src/components/zone-priority-panel.tsx `GROUP_KEYS`) are the only
+// codes it can turn into an `unrankedGroup.*` heading. Read them from the source so the gate
+// follows the code instead of a second hand-maintained list:
+//   - every GROUP_KEYS member needs a non-empty entry in BOTH locales (a missing one falls through
+//     to the `_other` heading and silently drops the reason);
+//   - every GROUP_KEYS member must be a member of the pinned M3ReasonCode enum (a group key the
+//     backend cannot emit is dead copy that can only mislead);
+//   - the family may hold no non-`_other` key outside GROUP_KEYS (unreachable duplicate entries are
+//     how the F1b defect survived a family-wide parity check), and `_other` must exist.
+const panelSource = await readFile(new URL('../src/components/zone-priority-panel.tsx', import.meta.url), 'utf8');
+const groupKeys = groupKeysFromPanel(panelSource);
+if (groupKeys.length === 0) {
+  failures.push('src/components/zone-priority-panel.tsx: GROUP_KEYS could not be read; the unrankedGroup class gate cannot verify the panel');
+} else {
+  for (const locale of locales) {
+    const family = catalogs.get(locale).zones?.unrankedGroup ?? {};
+    for (const key of groupKeys) {
+      if (typeof family[key] !== 'string' || family[key].trim() === '') {
+        failures.push(`${locale}: zones.unrankedGroup.${key} has no catalog entry (panel GROUP_KEYS member)`);
+      }
+    }
+    if (typeof family._other !== 'string' || family._other.trim() === '') {
+      failures.push(`${locale}: zones.unrankedGroup._other has no catalog entry (panel fallback)`);
+    }
+    for (const key of Object.keys(family)) {
+      if (key !== '_other' && !groupKeys.includes(key)) {
+        failures.push(`${locale}: zones.unrankedGroup.${key} is not a panel GROUP_KEYS member; it can never be rendered (dead duplicate entry)`);
+      }
+    }
+  }
+  for (const key of groupKeys) {
+    if (reasonCodes.length > 0 && !reasonCodes.includes(key)) {
+      failures.push(`src/components/zone-priority-panel.tsx: GROUP_KEYS member ${key} is not an M3ReasonCode member; the pinned backend cannot emit it`);
+    }
+  }
+}
+
 if (failures.length > 0) {
   process.stderr.write(`${failures.join('\n')}\n`);
   process.exitCode = 1;
 } else {
-  process.stdout.write(`Catalog keys and parameters match for ${locales.join(', ')}; all ${reasonCodes.length} M3ReasonCode members have entries.\n`);
+  process.stdout.write(`Catalog keys and parameters match for ${locales.join(', ')}; all ${reasonCodes.length} M3ReasonCode members have entries; ${groupKeys.length} panel group keys are covered in both locales and free of unsupported-outcome tokens (${DENY_TOKENS.length} denylisted).\n`);
+}
+
+// `const GROUP_KEYS = ['A', 'B', ...] as const;` — the array literal only, so a rename or a
+// structural change fails the check above instead of passing silently.
+function groupKeysFromPanel(source) {
+  const match = source.match(/const GROUP_KEYS\s*=\s*\[([\s\S]*?)\]\s*as const;/);
+  if (!match) return [];
+  return [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]);
 }
 
 function flatten(value, prefix = '', output = new Map()) {

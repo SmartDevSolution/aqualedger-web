@@ -247,12 +247,14 @@ for (const locale of ['en', 'ar'] as const) {
       // eligibility gate and never resurrect the pre-F1 non-persistence claim.
       // `> h5` so the assertion lands on the group heading, not on the h5 headings nested inside
       // the rows it contains.
-      const groupHeadings = page.locator('[data-testid="unranked-group"][data-reason="PERSISTENCE_INELIGIBLE"] > h5');
-      // The decision card renders the same group block but stays hidden until opened, so read the
-      // text content of every heading rather than the visible-only innerText.
-      const groupTexts = await groupHeadings.evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''));
-      expect(groupTexts.length).toBeGreaterThan(0);
-      for (const text of groupTexts) expect(text).toContain(L('Persistence not eligible for ranking', 'الاستمرارية غير مؤهلة للترتيب'));
+      const heading = page.locator('[data-testid="unranked-group"][data-reason="PERSISTENCE_INELIGIBLE"] > h5');
+      // The zone panel is the only surface that renders an `unranked-group` block (the decision
+      // card lists the same zones without a group heading), so the heading is unique on the page.
+      await expect(heading).toHaveCount(1);
+      await expect(heading).toHaveText(L('Persistence not eligible for ranking (1)', 'الاستمرارية غير مؤهلة للترتيب (1)'));
+      await expect(heading).not.toContainText(L('not persistent', 'غير مستمر'));
+      expect(await heading.textContent()).not.toMatch(/not persistent|غير مستمر/i);
+      await expect(page.locator('[data-testid="unranked-group"]')).toHaveCount(1);
       expect(await page.locator('.result-panel').innerText()).not.toMatch(/stress not persistent|الإجهاد غير مستمر|لم يكن الإجهاد مستمرًا/i);
     });
   }
