@@ -299,6 +299,30 @@ for (const locale of ['en', 'ar'] as const) {
     // DR-M3-01 §3, fail-closed: "LIMITED is not rankable". A body that ranks a zone the method did
     // not deem rankable is contract-invalid, so the whole result is refused — never partially read,
     // never rendered as a ranking.
+    test('malformed M3 factors and incomplete result identity envelopes are refused', async ({page}) => {
+      await serveMutated(page, M3_SCORED_ID, (body) => {
+        const assessment = body.assessment as Array<Record<string, unknown>>;
+        assessment[0]!.evidence_quality = {...assessment[0]!.evidence_quality as Record<string, unknown>, factors: null};
+      });
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
+      await expect(page.locator('.notice[role="alert"]').filter({hasText: L(
+        'The backend response did not match the pinned result contract.',
+        'لا تطابق استجابة الواجهة الخلفية عقد النتيجة المثبت.')})).toBeVisible();
+      await expect(page.locator('.zone-panel')).toHaveCount(0);
+
+      await page.unroute(`**/api/analyses/${M3_SCORED_ID}/result`);
+      await serveMutated(page, M3_SCORED_ID, (body) => {
+        delete body.result_identity;
+      });
+      await page.reload();
+      await expect(page.locator('.notice[role="alert"]').filter({hasText: L(
+        'The backend response did not match the pinned result contract.',
+        'لا تطابق استجابة الواجهة الخلفية عقد النتيجة المثبت.')})).toBeVisible();
+      await expect(page.locator('.zone-panel')).toHaveCount(0);
+    });
+    // DR-M3-01 §3, fail-closed: "LIMITED is not rankable". A body that ranks a zone the method did
+    // not deem rankable is contract-invalid, so the whole result is refused — never partially read,
+    // never rendered as a ranking.
     test('a body that ranks a zone with a non-SUFFICIENT evidence status is refused, never rendered', async ({page}) => {
       await page.goto(`/${locale}/analysis/${M3_CONTRADICTORY_LIMITED_RANKED_ID}?panel=card`);
       const contractNotice = page.locator('.notice[role="alert"]').filter({hasText: L(
@@ -830,6 +854,8 @@ for (const locale of ['en', 'ar'] as const) {
 
       await drawer.getByRole('button', {name: L('Load more', 'تحميل المزيد')}).click();
       await expect(drawer.locator('.history-item')).toHaveCount(3);
+      const omittedCountsRow = drawer.locator(`[data-analysis-id="${M3_SLOW_ID}"]`);
+      await expect(omittedCountsRow).not.toContainText(/0\s+(ranked|unranked)/i);
       await expect(drawer.getByRole('button', {name: L('Load more', 'تحميل المزيد')})).toHaveCount(0);
 
       await drawer.locator(`[data-analysis-id="${M3_SCORED_ID}"] a`).click();

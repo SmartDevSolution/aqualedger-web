@@ -224,13 +224,14 @@ function isAnalysisResult(value: unknown): value is AnalysisResult {
   // contract-invalid and rejected.
   const hasScoring = value.scoring !== undefined && value.scoring !== null;
   const hasAssessment = value.assessment !== undefined && value.assessment !== null;
-  if (hasScoring !== hasAssessment) return false;
+  const hasIdentity = value.result_identity !== undefined && value.result_identity !== null;
+  // The identity is meaningful only as part of the complete M3 scored envelope. An identity
+  // without scoring and assessment must not be downgraded to a valid "not scored" result.
+  if (hasScoring !== hasAssessment || hasIdentity !== hasScoring) return false;
   if (hasScoring) {
-    if (!isM3Scoring(value.scoring) || !isM3Assessment(value.assessment)) return false;
-    // A scored result must carry its identity block (§4: scoring+assessment+result_identity).
-    if (!isM3ResultIdentity(value.result_identity)) return false;
+    if (!isM3Scoring(value.scoring) || !isM3Assessment(value.assessment)
+      || !isM3ResultIdentity(value.result_identity)) return false;
   }
-  if (value.result_identity !== undefined && value.result_identity !== null && !isM3ResultIdentity(value.result_identity)) return false;
   return true;
 }
 

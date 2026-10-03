@@ -776,7 +776,7 @@ function historyItems(): Record<string, unknown>[] {
   return [
     {analysis_id: M3_SCORED_ID, aoi_sha256: 'a'.repeat(64), created_at: '2026-10-03T08:00:00Z', start_date: '2026-08-01', end_date: '2026-08-30', execution_status: 'SUCCEEDED', evidence_status: 'SUFFICIENT', method_version: 'aq-scorecard-1', ranked_count: 2, unranked_count: 2, result_sha256: scoredHash},
     {analysis_id: M3_NOT_SCORED_ID, aoi_sha256: 'b'.repeat(64), created_at: '2026-10-02T08:00:00Z', start_date: '2026-07-01', end_date: '2026-07-30', execution_status: 'SUCCEEDED', evidence_status: 'LIMITED', method_version: 'aq-scorecard-1'},
-    {analysis_id: M3_SLOW_ID, aoi_sha256: 'c'.repeat(64), created_at: '2026-10-01T08:00:00Z', start_date: '2026-06-01', end_date: '2026-06-30', execution_status: 'SUCCEEDED', evidence_status: 'SUFFICIENT', method_version: 'aq-scorecard-1', ranked_count: 2, unranked_count: 2, result_sha256: fixtureResultSha256(m3ScoredResultFixture(M3_SLOW_ID, 'slow'))}
+    {analysis_id: M3_SLOW_ID, aoi_sha256: 'c'.repeat(64), created_at: '2026-10-01T08:00:00Z', start_date: '2026-06-01', end_date: '2026-06-30', execution_status: 'SUCCEEDED', evidence_status: 'SUFFICIENT', method_version: 'aq-scorecard-1', result_sha256: fixtureResultSha256(m3ScoredResultFixture(M3_SLOW_ID, 'slow'))}
   ];
 }
 

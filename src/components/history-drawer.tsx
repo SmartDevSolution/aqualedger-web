@@ -116,9 +116,10 @@ export function HistoryDrawer({open, onClose, currentAnalysisId, hasDraftArea}: 
                   <span className="history-range">{range}</span>
                   <span className="subtle-copy">{t('itemCreated', {createdAt: formatTimestamp(item.created_at, locale)})}</span>
                   <span className="subtle-copy">
-                    {scored
-                      ? t('itemRanked', {rankedCount: String(item.ranked_count ?? 0), unrankedCount: String(item.unranked_count ?? 0)})
-                      : t('itemNotScored', {methodVersion: isolate(item.method_version)})}
+                    {scored && item.ranked_count !== undefined && item.ranked_count !== null
+                      && item.unranked_count !== undefined && item.unranked_count !== null
+                      ? t('itemRanked', {rankedCount: String(item.ranked_count), unrankedCount: String(item.unranked_count)})
+                      : scored ? null : t('itemNotScored', {methodVersion: isolate(item.method_version)})}
                   </span>
                   <bdi dir="ltr" className="subtle-copy">{item.analysis_id}</bdi>
                   {current ? <span className="selected-tag">{t('itemCurrent')}</span> : null}

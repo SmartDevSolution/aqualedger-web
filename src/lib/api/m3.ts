@@ -119,7 +119,7 @@ function isSufficiencyBlock(value: unknown): boolean {
 
 function isEvidenceQualityBlock(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  if (!isList(value.factors ?? [], isFactorRow)) return false;
+  if (!isList(value.factors, isFactorRow)) return false;
   if (value.class !== undefined && !(value.class === null
     || (typeof value.class === 'string' && EVIDENCE_QUALITY_CLASSES.includes(value.class as never)))) return false;
   for (const field of ['c', 'm', 'o', 'display', 'label'] as const) {
