@@ -23,8 +23,15 @@ export async function POST(request: Request): Promise<Response> {
  * re-encoded here — never the inbound query string verbatim — so the relay cannot be used to
  * smuggle other parameters or paths to the backend.
  */
+function hasDuplicateQueryKey(params: URLSearchParams, key: 'cursor' | 'limit'): boolean {
+  return params.getAll(key).length > 1;
+}
+
 export async function GET(request: Request): Promise<Response> {
   const incoming = new URL(request.url).searchParams;
+  if (hasDuplicateQueryKey(incoming, 'cursor') || hasDuplicateQueryKey(incoming, 'limit')) {
+    return invalidQuery('INPUT_INVALID');
+  }
   const outgoing = new URLSearchParams();
   const cursor = incoming.get('cursor');
   if (cursor !== null) {

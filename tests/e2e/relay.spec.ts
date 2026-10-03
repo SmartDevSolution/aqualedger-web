@@ -15,6 +15,7 @@ const polygon = {type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01]
 type DoubleRequestLogEntry = {
   method: string;
   path: string;
+  search: string | null;
   hasAuthorization: boolean;
   authorization: string | null;
   idempotencyKey: string | null;
@@ -24,6 +25,30 @@ type DoubleRequestLogEntry = {
 async function doubleRequests(): Promise<DoubleRequestLogEntry[]> {
   const response = await fetch(`${doubleBase}/__test__/requests`);
   return response.json();
+}
+
+async function resetDoubleRequests(): Promise<void> {
+  await fetch(`${doubleBase}/__test__/reset`, {method: 'POST'});
+}
+
+async function lastAnalysesListSearch(): Promise<string | null> {
+  const entries = (await doubleRequests()).filter((entry) => entry.method === 'GET' && entry.path === '/analyses');
+  return entries[entries.length - 1]?.search ?? null;
+}
+
+async function expectListQueryRejected(
+  request: {get: (url: string) => Promise<{status: () => number; json: () => Promise<unknown>}>},
+  url: string,
+  code: 'INPUT_INVALID' | 'LIMIT_EXCEEDED'
+): Promise<void> {
+  await resetDoubleRequests();
+  const before = (await doubleRequests()).filter((entry) => entry.path === '/analyses').length;
+  const response = await request.get(url);
+  expect(response.status()).toBe(400);
+  const body = await response.json() as {error: {code: string}};
+  expect(body.error.code).toBe(code);
+  const after = (await doubleRequests()).filter((entry) => entry.path === '/analyses').length;
+  expect(after).toBe(before);
 }
 
 test.describe('same-origin relay (Council DP-2 access model)', () => {
@@ -133,5 +158,43 @@ test.describe('same-origin relay (Council DP-2 access model)', () => {
     const body = await response.json();
     expect(body.analysis_id).toBe(SUCCEEDED_ID);
     expect(JSON.stringify(body)).not.toContain(TEST_OPERATOR_TOKEN);
+  });
+
+  test.describe('GET /api/analyses list query validation (cursor and limit only)', () => {
+    test('rejects duplicate limit or cursor query keys in either order before relaying', async ({request}) => {
+      await expectListQueryRejected(request, '/api/analyses?limit=2&limit=0', 'INPUT_INVALID');
+      await expectListQueryRejected(request, '/api/analyses?limit=0&limit=2', 'INPUT_INVALID');
+      await expectListQueryRejected(request, '/api/analyses?cursor=ok&cursor=', 'INPUT_INVALID');
+      await expectListQueryRejected(request, '/api/analyses?cursor=&cursor=ok', 'INPUT_INVALID');
+    });
+
+    test('rejects empty, oversized and non-integer limits with INPUT_INVALID', async ({request}) => {
+      await expectListQueryRejected(request, '/api/analyses?cursor=', 'INPUT_INVALID');
+      await expectListQueryRejected(request, `/api/analyses?cursor=${'x'.repeat(513)}`, 'INPUT_INVALID');
+      for (const limit of ['0', 'abc', '-1', '1.5']) {
+        await expectListQueryRejected(request, `/api/analyses?limit=${limit}`, 'INPUT_INVALID');
+      }
+    });
+
+    test('rejects limit above the configured maximum with LIMIT_EXCEEDED', async ({request}) => {
+      await expectListQueryRejected(request, '/api/analyses?limit=101', 'LIMIT_EXCEEDED');
+    });
+
+    test('forwards boundary limits and a valid cursor unchanged to the backend', async ({request}) => {
+      await resetDoubleRequests();
+      const atMin = await request.get('/api/analyses?limit=1');
+      expect(atMin.status()).toBe(200);
+      expect(await lastAnalysesListSearch()).toBe('?limit=1');
+
+      await resetDoubleRequests();
+      const atMax = await request.get('/api/analyses?limit=100');
+      expect(atMax.status()).toBe(200);
+      expect(await lastAnalysesListSearch()).toBe('?limit=100');
+
+      await resetDoubleRequests();
+      const paged = await request.get('/api/analyses?cursor=page-2');
+      expect(paged.status()).toBe(200);
+      expect(await lastAnalysesListSearch()).toBe('?cursor=page-2');
+    });
   });
 });

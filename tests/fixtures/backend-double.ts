@@ -220,6 +220,7 @@ type JsonValue = Record<string, unknown> | unknown[];
 type LoggedRequest = {
   method: string | undefined;
   path: string;
+  search: string | null;
   hasAuthorization: boolean;
   authorization: string | null;
   idempotencyKey: string | null;
@@ -864,6 +865,7 @@ export function startBackendDouble(
     requests.push({
       method: req.method,
       path: url.pathname,
+      search: url.search.length > 0 ? url.search : null,
       hasAuthorization: authorization !== null,
       authorization,
       idempotencyKey: (req.headers['idempotency-key'] as string | undefined) ?? null,

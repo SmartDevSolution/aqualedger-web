@@ -319,6 +319,17 @@ for (const locale of ['en', 'ar'] as const) {
         'The backend response did not match the pinned result contract.',
         'لا تطابق استجابة الواجهة الخلفية عقد النتيجة المثبت.')})).toBeVisible();
       await expect(page.locator('.zone-panel')).toHaveCount(0);
+
+      await page.unroute(`**/api/analyses/${M3_SCORED_ID}/result`);
+      await serveMutated(page, M3_SCORED_ID, (body) => {
+        delete body.scoring;
+        delete body.assessment;
+      });
+      await page.reload();
+      await expect(page.locator('.notice[role="alert"]').filter({hasText: L(
+        'The backend response did not match the pinned result contract.',
+        'لا تطابق استجابة الواجهة الخلفية عقد النتيجة المثبت.')})).toBeVisible();
+      await expect(page.locator('.zone-panel')).toHaveCount(0);
     });
     // DR-M3-01 §3, fail-closed: "LIMITED is not rankable". A body that ranks a zone the method did
     // not deem rankable is contract-invalid, so the whole result is refused — never partially read,
@@ -855,7 +866,7 @@ for (const locale of ['en', 'ar'] as const) {
       await drawer.getByRole('button', {name: L('Load more', 'تحميل المزيد')}).click();
       await expect(drawer.locator('.history-item')).toHaveCount(3);
       const omittedCountsRow = drawer.locator(`[data-analysis-id="${M3_SLOW_ID}"]`);
-      await expect(omittedCountsRow).not.toContainText(/0\s+(ranked|unranked)/i);
+      await expect(omittedCountsRow).not.toContainText(L('0 ranked · 0 unranked', '0 مرتبة · 0 غير مرتبة'));
       await expect(drawer.getByRole('button', {name: L('Load more', 'تحميل المزيد')})).toHaveCount(0);
 
       await drawer.locator(`[data-analysis-id="${M3_SCORED_ID}"] a`).click();

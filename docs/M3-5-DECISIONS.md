@@ -309,5 +309,7 @@ made twice:
   regression asserts the group heading and asserts that no non-persistence claim appears anywhere in
   the result panel, so the group surface cannot regress silently.
 
-Base for this slice: web `dev` at the M3-4 merge commit `0b48dae` (tree equal to the reviewed head
-`f1426c2`); the M3-4 branch is not a landing dependency.
+Base for this slice: web `dev` at merge commit `cbb74fa9ce93ee2fdbd5a6667201b395dceec795` (live base
+and merge-base for PR #11). The earlier M3-4 merge commit `0b48dae` (tree equal to the reviewed
+head `f1426c2`) is a historical/superseded reference only; the M3-4 branch is not a landing
+dependency.
