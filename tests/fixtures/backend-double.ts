@@ -573,7 +573,9 @@ function m3ScoredResultFixture(id: string, variant: 'main' | 'slow' = 'main'): R
         geometry_hash: 'fixture-zone-hash-4',
         evidence_status: 'NOT_ASSESSED',
         sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: [], reasons: []},
-        evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
+        // A payload that (wrongly) carries a class and composite on an UNRANKED zone: the panel
+        // must render neither (Council condition 1).
+        evidence_quality: {m: '0.9000', o: '0.9000', c: '0.9000', class: 'HIGH', display: '0.90', display_decimals: 2, factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
         priority: {status: 'UNRANKED', reasons: [{code: 'FUTURE_CODE_X', params: {}}]},
         confounders: [{code: 'FUTURE_CONFOUNDER_Y', assessed: false}],
         independent_families: [],
@@ -687,7 +689,6 @@ export function startBackendDouble(
   // Mutable only for the /sources scenario tests, which run in a serial describe block to avoid
   // cross-test races on this shared, long-lived double.
   let sourcesMode: 'default' | 'empty' | 'outage' | 'unknownRole' = 'default';
-  let historyMode: 'default' | 'empty' | 'error' | 'unauthorized' = 'default';
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
@@ -703,7 +704,6 @@ export function startBackendDouble(
       requests.length = 0;
       notReadyServedIds.clear();
       sourcesMode = 'default';
-      historyMode = 'default';
       respondJson(res, 200, {ok: true});
       return;
     }
@@ -711,12 +711,6 @@ export function startBackendDouble(
       const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'outage' | 'unknownRole'}) : {};
       sourcesMode = body.mode ?? 'default';
       respondJson(res, 200, {ok: true, sourcesMode});
-      return;
-    }
-    if (url.pathname === '/__test__/set-history-mode' && req.method === 'POST') {
-      const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'error' | 'unauthorized'}) : {};
-      historyMode = body.mode ?? 'default';
-      respondJson(res, 200, {ok: true, historyMode});
       return;
     }
     if (url.pathname === '/__test__/preview-bytes' && req.method === 'GET') {
@@ -737,15 +731,7 @@ export function startBackendDouble(
     });
 
     if (req.method === 'GET' && url.pathname === '/analyses') {
-      if (historyMode === 'unauthorized') {
-        respondJson(res, 401, errorEnvelope('UNAUTHENTICATED'));
-        return;
-      }
-      if (historyMode === 'error') {
-        respondJson(res, 503, errorEnvelope('SOURCE_UNAVAILABLE'));
-        return;
-      }
-      const all = historyMode === 'empty' ? [] : historyItems();
+      const all = historyItems();
       const cursor = url.searchParams.get('cursor');
       const pageSize = 2;
       const start = cursor === 'page-2' ? pageSize : 0;

@@ -56,9 +56,20 @@ export function ZonePriorityPanel({view, selectedZoneId, onSelectZone, identity,
           {cardOpen ? card('close') : card('open')}
         </button>
       </div>
-      <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner">
-        {t('priorityClassBanner', {methodVersion: isolate(view.result.scoring.method_version)})}
-      </p>
+      {view.result.scoring.priority_class_status === 'NOT_ESTABLISHED' ? (
+        <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner">
+          {t('priorityClassBanner', {methodVersion: isolate(view.result.scoring.method_version)})}
+        </p>
+      ) : (
+        // Bound to the body's own value (Council condition 3): any other or absent status is never
+        // restated as "not established" and never turned into a class; only the order is shown.
+        <p className="notice notice-neutral zone-class-banner" data-testid="priority-class-banner" data-status="unrecognised">
+          {t('priorityClassUnrecognised', {
+            methodVersion: isolate(view.result.scoring.method_version),
+            status: isolate(view.result.scoring.priority_class_status ?? '—')
+          })}
+        </p>
+      )}
       <p className="subtle-copy" data-testid="zone-guardrail">{m3('panelFooter')}</p>
       <p className="subtle-copy">{m3('ordering')}</p>
       <p className="subtle-copy">{m3('noPriorityScore')}</p>
@@ -277,11 +288,14 @@ function ConfounderText({code, assessed}: {code: string; assessed: boolean}) {
 export function EvidenceClassBadge({zone}: {zone: ZoneView}) {
   const e = useTranslations('evidenceQuality');
   const quality = zone.assessment.evidence_quality;
-  const display = quality.display ?? quality.c ?? null;
+  // An UNRANKED zone never shows a class or composite, whatever the payload carries (Council
+  // condition 1): the suppression is explicit, not a by-product of the generic row layout.
+  const shown = zone.ranked ? quality : null;
+  const display = shown ? (shown.display ?? shown.c ?? null) : null;
   return (
-    <span className="quality-badge" data-testid="evidence-quality-badge" data-class={quality.class ?? 'none'}>
+    <span className="quality-badge" data-testid="evidence-quality-badge" data-class={shown?.class ?? 'none'}>
       <span className="quality-badge-axis">{e('axisLabel')}:</span>{' '}
-      {quality.class ? e('badge', {class: e(`class.${quality.class}`)}) : e('noClass')}
+      {shown?.class ? e('badge', {class: e(`class.${shown.class}`)}) : e('noClass')}
       {display ? <> · <bdi dir="ltr">{e('compositeC', {value: display})}</bdi></> : null}
     </span>
   );
@@ -305,7 +319,7 @@ function TechnicalView({view, zone, locale, onSelect}: {view: ScoredResultView; 
       <dl className="result-facts compact-facts">
         <div className="result-fact"><dt>{e('mandatoryLabel')}</dt><dd><bdi dir="ltr">{quality.m ?? e('absentNotZero')}</bdi></dd></div>
         <div className="result-fact"><dt>{e('optionalLabel')}</dt><dd><bdi dir="ltr">{quality.o ?? e('absentNotZero')}</bdi></dd></div>
-        <div className="result-fact"><dt>{e('compositeLabel')}</dt><dd><bdi dir="ltr">{quality.c ?? e('absentNotZero')}</bdi></dd></div>
+        <div className="result-fact"><dt>{e('compositeLabel')}</dt><dd><bdi dir="ltr">{zone.ranked ? (quality.c ?? e('absentNotZero')) : e('absentNotZero')}</bdi></dd></div>
       </dl>
       {topReasons.length > 0 ? (
         <>

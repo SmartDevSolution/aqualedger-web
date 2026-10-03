@@ -270,6 +270,7 @@
   "zones": {
     "panelTitle": "Zones — order and evidence",
     "priorityClassBanner": "Priority class not established under method {methodVersion}. Only the order of the zones is shown.",
+    "priorityClassUnrecognised": "Priority class not established under method {methodVersion}: the backend reported priority status “{status}”, which this version does not recognise. No class is shown; only the order of the zones is.",
     "methodLabel": "Scoring method",
     "rankedHeading": "Ranked zones",
     "unrankedHeading": "Unranked zones",

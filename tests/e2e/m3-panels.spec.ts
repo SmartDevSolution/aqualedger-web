@@ -14,18 +14,26 @@ import {canonicalJson, computeCardId, computeResultSha256} from '../../src/lib/a
 // production claim. The fixture's `result_sha256` is computed by an independent implementation in
 // the double, so these tests cross-check the web's verifier rather than the web against itself.
 
-const doubleBase = 'http://127.0.0.1:3199';
 const DENYLIST = /theft|steal|stolen|fraud|penalt|illegal|violation|سرق|احتيال|غرام|عقوب|مخالف/i;
 
-async function doubleRequests(): Promise<{path: string; method: string}[]> {
-  return (await fetch(`${doubleBase}/__test__/requests`)).json();
+// Per-page observation (tests run fullyParallel against one shared backend double, so neither the
+// double's global request log nor any global mode is safe to assert on): count POSTs this page made.
+function trackPosts(page: Page): {count: () => number} {
+  let posts = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith('/api/analyses')) posts += 1;
+  });
+  return {count: () => posts};
 }
 
-async function setHistoryMode(mode: 'default' | 'empty' | 'error' | 'unauthorized') {
-  await fetch(`${doubleBase}/__test__/set-history-mode`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({mode})
+// A history state scoped to ONE page: the relay response for `GET /api/analyses` is replaced in
+// this page's network layer only, with the backend's own error envelope shape.
+async function stubHistory(page: Page, mode: 'empty' | 'error' | 'unauthorized') {
+  await page.route(/\/api\/analyses(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    if (mode === 'empty') return route.fulfill({status: 200, json: {items: [], next_cursor: null}});
+    const [status, code] = mode === 'error' ? [503, 'SOURCE_UNAVAILABLE'] : [401, 'UNAUTHENTICATED'];
+    return route.fulfill({status, json: {error: {code, params: {}, request_id: 'req-stub-1'}}});
   });
 }
 
@@ -87,6 +95,12 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(z2.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'none');
       await expect(z2.getByText(L('Insufficient data — this is not a low class', 'بيانات غير كافية — وهذا ليس فئة منخفضة'))).toBeVisible();
       await expect(z2.locator('[data-reason-code="MANDATORY_INPUT_MISSING"]')).toContainText('chirps');
+
+      // Council condition 1: an UNRANKED zone whose payload carries class HIGH / c 0.90 shows neither.
+      const z4Badge = panel.locator('.zone-row[data-zone-id="Z-4"]').getByTestId('evidence-quality-badge');
+      await expect(z4Badge).toHaveAttribute('data-class', 'none');
+      await expect(z4Badge).not.toContainText('0.90');
+      await expect(z4Badge).not.toContainText(L('High', 'مرتفعة'));
 
       // An unknown backend code falls back to the generic template with the analysis id as reference.
       const z4 = panel.locator('.zone-row[data-zone-id="Z-4"]');
@@ -158,6 +172,20 @@ for (const locale of ['en', 'ar'] as const) {
       await page.locator('.zone-row[data-zone-id="Z-1"] .technical-view summary').click();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(1);
+    });
+
+    test('the not-established sentence is bound to the body priority_class_status', async ({page}) => {
+      await page.route(`**/api/analyses/${M3_SCORED_ID}/result`, async (route) => {
+        const response = await route.fetch();
+        const body = await response.json() as {scoring: Record<string, unknown>};
+        body.scoring.priority_class_status = 'ESTABLISHED_FUTURE';
+        await route.fulfill({response, json: body});
+      });
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}`);
+      const banner = page.getByTestId('priority-class-banner');
+      await expect(banner).toHaveAttribute('data-status', 'unrecognised');
+      await expect(banner).toContainText('ESTABLISHED_FUTURE');
+      await expect(banner).toContainText(L('No class is shown', 'لا تُعرض أي فئة'));
     });
 
     test('the map draws the zone layer and does not mirror under RTL', async ({page}) => {
@@ -248,7 +276,7 @@ for (const locale of ['en', 'ar'] as const) {
 
   test.describe(`language switch in ${locale}`, () => {
     test('keeps analysis id, zone, panel and the same result hash, with no POST', async ({page}) => {
-      await fetch(`${doubleBase}/__test__/reset`, {method: 'POST'});
+      const posts = trackPosts(page);
       const {sha} = await servedSha(page, M3_SCORED_ID);
       await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?zone=Z-3&panel=card`);
       await expect(page.getByTestId('decision-card')).toBeVisible();
@@ -266,17 +294,17 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByTestId('result-sha256')).toHaveText(sha.slice(0, 12));
       await expect(page.getByTestId('decision-card')).toHaveAttribute('data-result-sha256', sha);
 
-      const requests = await doubleRequests();
-      expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0);
+      expect(posts.count()).toBe(0);
     });
   });
 
   test.describe(`history drawer in ${locale}`, () => {
-    test.describe.configure({mode: 'serial'});
-
     test('lists saved analyses with cursor load-more; opening one is a GET, never a POST', async ({page}) => {
-      await setHistoryMode('default');
-      await fetch(`${doubleBase}/__test__/reset`, {method: 'POST'});
+      const posts = trackPosts(page);
+      const resultGets: string[] = [];
+      page.on('request', (request) => {
+        if (request.method() === 'GET') resultGets.push(new URL(request.url()).pathname);
+      });
       await page.goto(`/${locale}/analysis/${M3_NOT_SCORED_ID}`);
       await page.getByRole('button', {name: L('Recent analyses', 'التحليلات الحديثة')}).click();
       const drawer = page.getByTestId('history-drawer');
@@ -292,19 +320,17 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(drawer.locator('.history-item')).toHaveCount(3);
       await expect(drawer.getByRole('button', {name: L('Load more', 'تحميل المزيد')})).toHaveCount(0);
 
-      await fetch(`${doubleBase}/__test__/reset`, {method: 'POST'});
       await drawer.locator(`[data-analysis-id="${M3_SCORED_ID}"] a`).click();
       await expect(page).toHaveURL(new RegExp(`/${locale}/analysis/${M3_SCORED_ID}`));
       await expect(page.locator('.zone-panel')).toBeVisible();
-      const requests = await doubleRequests();
-      expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0);
-      expect(requests.some((request) => request.method === 'GET' && request.path === `/analyses/${M3_SCORED_ID}/result`)).toBe(true);
+      expect(posts.count()).toBe(0);
+      expect(resultGets).toContain(`/api/analyses/${M3_SCORED_ID}/result`);
     });
 
     for (const mode of ['empty', 'error', 'unauthorized'] as const) {
       test(`renders the ${mode} state`, async ({page}) => {
-        await setHistoryMode(mode);
-        try {
+        await stubHistory(page, mode);
+        {
           await page.goto(`/${locale}/analysis?history=1`);
           const drawer = page.getByTestId('history-drawer');
           if (mode === 'empty') {
@@ -316,14 +342,11 @@ for (const locale of ['en', 'ar'] as const) {
             await expect(drawer.getByTestId('history-error')).toContainText(L('not authorized', 'غير مخوّلة'));
             await expect(drawer.getByRole('button', {name: L('Try again', 'حاول مرة أخرى')})).toHaveCount(0);
           }
-        } finally {
-          await setHistoryMode('default');
         }
       });
     }
 
     test('the drawer preserves a draft polygon and says so', async ({page}) => {
-      await setHistoryMode('default');
       const polygon = JSON.stringify({type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0, 0]]]});
       await page.goto(`/${locale}/analysis`);
       await page.locator('.coordinate-entry summary').click();

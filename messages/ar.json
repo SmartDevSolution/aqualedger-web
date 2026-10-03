@@ -270,6 +270,7 @@
   "zones": {
     "panelTitle": "المناطق — الترتيب والأدلة",
     "priorityClassBanner": "فئة الأولوية غير محددة بطريقة {methodVersion}. يُعرض ترتيب المناطق فقط.",
+    "priorityClassUnrecognised": "فئة الأولوية غير محددة بطريقة {methodVersion}: أبلغت الواجهة الخلفية بحالة أولوية «{status}» لا تتعرف عليها هذه النسخة. لا تُعرض أي فئة؛ يُعرض ترتيب المناطق فقط.",
     "methodLabel": "طريقة التقييم",
     "rankedHeading": "المناطق المرتبة",
     "unrankedHeading": "المناطق غير المرتبة",
