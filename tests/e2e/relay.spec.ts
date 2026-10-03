@@ -27,28 +27,32 @@ async function doubleRequests(): Promise<DoubleRequestLogEntry[]> {
   return response.json();
 }
 
-async function resetDoubleRequests(): Promise<void> {
-  await fetch(`${doubleBase}/__test__/reset`, {method: 'POST'});
-}
-
-async function lastAnalysesListSearch(): Promise<string | null> {
-  const entries = (await doubleRequests()).filter((entry) => entry.method === 'GET' && entry.path === '/analyses');
-  return entries[entries.length - 1]?.search ?? null;
-}
-
 async function expectListQueryRejected(
   request: {get: (url: string) => Promise<{status: () => number; json: () => Promise<unknown>}>},
   url: string,
   code: 'INPUT_INVALID' | 'LIMIT_EXCEEDED'
 ): Promise<void> {
-  await resetDoubleRequests();
-  const before = (await doubleRequests()).filter((entry) => entry.path === '/analyses').length;
+  // The double is shared by both browser projects and the suite is fully parallel. Do not reset or
+  // compare its global request-log length: another test can legitimately append an entry between
+  // either read. Instead, prove this exact invalid query never reached the double.
+  const expectedSearch = new URL(`http://relay.test${url}`).search;
   const response = await request.get(url);
   expect(response.status()).toBe(400);
   const body = await response.json() as {error: {code: string}};
   expect(body.error.code).toBe(code);
-  const after = (await doubleRequests()).filter((entry) => entry.path === '/analyses').length;
-  expect(after).toBe(before);
+  const relayedMatch = (await doubleRequests()).some((entry) => entry.path === '/analyses' && entry.search === expectedSearch);
+  expect(relayedMatch).toBe(false);
+}
+
+async function expectListQueryForwarded(
+  request: {get: (url: string) => Promise<{status: () => number}>},
+  url: string
+): Promise<void> {
+  const expectedSearch = new URL(`http://relay.test${url}`).search;
+  const response = await request.get(url);
+  expect(response.status()).toBe(200);
+  const relayedMatch = (await doubleRequests()).some((entry) => entry.method === 'GET' && entry.path === '/analyses' && entry.search === expectedSearch);
+  expect(relayedMatch).toBe(true);
 }
 
 test.describe('same-origin relay (Council DP-2 access model)', () => {
@@ -181,20 +185,9 @@ test.describe('same-origin relay (Council DP-2 access model)', () => {
     });
 
     test('forwards boundary limits and a valid cursor unchanged to the backend', async ({request}) => {
-      await resetDoubleRequests();
-      const atMin = await request.get('/api/analyses?limit=1');
-      expect(atMin.status()).toBe(200);
-      expect(await lastAnalysesListSearch()).toBe('?limit=1');
-
-      await resetDoubleRequests();
-      const atMax = await request.get('/api/analyses?limit=100');
-      expect(atMax.status()).toBe(200);
-      expect(await lastAnalysesListSearch()).toBe('?limit=100');
-
-      await resetDoubleRequests();
-      const paged = await request.get('/api/analyses?cursor=page-2');
-      expect(paged.status()).toBe(200);
-      expect(await lastAnalysesListSearch()).toBe('?cursor=page-2');
+      await expectListQueryForwarded(request, '/api/analyses?limit=1');
+      await expectListQueryForwarded(request, '/api/analyses?limit=100');
+      await expectListQueryForwarded(request, '/api/analyses?cursor=page-2');
     });
   });
 });
