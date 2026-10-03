@@ -52,6 +52,21 @@ const m3ReasonMessages = new Set<ErrorMessageKey>([
   'FACTOR_NOT_APPLICABLE', 'FACTOR_NOT_ASSESSED', 'EVIDENCE_QUALITY_UNCALIBRATED'
 ]);
 
+// The M2 persistence prerequisite cause (`Reason.params["m2_reason_code"]`), as published by the
+// pinned backend: `scorecard.py::_persistence_reason` copies `PersistenceAssessment.reason_code`
+// into `params["m2_reason_code"]` (pinned SHA 6ba3f13…, scorecard.py:611-612, model field
+// models/m3.py:327). The codes below are exactly the ones the pinned `analysis/m2.py` assigns to a
+// `PersistenceAssessment` that is INELIGIBLE (`assess_persistence` m2.py:85 NO_COMPATIBLE_BASELINE,
+// m2.py:92 EXCESSIVE_GAPS; the degraded fallback m2.py:385 AGRICULTURAL_MASK_BLOCKED). The other
+// M2 persistence codes (m2.py:99 INCOMPARABLE_REVISION → UNKNOWN, m2.py:105 SUFFICIENT_HISTORY →
+// ELIGIBLE) never reach `PERSISTENCE_INELIGIBLE`, and are deliberately absent. An unrecognized or
+// absent code yields no cause sentence — the client states eligibility and invents no cause.
+const persistenceCauseMessages = new Set<ErrorMessageKey>([
+  'PERSISTENCE_CAUSE_NO_COMPATIBLE_BASELINE',
+  'PERSISTENCE_CAUSE_EXCESSIVE_GAPS',
+  'PERSISTENCE_CAUSE_AGRICULTURAL_MASK_BLOCKED'
+]);
+
 // The pinned contract has no separate enum for `limitations[].code`; it is a free-form object
 // (see contracts/openapi.json AnalysisResult.limitations). Enumerated directly from every place
 // the pinned backend actually constructs a top-level limitation
@@ -93,4 +108,16 @@ export function sourceReasonMessageKey(code: string | null): ErrorMessageKey {
 
 export function m3ReasonMessageKey(code: string | null | undefined): ErrorMessageKey {
   return code && m3ReasonMessages.has(code as ErrorMessageKey) ? code as ErrorMessageKey : 'unknownBackendReason';
+}
+
+/**
+ * Message key for an M2 persistence prerequisite cause carried on a `PERSISTENCE_INELIGIBLE`
+ * reason (`params.m2_reason_code`). Returns null when the backend published no cause or a code
+ * this build cannot source, so the caller renders only the eligibility statement rather than
+ * inventing a cause.
+ */
+export function persistenceCauseMessageKey(code: string | null | undefined): ErrorMessageKey | null {
+  if (!code) return null;
+  const key = `PERSISTENCE_CAUSE_${code}` as ErrorMessageKey;
+  return persistenceCauseMessages.has(key) ? key : null;
 }

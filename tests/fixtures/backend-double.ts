@@ -69,6 +69,13 @@ export const M3_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1';
 // backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
 // under this method", never as UNRANKED.
 export const M3_NOT_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaf1';
+// Two SUCCEEDED M3-scored results whose single UNRANKED zone carries a `PERSISTENCE_INELIGIBLE`
+// reason with the M2 prerequisite cause the pinned backend publishes in
+// `params.m2_reason_code` — `NO_COMPATIBLE_BASELINE` (m2.py:85) and `EXCESSIVE_GAPS` (m2.py:92).
+// F1 regression doubles: the web must explain the eligibility gate, never assert that the stress
+// "was not persistent" (which neither prerequisite failure establishes).
+export const M3_PERSISTENCE_INELIGIBLE_BASELINE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2';
+export const M3_PERSISTENCE_INELIGIBLE_GAPS_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae3';
 // A FAILED run whose single `errors[].code` is a real per-date-only rejection code
 // (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
 // `failure_reason_code` path can actually publish (`SOURCE_READ_FAILED`, `SOURCE_UNAVAILABLE`,
@@ -527,6 +534,40 @@ function errorEnvelope(code: string, params: Record<string, unknown> = {}, reque
   return {error: {code, params, request_id: requestId}};
 }
 
+// A SUCCEEDED M3-scored result whose single zone is UNRANKED on a `PERSISTENCE_INELIGIBLE`
+// reason carrying the M2 prerequisite cause in `params.m2_reason_code` (the shape the pinned
+// backend emits at scorecard.py:611-612). Every prerequisite failure in the pinned m2.py leaves
+// the persistence outcome UNASSESSED, so the rendered text must state the eligibility gate and
+// the sourced cause — never a "not persistent" conclusion. Labelled test-double content.
+function m3PersistenceIneligibleResultFixture(id: string, m2ReasonCode: string): Record<string, unknown> {
+  const fixture = m3ScoredResultFixture(id);
+  fixture.scoring = {
+    ...(fixture.scoring as Record<string, unknown>),
+    ranked_count: 0,
+    unranked_count: 1
+  };
+  fixture.assessment = [
+    {
+      zone_id: 'Z-9',
+      geometry_version: 3,
+      geometry_hash: 'fixture-zone-hash-persistence',
+      evidence_status: 'INSUFFICIENT',
+      sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: ['M2'], reasons: []},
+      evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
+      priority: {
+        status: 'UNRANKED',
+        reasons: [
+          {code: 'PERSISTENCE_INELIGIBLE', params: {m2_reason_code: m2ReasonCode}}
+        ]
+      },
+      confounders: [],
+      independent_families: [],
+      evidence_refs: []
+    }
+  ];
+  return fixture;
+}
+
 // Lowercase, matching the pinned backend's real published value
 // (work/backend/src/aqualedger/config.py SOURCE_REGISTRY: `temporal_or_static="temporal"`), not
 // the 'TEMPORAL' this fixture used to carry — that mismatch is what let A41 (a false "Static" role
@@ -671,7 +712,9 @@ export function startBackendDouble(
         NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
         NO_VALID_PIXEL_ID,
         M3_SCORED_ID,
-        M3_NOT_SCORED_ID
+        M3_NOT_SCORED_ID,
+        M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
+        M3_PERSISTENCE_INELIGIBLE_GAPS_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
         notReadyServedIds.add(id);
@@ -743,6 +786,14 @@ export function startBackendDouble(
       }
       if (id === M3_NOT_SCORED_ID) {
         respondJson(res, 200, m3NotScoredResultFixture(id));
+        return;
+      }
+      if (id === M3_PERSISTENCE_INELIGIBLE_BASELINE_ID) {
+        respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'NO_COMPATIBLE_BASELINE'));
+        return;
+      }
+      if (id === M3_PERSISTENCE_INELIGIBLE_GAPS_ID) {
+        respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'EXCESSIVE_GAPS'));
         return;
       }
       if (id === NO_ARTIFACT_ID) {

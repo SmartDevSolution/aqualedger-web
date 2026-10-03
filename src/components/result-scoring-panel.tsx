@@ -2,7 +2,7 @@
 
 import {useTranslations} from 'next-intl';
 import {isM3Envelope} from '@/lib/api/m3';
-import {m3ReasonMessageKey} from '@/lib/api/error-messages';
+import {m3ReasonMessageKey, persistenceCauseMessageKey, type ErrorMessageKey} from '@/lib/api/error-messages';
 import type {M3ZoneAssessment} from '@/lib/api/m3';
 
 // M3 scoring-envelope presentation, additive to the M1/M2 result panel (contract 0.2.0).
@@ -102,9 +102,35 @@ function ZoneRow({zone, ranked}: {
       {classDisplay ? <bdi dir="ltr">{classDisplay}</bdi> : null}
       <span className="bidi-list">
         {(zone.priority.reasons ?? []).map((reason, index) => (
-          <bdi key={`${reason.code}-${index}`} dir="auto">{errors(m3ReasonMessageKey(reason.code))}</bdi>
+          <bdi key={`${reason.code}-${index}`} dir="auto">{reasonText(reason, errors)}</bdi>
         ))}
       </span>
     </li>
   );
+}
+
+/**
+ * Rendered text for one typed M3 reason. The code's own catalog message is always present; a
+ * `PERSISTENCE_INELIGIBLE` reason additionally discloses the M2 prerequisite cause when the
+ * backend published one this build can source (`params.m2_reason_code`). Both sentences are
+ * statements about eligibility/prerequisites and neither asserts a persistence outcome — the
+ * pinned backend sets `PERSISTENCE_INELIGIBLE` only when persistence could not be assessed
+ * (NO_COMPATIBLE_BASELINE / EXCESSIVE_GAPS / AGRICULTURAL_MASK_BLOCKED), which establishes no
+ * persistence result in either direction.
+ */
+function reasonText(
+  reason: NonNullable<M3ZoneAssessment['priority']['reasons']>[number],
+  errors: (key: ErrorMessageKey) => string
+): string {
+  const message = errors(m3ReasonMessageKey(reason.code));
+  const causeKey = persistenceCauseFor(reason);
+  return causeKey ? `${message} ${errors(causeKey)}` : message;
+}
+
+function persistenceCauseFor(
+  reason: NonNullable<M3ZoneAssessment['priority']['reasons']>[number]
+): ErrorMessageKey | null {
+  if (reason.code !== 'PERSISTENCE_INELIGIBLE') return null;
+  const code = reason.params?.m2_reason_code;
+  return persistenceCauseMessageKey(typeof code === 'string' ? code : null);
 }
