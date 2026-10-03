@@ -1,7 +1,7 @@
 Author this PR, agent briefs and review reports in English. Necessary exact Arabic terms and Arabic localization values/product fixtures are exceptions, not permission for Arabic engineering prose. Keep both UI languages.
 
 ## Requirement and scope
-Central mission/owner decision:
+Central mission/Planning Council decision:
 Web issue:
 Implemented behavior:
 Out of scope:
@@ -14,7 +14,7 @@ Migration dependency and safe rollout order, if any:
 
 ## Planning Council decision linkage
 Council decision record(s) for any unresolved technical/domain choice introduced or resolved by this PR:
-If no new Council decision is required, cite the existing approved owner/Council decision or contract clause and the acceptance criteria that determine the behavior:
+If no new Council decision is required, cite the existing approved Planning Council decision or contract clause and the acceptance criteria that determine the behavior:
 
 ## Verification
 Commands actually run and outcomes:
@@ -30,8 +30,9 @@ Secrets/access/security impact:
 - [ ] Project documentation, code comments and engineering communication are English; Arabic is confined to necessary literal/localization content.
 - [ ] Exactly two primary screens; no speculative scope.
 - [ ] Any unresolved technical/domain choice is linked to a recorded Planning Council verdict (ACCEPTED, or a MODIFIED verdict whose conditions are met) before dependent implementation; no coordinator/agent recommendation is treated as a decision. A PENDING or REJECTED proposal does not authorize its implementation.
-- [ ] Independent latest-fix review linked to SHA.
-- [ ] Final Council owner-scope verdict linked.
+- [ ] Grok 4.6 independent latest-fix review linked to SHA.
+- [ ] Grok 4.7 and Grok 4.6 final gate linked.
+- [ ] Final Planning Council scope verdict linked.
 - [ ] Merge to dev only after required checks; record paired post-merge verification separately.
 
 Missing tests/reviews are not PASS. No main release or public deployment is implied.
