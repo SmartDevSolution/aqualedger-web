@@ -137,6 +137,49 @@ function m3ContradictoryLimitedRankedResultFixture(id: string): Record<string, u
   return fixture;
 }
 
+// Round-3 correction double (stage-⑥ Council BLOCK at web PR #11 head 70e0abf, card t_b8506b9d).
+// It carries the committed content the decision card must project and that the main fixture cannot
+// exercise, kept materially different from it so a card that ignores this content is observably
+// wrong rather than accidentally right:
+//   * a NON-EMPTY `m2.coverage` gap list, with a real `READ_FAILED:<cause>` composite reason code;
+//   * committed valid counts / coverage far from the main fixture's (whole-area statistics
+//     9876 valid observations and 0.123 effective coverage vs 2400 / 0.9; the first observation's
+//     valid count 8765 and valid-area fraction 0.321 vs 120 / 0.92);
+//   * a source whose represented and acquisition dates are DISTINCT (the main fixture carries equal
+//     dates, so a merged unlabeled date list cannot be detected there);
+//   * a `priority_class_status` that is not `NOT_ESTABLISHED` while Z-1 still carries the
+//     `PRIORITY_CLASS_NOT_ESTABLISHED` reason (the F-02 leak: the fixed conclusion must not render
+//     from the reason when the body's own status says otherwise).
+// `result_identity.result_sha256` is recomputed over the mutated payload so the served identity
+// stays truthful. Labelled test-double content, never a production claim.
+export const M3_CARD_PROJECTION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae8';
+function m3CardProjectionResultFixture(id: string): Record<string, unknown> {
+  const fixture = m3ScoredResultFixture(id);
+  const m2 = fixture.m2 as Record<string, unknown>;
+  fixture.effective_coverage = {acquisition_date: '2026-08-30', valid_coverage_fraction: 0.123, min_valid_coverage_fraction_guard: 0.5};
+  fixture.statistics = {...(fixture.statistics as Record<string, unknown>), valid_observation_count: 9876, valid_area_m2: 987600};
+  const observations = (m2.observations as Record<string, unknown>[]).map((observation, index) => index === 0
+    ? {...observation, valid_count: 8765, valid_area_fraction: 0.321}
+    : observation);
+  m2.observations = observations;
+  m2.coverage = [{
+    source_id: 'chirps-gap-probe',
+    window_start: '2026-07-12',
+    window_end: '2026-07-29',
+    reason_code: 'READ_FAILED:PROBE_GAP',
+    expected_count: 91,
+    observed_count: 17,
+    coverage_fraction: 0.186813
+  }];
+  m2.source_manifest = [
+    {source_id: 'sentinel2_l2a_earth_search', role: 'TEMPORAL', status: 'READ', product: 'sentinel-2-l2a', version: '05.11', revision: '05.11', represented_date: '2026-08-29', acquisition_date: '2026-08-31'},
+    {source_id: 'chirps', role: 'TEMPORAL', status: 'READ', product: 'chirps-daily'}
+  ];
+  fixture.scoring = {...(fixture.scoring as Record<string, unknown>), priority_class_status: 'ESTABLISHED_FUTURE'};
+  fixture.result_identity = {...(fixture.result_identity as Record<string, unknown>), result_sha256: fixtureResultSha256(fixture)};
+  return fixture;
+}
+
 // A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the gates, so the
 // backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
 // under this method", never as UNRANKED.
@@ -902,6 +945,7 @@ export function startBackendDouble(
         M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
         M3_LIMITED_UNRANKED_ID,
         M3_CONTRADICTORY_LIMITED_RANKED_ID,
+        M3_CARD_PROJECTION_ID,
         M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
@@ -990,6 +1034,10 @@ export function startBackendDouble(
       }
       if (id === M3_CONTRADICTORY_LIMITED_RANKED_ID) {
         respondJson(res, 200, m3ContradictoryLimitedRankedResultFixture(id));
+        return;
+      }
+      if (id === M3_CARD_PROJECTION_ID) {
+        respondJson(res, 200, m3CardProjectionResultFixture(id));
         return;
       }
       if (id === M3_SLOW_ID) {

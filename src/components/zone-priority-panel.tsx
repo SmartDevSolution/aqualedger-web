@@ -200,7 +200,9 @@ function ZoneRow({view, zone, selected, onSelect}: {
 }) {
   const t = useTranslations('zones');
   const locale = useLocale();
-  const reasonText = useReasonText(view.analysisId);
+  // The priority-class reason family is bound to the body's own status (round-3 F-02): a body that
+  // does not report `NOT_ESTABLISHED` never renders the fixed conclusion from a reason.
+  const reasonText = useReasonText(view.analysisId, view.result.scoring.priority_class_status);
   const assessment = zone.assessment;
   const priorityReasons = (assessment.priority.reasons ?? []).slice(0, 3);
   const families = assessment.independent_families ?? [];
@@ -313,7 +315,7 @@ export function EvidenceClassBadge({zone}: {zone: ZoneView}) {
 function TechnicalView({view, zone, locale, onSelect}: {view: ScoredResultView; zone: ZoneView; locale: string; onSelect: (zoneId: string) => void}) {
   const t = useTranslations('zones');
   const e = useTranslations('evidenceQuality');
-  const reasonText = useReasonText(view.analysisId);
+  const reasonText = useReasonText(view.analysisId, view.result.scoring.priority_class_status);
   const quality = zone.assessment.evidence_quality;
   const topReasons = (quality.top_reasons ?? []).slice(0, 3);
   const rankKey = zone.assessment.priority.rank_key ?? null;

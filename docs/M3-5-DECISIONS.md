@@ -159,20 +159,26 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
    - **B2 — the priority-class notice is bound to the body** (item 3): the unrecognised and absent
      branches no longer assert "not established", and the card's priority-class limitation follows the
      same three-way branch.
-   - **B3 — card/print projection (DR-M3-01 §8).** The card prints the committed pipeline, M2
-     pipeline and M2 config versions; the AOI identity (outer-ring vertex count, committed bounds, and
-     an area hash re-derived in the browser **labelled as re-derived** and explicitly not the
-     backend's value — the contract's `AnalysisResult.request` carries the polygon only) with a small
-     inline-SVG inset drawn from the committed AOI/zone geometry (no tiles, no provider, real
-     text/SVG, so the export keeps it); sources with localized role/status plus product
-     version/revision and represented/acquisition dates, stating explicitly when none are recorded;
-     observation counts and coverage gaps; per ranked zone the rank-key components, the independent
-     families (counted / not counted / collapsed / adverse signal) and the confounder disclosures (the
-     same `ConfounderChip` disclosure-only treatment as the panel); UNRANKED zones counted, grouped by
-     reason and listed; and the standing limitations (uncalibrated class, estimate, no 0–100 priority
-     score, provisional AOI, not validated against in-basin field measurements, context-only sources,
-     masked pixels excluded). No new route, service or export collection: the inset is built by
-     `src/lib/aoi-inset.ts` from geometry the committed result already carries.
+   - **B3 — card/print projection (DR-M3-01 §8).** At this head the card printed the committed
+     pipeline, M2 pipeline and M2 config versions; the AOI identity (outer-ring vertex count,
+     committed bounds, and an area hash re-derived in the browser **labelled as re-derived** and
+     explicitly not the backend's value — the contract's `AnalysisResult.request` carries the polygon
+     only) with a small inline-SVG inset drawn from the committed AOI/zone geometry (no tiles, no
+     provider, real text/SVG, so the export keeps it); sources with localized role/status plus product
+     version/revision and a single merged, unlabeled date list; observation-ROW counts by epistemic
+     class and the number of recorded coverage gaps; per ranked zone the rank-key components, the
+     independent families (counted / not counted / collapsed / adverse signal) and the confounder
+     disclosures (the same `ConfounderChip` disclosure-only treatment as the panel); UNRANKED zones
+     counted, grouped by reason and listed; and the standing limitations (uncalibrated class,
+     estimate, no 0–100 priority score, provisional AOI, not validated against in-basin field
+     measurements, context-only sources, masked pixels excluded). No new route, service or export
+     collection: the inset is built by `src/lib/aoi-inset.ts` from geometry the committed result
+     already carries.
+     **This bullet overstated §8 completion at `70e0abf`**: the committed valid-observation counts,
+     the coverage values and the scoped gap records were NOT projected (only row counts and the gap
+     count were), and the represented/acquisition dates were merged into one unlabeled list. Both
+     were corrected on card `t_b8506b9d` — see item 10 below, which is the corrected §8 statement for
+     those parts.
    - **B4 — dynamic values are localized through the catalogs.** `missing_reason` renders through the
      new `evidenceMissing.*` family (`NOT_CONFIGURED`, `NO_DECODE_PROOF`, `NO_VALID_PIXELS`,
      `NO_DECODABLE_STATISTIC`, `NO_INTERSECTING_BASIN`, plus the `READ_FAILED` / `READ_FAILED:<cause>`
@@ -190,6 +196,62 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
      evidence table asserts the localized explanation. The two e2e assertions that positively expected
      the forbidden presentation (the LOW badge on a LIMITED zone; the bare `missing_reason` code) are
      replaced, not merely weakened.
+
+10. Round-3 corrections at the corrected head (card `t_b8506b9d`; stage-⑥ Council BLOCK 2–0 at
+    `70e0abf`, both co-equal seats). This item is the corrected statement for the two §8 parts that
+    item 9's B3 bullet overstated, and records the third blocking item.
+    - **F-01 — committed valid counts, coverage and scoped gaps are now projected (both seats).** At
+      `70e0abf` the card tallied only observation ROWS by epistemic class (`decision-card.tsx:44-54`)
+      and printed those totals plus `String(m2?.coverage?.length ?? 0)` (`:178-182`); it read neither
+      `statistics.valid_observation_count`, nor `effective_coverage.*`, nor any `CoverageGap` field.
+      The corrected card's "Observations, coverage and gaps" section projects, from the one committed
+      result: the observation-ROW totals as an explicitly labelled row count; the committed
+      whole-area `statistics.valid_observation_count` and `statistics.valid_area_m2`; the committed
+      `effective_coverage.valid_coverage_fraction`, `.acquisition_date` and
+      `.min_valid_coverage_fraction_guard`; a scope note stating these are whole-area values, not
+      per-zone ones; the per-observation `valid_count` and `valid_area_fraction` under their own
+      zone/window/indicator scope; and every recorded `m2.coverage[]` gap with its source, window, a
+      localized explanation of its `reason_code` (through `evidenceMissing.*`, which covers the open
+      `READ_FAILED:<cause>` composite) and its `observed_count` / `expected_count` /
+      `coverage_fraction`. Absent/null stays absent: an absent optional `m2` block now reads "Not
+      returned" for the row totals and the gap line (and "not returned" for the per-observation list)
+      instead of tallying 0/0/0, and a null `expected_count` / `coverage_fraction` reads "not
+      returned" rather than zero. The row totals are now visibly distinct from the committed valid
+      count they were previously mistaken for.
+      Regressions (`tests/e2e/m3-panels.spec.ts`, en + ar, both viewport projects): "card and print
+      project committed valid counts, coverage and scoped gap records" — a served double with a
+      non-empty gap list and materially different valid counts/coverage, asserted in the card and
+      again under `emulateMedia({media: 'print'})`; and "an absent M2 block is reported as not
+      returned, never as a zero count".
+    - **F-02 — the fixed priority-class reason is bound to the body (seat 2).** `useReasonText` now
+      takes the body's `scoring.priority_class_status`; when a reason carries
+      `PRIORITY_CLASS_NOT_ESTABLISHED` while that status is not `NOT_ESTABLISHED`, the formatter
+      renders a status-bound sentence (`reasons.PRIORITY_CLASS_STATUS_UNRECOGNISED`, quoting the
+      reported value, or `reasons.PRIORITY_CLASS_STATUS_ABSENT` for an absent status) instead of the
+      fixed conclusion. Every surface that renders priority reasons threads the status in (panel row,
+      panel technical view, card/print), so the fixed "priority class is not established" text can no
+      longer be produced from a reason under any other status. The round-2 banner/limitation
+      three-way branch is unchanged.
+      Regressions: the status tests now assert the fixed conclusion's absence from the ROW and the
+      CARD reason text (`[data-reason-code="PRIORITY_CLASS_NOT_ESTABLISHED"]`) as well as from the
+      banner and the card limitation, for both the `ESTABLISHED_FUTURE` rewrite and the absent
+      status.
+    - **F-03 — represented and acquisition dates are projected separately (seat 2).** `sourceDateText`
+      merged `represented_date` + `acquisition_date` into one deduplicated, unlabeled list, so two
+      distinct dates could not be told apart and a single date could not be attributed to a role. The
+      card now renders each role under its own label (`decisionCard.sourceRepresentedDate` /
+      `decisionCard.sourceAcquisitionDate`), stating "Not returned" for a role the source does not
+      carry, so absence is explicit rather than folded away; a source carrying no version, revision or
+      dates at all keeps the single explicit `sourceDetailsUnavailable` sentence. The now-unused
+      `decisionCard.sourceDates` key was removed from both catalogs.
+      Regression: "card labels represented and acquisition dates separately" — the served double
+      carries distinct dates; asserts both role labels and both dates, and that neither role carries
+      the other's date (the shipped main fixture carries equal dates and cannot detect the loss).
+    - **Nothing already projected was regressed:** versions, AOI identity + inline inset, source
+      manifest with localized role/status, rank-key / families / confounders, the UNRANKED listing,
+      the limitations, the B1 fail-closed rankability guard, the B2 banner wording and the B4
+      localization with its fail-closed fallbacks are unchanged, and the contract pin and generated
+      types are untouched.
 
 ## Other decisions
 

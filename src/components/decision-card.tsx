@@ -3,8 +3,8 @@
 import {useEffect, useState} from 'react';
 import {useLocale, useTranslations} from 'next-intl';
 import {validatePolygon, type AoiPolygon} from '@/lib/analysis-input';
-import {formatGregorianDate, formatNumber, formatUtcTimestamp, formatValue} from '@/lib/format';
-import {isolate, useReasonText} from '@/lib/reason-text';
+import {formatGregorianDate, formatNumber, formatPercent, formatUtcTimestamp, formatValue} from '@/lib/format';
+import {isolate, useMissingReasonText, useReasonText} from '@/lib/reason-text';
 import {canonicalJson, sha256Hex, shortHash} from '@/lib/api/result-hash';
 import type {ResultIdentityState} from '@/lib/api/use-result-identity';
 import {isPolygonal, rankGroupStep, zoneBounds, type ScoredResultView, type ZoneView} from '@/lib/zone-model';
@@ -20,12 +20,15 @@ import {ConfounderChip, EvidenceClassBadge, familyLabel} from './zone-priority-p
 //
 // DR-M3-01 §8 content projection: the identity/content fields above, the committed pipeline and
 // config versions, the AOI identity with a small inset drawn from the committed geometry, sources
-// with product/version/revision and represented/acquisition dates, observation counts and gaps,
-// ranked zones with rank / rank_group / rank-key components / independent families, the
-// evidence-quality class with C and the recovered uncalibrated label, UNRANKED zones counted and
-// listed, the priority-class statement bound to the body's own status, confounder disclosures, and
-// the applicable limitations. A field the committed result does not carry is stated as not
-// returned; nothing is silently dropped and no source fact is invented.
+// with product/version/revision and separately labelled represented and acquisition dates, the
+// committed whole-area valid-observation count and effective coverage with their scope, the
+// observation-ROW totals kept distinct from the per-observation valid counts (each under its own
+// zone/window scope), every recorded coverage gap with a localized reason and its counts, ranked
+// zones with rank / rank_group / rank-key components / independent families, the evidence-quality
+// class with C and the recovered uncalibrated label, UNRANKED zones counted and listed, the
+// priority-class statement bound to the body's own status, confounder disclosures, and the
+// applicable limitations. A field the committed result does not carry is stated as not returned;
+// nothing is silently dropped and no source fact is invented.
 
 type DecisionCardProps = {
   view: ScoredResultView;
@@ -36,12 +39,18 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
   const t = useTranslations('decisionCard');
   const m3 = useTranslations('m3Disclosure');
   const e = useTranslations('evidenceQuality');
+  const ze = useTranslations('zoneEvidence');
   const printT = useTranslations('print');
   const locale = useLocale();
-  const reasonText = useReasonText(view.analysisId);
+  // Priority reasons are bound to the body's own priority-class status (round-3 F-02), so the fixed
+  // "not established" conclusion cannot be rendered from a reason under any other status.
+  const reasonText = useReasonText(view.analysisId, view.result.scoring.priority_class_status);
+  const missingReason = useMissingReasonText();
   const {result} = view;
   const scoring = result.scoring;
   const m2 = result.m2 ?? null;
+  const statistics = result.statistics ?? null;
+  const coverage = result.effective_coverage;
   const scoredAt = scoring.computed_at ? t('utc', {timestamp: formatUtcTimestamp(scoring.computed_at, locale)}) : t('notReturned');
   const shortSha = shortHash(view.resultSha256);
   const aoi = result.request.aoi_geojson as unknown as AoiPolygon;
@@ -151,8 +160,12 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
         {(m2?.source_manifest ?? []).length === 0 ? <p className="subtle-copy">{t('noSources')}</p> : (
           <ul className="reason-list card-source-list">
             {(m2?.source_manifest ?? []).map((source, index) => {
-              const dates = sourceDateText(source, locale);
-              const hasDetails = Boolean(source.version || source.revision || dates);
+              // The two date ROLES are projected separately (round-3 F-03): DR-M3-01 §8 names
+              // "acquisition/represented dates" as distinct content, so a source carrying two
+              // different dates can be told apart, and a source carrying one says which role it
+              // is. An absent role is stated explicitly, never folded into one unlabeled string.
+              const hasDates = Boolean(source.represented_date || source.acquisition_date);
+              const hasDetails = Boolean(source.version || source.revision || hasDates);
               return (
                 <li key={`${source.source_id}-${index}`} data-source-id={source.source_id}>
                   {t('sourceLine', {
@@ -165,7 +178,12 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
                     <>
                       {source.version ? <span className="card-source-detail">{t('sourceVersion', {version: isolate(source.version)})}</span> : null}
                       {source.revision ? <span className="card-source-detail">{t('sourceRevision', {revision: isolate(source.revision)})}</span> : null}
-                      {dates ? <span className="card-source-detail">{t('sourceDates', {dates})}</span> : null}
+                      <span className="card-source-detail" data-source-date-role="represented" data-source-date={source.represented_date ?? 'absent'}>
+                        {t('sourceRepresentedDate', {date: source.represented_date ? isolate(formatGregorianDate(source.represented_date, locale)) : t('notReturned')})}
+                      </span>
+                      <span className="card-source-detail" data-source-date-role="acquisition" data-source-date={source.acquisition_date ?? 'absent'}>
+                        {t('sourceAcquisitionDate', {date: source.acquisition_date ? isolate(formatGregorianDate(source.acquisition_date, locale)) : t('notReturned')})}
+                      </span>
                     </>
                   ) : <span className="card-source-detail subtle-copy">{t('sourceDetailsUnavailable')}</span>}
                 </li>
@@ -177,8 +195,103 @@ export function DecisionCard({view, identity}: DecisionCardProps) {
 
       <section className="card-section" aria-labelledby="card-observations">
         <h4 id="card-observations">{t('sectionObservations')}</h4>
-        <p>{t('observationCounts', {observed: String(counts.observed), derived: String(counts.derived), missing: String(counts.missing)})}</p>
-        <p>{t('coverageGaps', {count: String(m2?.coverage?.length ?? 0)})}</p>
+        {/* Observation-ROW totals by epistemic class. Kept distinct from the committed valid counts
+            below, and an absent M2 block is reported as not returned rather than tallied into
+            0/0/0 (round-3 F-01: absent means not collected, never zero). */}
+        <dl className="result-facts">
+          <Fact label={t('observationRows')} value={
+            <span data-testid="card-observation-rows">
+              {m2 === null ? t('notReturned') : t('observationCounts', {observed: String(counts.observed), derived: String(counts.derived), missing: String(counts.missing)})}
+            </span>
+          } />
+          <Fact label={t('committedValidCount')} value={
+            <bdi dir="ltr" data-testid="card-valid-observation-count">
+              {statistics === null ? t('notReturned') : formatValue(statistics.valid_observation_count, locale, 0)}
+            </bdi>
+          } />
+          <Fact label={t('committedValidArea')} value={
+            <bdi dir="ltr" data-testid="card-valid-area">
+              {statistics === null ? t('notReturned') : formatValue(statistics.valid_area_m2, locale, 0)}
+            </bdi>
+          } />
+          <Fact label={t('effectiveCoverage')} value={
+            <bdi dir="ltr" data-testid="card-effective-coverage">
+              {coverage.valid_coverage_fraction === null || coverage.valid_coverage_fraction === undefined
+                ? t('notReturned')
+                : formatValue(coverage.valid_coverage_fraction, locale, 6)}
+            </bdi>
+          } />
+          <Fact label={t('coverageAcquisition')} value={
+            <bdi dir="ltr" data-testid="card-coverage-acquisition">
+              {coverage.acquisition_date ? isolate(formatGregorianDate(coverage.acquisition_date, locale)) : t('notReturned')}
+            </bdi>
+          } />
+          <Fact label={t('coverageGuard')} value={<bdi dir="ltr" data-testid="card-coverage-guard">{formatValue(coverage.min_valid_coverage_fraction_guard, locale, 6)}</bdi>} />
+        </dl>
+        <p className="subtle-copy" data-testid="card-coverage-scope">{t('coverageScopeNote')}</p>
+
+        {/* Per-observation valid counts carry their own zone/window scope, so a reader can tell a
+            zone-window valid count from the whole-area committed count above. */}
+        <h5>{t('observationListHeading')}</h5>
+        {m2 === null ? (
+          <p className="subtle-copy" data-testid="card-observations-unavailable">{t('observationsUnavailable')}</p>
+        ) : (m2.observations ?? []).length === 0 ? (
+          <p className="subtle-copy" data-testid="card-observation-rows-none">{t('noObservationRows')}</p>
+        ) : (
+          <ul className="reason-list card-observation-list">
+            {(m2.observations ?? []).map((observation, index) => (
+              <li
+                key={`${observation.zone_id}-${observation.indicator}-${observation.window_start}-${index}`}
+                data-observation-zone={observation.zone_id}
+                data-observation-indicator={observation.indicator}
+                data-observation-class={observation.observation_class}
+              >
+                <span data-testid="card-observation-scope">{t('observationScope', {
+                  indicator: ze(`indicator.${observation.indicator}`),
+                  zone: isolate(observation.zone_id),
+                  start: isolate(formatGregorianDate(observation.window_start, locale)),
+                  end: isolate(formatGregorianDate(observation.window_end, locale))
+                })}</span>
+                {' · '}
+                <span className="card-source-detail" data-observation-kind={observation.observation_class}>{t('observationKind', {kind: ze(`class.${observation.observation_class}`)})}</span>
+                {' · '}
+                <span className="card-source-detail" data-testid="card-observation-valid-count">{t('observationValidCount', {count: formatValue(observation.valid_count, locale, 0)})}</span>
+                {' · '}
+                {typeof observation.valid_area_fraction === 'number'
+                  ? <span className="card-source-detail">{t('observationValidArea', {fraction: formatPercent(observation.valid_area_fraction, locale)})}</span>
+                  : <span className="card-source-detail subtle-copy">{t('observationValidAreaAbsent')}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* The recorded gaps, each with its source/window scope and a localized explanation of the
+            committed reason code (the M2 coverage vocabulary is open: READ_FAILED:<cause> and the
+            typed decode reasons), never the raw code alone. */}
+        <p data-testid="card-coverage-gaps">
+          {m2 === null ? t('coverageGapsUnavailable') : t('coverageGaps', {count: String(m2.coverage?.length ?? 0)})}
+        </p>
+        {m2 !== null && (m2.coverage ?? []).length > 0 ? (
+          <ul className="reason-list card-coverage-gap-list">
+            {(m2.coverage ?? []).map((gap, index) => (
+              <li key={`${gap.source_id}-${gap.window_start}-${index}`} data-gap-source={gap.source_id}>
+                <span>{t('gapScope', {
+                  source: isolate(gap.source_id),
+                  start: isolate(formatGregorianDate(gap.window_start, locale)),
+                  end: isolate(formatGregorianDate(gap.window_end, locale))
+                })}</span>
+                {' · '}
+                <span className="card-source-detail" data-gap-reason={gap.reason_code}>{missingReason(gap.reason_code)}</span>
+                {' · '}
+                <span className="card-source-detail" data-testid="card-gap-counts">{t('gapCounts', {
+                  observed: formatValue(gap.observed_count, locale, 0),
+                  expected: gap.expected_count === null || gap.expected_count === undefined ? t('notReturned') : formatValue(gap.expected_count, locale, 0),
+                  fraction: gap.coverage_fraction === null || gap.coverage_fraction === undefined ? t('notReturned') : formatValue(gap.coverage_fraction, locale, 6)
+                })}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <section className="card-section" aria-labelledby="card-ranked">
@@ -253,7 +366,7 @@ function CardZone({zone, reasonText}: {zone: ZoneView; reasonText: ReturnType<ty
         <span>{t('evidenceStatusLabel')}: {t(`evidenceStatus.${zone.assessment.evidence_status}`)}</span>
       </p>
       <ul className="reason-list">
-        {reasons.map((reason, index) => <li key={`${reason.code}-${index}`}>{reasonText(reason)}</li>)}
+        {reasons.map((reason, index) => <li key={`${reason.code}-${index}`} data-reason-code={reason.code}>{reasonText(reason)}</li>)}
       </ul>
 
       {zone.ranked && rankKey ? (
@@ -339,12 +452,6 @@ function sourceStatusText(status: string, t: ReturnType<typeof useTranslations<'
     return t(`sourceStatus.${status as SourceEvidenceStatus}`);
   }
   return t('sourceStatus._unknown', {code: isolate(status)});
-}
-
-function sourceDateText(source: {represented_date?: string | null; acquisition_date?: string | null}, locale: string): string | null {
-  const dates = [source.represented_date, source.acquisition_date].filter((date): date is string => typeof date === 'string');
-  const unique = [...new Set(dates)];
-  return unique.length === 0 ? null : unique.map((date) => isolate(formatGregorianDate(date, locale))).join(', ');
 }
 
 /** Number of AOI vertices excluding the repeated closing position; null when no polygon is committed. */

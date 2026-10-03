@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {expect, test, type Page} from '@playwright/test';
 import {
+  M3_CARD_PROJECTION_ID,
   M3_CONTRADICTORY_LIMITED_RANKED_ID,
   M3_LIMITED_UNRANKED_ID,
   M3_NOT_SCORED_ID,
@@ -13,6 +14,7 @@ import {
   fixtureResultSha256
 } from '../fixtures/backend-double';
 import {canonicalJson, computeCardId, computeResultSha256} from '../../src/lib/api/result-hash';
+import {formatGregorianDate, formatPercent, formatValue} from '../../src/lib/format';
 
 // M3-5: bilingual zone priority/evidence panel, history drawer, decision card and print view. All
 // numbers are the labelled test-double fixture (tests/fixtures/backend-double.ts), never a
@@ -218,10 +220,31 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(banner).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
       // Nothing on the page gains a class from an unrecognized status.
       await expect(page.locator('.zone-panel').getByText(/priority:\s*(high|medium|low)/i)).toHaveCount(0);
+
+      // Round-3 F-02: the ROW renders the same `PRIORITY_CLASS_NOT_ESTABLISHED` reason code, so it
+      // too must be bound to the body's own status — the fixed conclusion may not appear in the row
+      // reason text, only the status-bound sentence.
+      const fixedConclusion = L('Priority class not established', 'فئة الأولوية غير محددة');
+      const fixedReasonSentence = 'A priority class is not established';
+      const rowReason = page.locator('.zone-row[data-zone-id="Z-1"] [data-reason-code="PRIORITY_CLASS_NOT_ESTABLISHED"]');
+      await expect(rowReason).toBeVisible();
+      await expect(rowReason).not.toContainText(fixedConclusion);
+      await expect(rowReason).not.toContainText(fixedReasonSentence);
+      await expect(rowReason).toContainText('ESTABLISHED_FUTURE');
+      await expect(rowReason).toContainText(L('No priority class is shown for this zone', 'لا تُعرض أي فئة أولوية لهذه المنطقة'));
+
       await page.getByRole('button', {name: L('Open decision card', 'فتح بطاقة القرار')}).click();
       const limitation = page.locator('[data-limitation="priority-class"]');
       await expect(limitation).toContainText('ESTABLISHED_FUTURE');
       await expect(limitation).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+
+      // ...and the CARD's zone reason text follows the same binding (same reason, same body).
+      const cardReason = page.locator('.decision-card .card-zone[data-zone-id="Z-1"] [data-reason-code="PRIORITY_CLASS_NOT_ESTABLISHED"]');
+      await expect(cardReason).toBeVisible();
+      await expect(cardReason).not.toContainText(fixedConclusion);
+      await expect(cardReason).not.toContainText(fixedReasonSentence);
+      await expect(cardReason).toContainText('ESTABLISHED_FUTURE');
+      await expect(cardReason).toContainText(L('No priority class is shown for this zone', 'لا تُعرض أي فئة أولوية لهذه المنطقة'));
     });
 
     test('an absent priority_class_status is reported as absent, never restated as not established', async ({page}) => {
@@ -233,10 +256,18 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(banner).toHaveAttribute('data-status', 'absent');
       await expect(banner).toContainText(L('no priority status', 'بأي حالة أولوية'));
       await expect(banner).not.toContainText(L('Priority class not established', 'فئة الأولوية غير محددة'));
+      // The row reason is bound to the absent status too (round-3 F-02).
+      const rowReason = page.locator('.zone-row[data-zone-id="Z-1"] [data-reason-code="PRIORITY_CLASS_NOT_ESTABLISHED"]');
+      await expect(rowReason).toBeVisible();
+      await expect(rowReason).not.toContainText(L('not established', 'غير محددة'));
+      await expect(rowReason).toContainText(L('No priority class is shown for this zone', 'لا تُعرض أي فئة أولوية لهذه المنطقة'));
       await page.getByRole('button', {name: L('Open decision card', 'فتح بطاقة القرار')}).click();
       const limitation = page.locator('[data-limitation="priority-class"]');
       await expect(limitation).toContainText(L('reported no priority status', 'لم تُبلّغ الطريقة'));
       await expect(limitation).not.toContainText(L('not established', 'غير محددة'));
+      const cardReason = page.locator('.decision-card .card-zone[data-zone-id="Z-1"] [data-reason-code="PRIORITY_CLASS_NOT_ESTABLISHED"]');
+      await expect(cardReason).not.toContainText(L('not established', 'غير محددة'));
+      await expect(cardReason).toContainText(L('No priority class is shown for this zone', 'لا تُعرض أي فئة أولوية لهذه المنطقة'));
     });
 
     // DR-M3-01 §3, fail-closed: "LIMITED is not rankable". A body that ranks a zone the method did
@@ -494,6 +525,116 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(card).toContainText(L('not validated against in-basin field measurements', 'مقابل قياسات ميدانية داخل الحوض'));
       await expect(card).toContainText(L('provisional', 'مؤقتة'));
       expect(await card.innerText()).not.toMatch(DENYLIST);
+    });
+
+    // Round-3 F-01 (stage-⑥ Council BLOCK at head 70e0abf, both seats): DR-M3-01 §8 requires
+    // "valid-observation counts, coverage and gaps". The card must project the committed whole-area
+    // valid count and effective coverage, the per-observation valid counts with their zone/window
+    // scope, and each recorded gap with a localized reason — not only the observation-ROW totals.
+    test('card and print project committed valid counts, coverage and scoped gap records', async ({page}) => {
+      const {body} = await servedSha(page, M3_CARD_PROJECTION_ID);
+      const m2 = body.m2 as {
+        observations: {zone_id: string; indicator: string; observation_class: string; valid_count: number; valid_area_fraction?: number | null; window_start: string}[];
+        coverage: {source_id: string; window_start: string; window_end: string; reason_code: string; expected_count: number; observed_count: number; coverage_fraction: number}[];
+      };
+      const statistics = body.statistics as {valid_observation_count: number; valid_area_m2: number};
+      const effectiveCoverage = body.effective_coverage as {valid_coverage_fraction: number; acquisition_date: string};
+      const gap = m2.coverage[0]!;
+      const firstObservation = m2.observations[0]!;
+      const rowCounts = m2.observations.reduce((tally, observation) => {
+        tally[observation.observation_class] = (tally[observation.observation_class] ?? 0) + 1;
+        return tally;
+      }, {} as Record<string, number>);
+
+      await page.goto(`/${locale}/analysis/${M3_CARD_PROJECTION_ID}?panel=card`);
+      const card = page.getByTestId('decision-card');
+      await expect(card).toBeVisible();
+
+      // The committed whole-area valid count and area, and the effective coverage — from the served
+      // body, not read back off the page.
+      await expect(page.getByTestId('card-valid-observation-count')).toHaveText(formatValue(statistics.valid_observation_count, locale, 0));
+      await expect(page.getByTestId('card-valid-area')).toHaveText(formatValue(statistics.valid_area_m2, locale, 0));
+      await expect(page.getByTestId('card-effective-coverage')).toHaveText(formatValue(effectiveCoverage.valid_coverage_fraction, locale, 6));
+      await expect(page.getByTestId('card-coverage-acquisition')).toContainText(formatGregorianDate(effectiveCoverage.acquisition_date, locale));
+
+      // Observation-ROW totals stay distinct from the committed valid count.
+      const rows = page.getByTestId('card-observation-rows');
+      await expect(rows).toContainText(`${rowCounts.OBSERVED ?? 0} ${L('observed', 'مرصودة')}`);
+      await expect(rows).toContainText(`${rowCounts.MISSING ?? 0} ${L('missing', 'مفقودة')}`);
+      await expect(rows).not.toContainText(formatValue(statistics.valid_observation_count, locale, 0));
+
+      // Per-observation valid counts, with their own zone/window scope.
+      const firstRow = card.locator(`[data-observation-zone="${firstObservation.zone_id}"]`).first();
+      await expect(firstRow).toContainText(formatValue(firstObservation.valid_count, locale, 0));
+      await expect(firstRow).toContainText(formatGregorianDate(firstObservation.window_start, locale));
+      if (typeof firstObservation.valid_area_fraction === 'number') {
+        await expect(firstRow).toContainText(formatPercent(firstObservation.valid_area_fraction, locale));
+      }
+
+      // The recorded gap: source, window, localized reason and counts — never just the number of gaps.
+      await expect(page.getByTestId('card-coverage-gaps')).toContainText(L('Coverage gaps recorded', 'فجوات التغطية المسجلة'));
+      const gapItem = card.locator(`[data-gap-source="${gap.source_id}"]`);
+      await expect(gapItem).toBeVisible();
+      await expect(gapItem).toContainText(formatGregorianDate(gap.window_start, locale));
+      await expect(gapItem).toContainText(L('The source could not be read', 'تعذّرت قراءة المصدر'));
+      await expect(gapItem).toContainText(gap.reason_code);
+      await expect(gapItem).toContainText(formatValue(gap.observed_count, locale, 0));
+      await expect(gapItem).toContainText(formatValue(gap.expected_count, locale, 0));
+      await expect(gapItem).toContainText(formatValue(gap.coverage_fraction, locale, 6));
+
+      // The print view is the same real-text layer, so the projection survives printing.
+      await page.emulateMedia({media: 'print'});
+      await expect(card).toBeVisible();
+      await expect(gapItem).toBeVisible();
+      await expect(page.getByTestId('card-valid-observation-count')).toHaveText(formatValue(statistics.valid_observation_count, locale, 0));
+    });
+
+    // Round-3 F-03 (stage-⑥ Council BLOCK, seat 2): DR-M3-01 §8 names the acquisition AND the
+    // represented date as distinct content. The card must label the two roles separately instead of
+    // merging them into one unlabeled list (which cannot tell two dates apart, nor say which role a
+    // single date has). The main fixture carries equal dates, so this test uses the double whose
+    // two dates are distinct.
+    test('card labels represented and acquisition dates separately', async ({page}) => {
+      const {body} = await servedSha(page, M3_CARD_PROJECTION_ID);
+      const manifest = (body.m2 as {source_manifest: {source_id: string; represented_date?: string | null; acquisition_date?: string | null}[]}).source_manifest;
+      const optical = manifest.find((source) => source.source_id === 'sentinel2_l2a_earth_search')!;
+      expect(optical.represented_date).toBeTruthy();
+      expect(optical.acquisition_date).toBeTruthy();
+      expect(optical.represented_date).not.toBe(optical.acquisition_date);
+      const representedText = formatGregorianDate(optical.represented_date as string, locale);
+      const acquisitionText = formatGregorianDate(optical.acquisition_date as string, locale);
+
+      await page.goto(`/${locale}/analysis/${M3_CARD_PROJECTION_ID}?panel=card`);
+      const source = page.locator('.decision-card .card-source-list li[data-source-id="sentinel2_l2a_earth_search"]');
+      const represented = source.locator('[data-source-date-role="represented"]');
+      const acquisition = source.locator('[data-source-date-role="acquisition"]');
+      await expect(represented).toContainText(L('Represented date', 'تاريخ التمثيل'));
+      await expect(acquisition).toContainText(L('Acquisition date', 'تاريخ الالتقاط'));
+      await expect(represented).toContainText(representedText);
+      await expect(acquisition).toContainText(acquisitionText);
+      // Each date sits under its own role, so neither role carries the other's date.
+      await expect(represented).not.toContainText(acquisitionText);
+      await expect(acquisition).not.toContainText(representedText);
+
+      // A source with neither date states the absence explicitly rather than dropping the roles.
+      const chirps = page.locator('.decision-card .card-source-list li[data-source-id="chirps"]');
+      await expect(chirps).toContainText(L('No product version, revision or dates', 'لا يوجد إصدار منتج أو مراجعة أو تواريخ'));
+    });
+
+    // Round-3 F-01, absent/null ≠ zero: a result with no optional `m2` block must say "not returned",
+    // never tally the missing rows into 0 observed / 0 derived / 0 missing.
+    test('an absent M2 block is reported as not returned, never as a zero count', async ({page}) => {
+      const {body} = await servedSha(page, M3_SCORED_ID);
+      const statistics = body.statistics as {valid_observation_count: number};
+      await serveMutated(page, M3_SCORED_ID, (mutated) => { delete mutated.m2; });
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?panel=card`);
+      const rows = page.getByTestId('card-observation-rows');
+      await expect(rows).toHaveText(L('Not returned', 'لم يُعَد'));
+      await expect(rows).not.toContainText('0');
+      // The committed whole-area count does not depend on the absent M2 block and still projects.
+      await expect(page.getByTestId('card-valid-observation-count')).toHaveText(formatValue(statistics.valid_observation_count, locale, 0));
+      await expect(page.getByTestId('card-coverage-gaps')).toContainText(L('not returned', 'لم تُعَد'));
+      await expect(page.getByTestId('card-observations-unavailable')).toContainText(L('not returned', 'لم تُعَد'));
     });
 
     test('print view repeats analysis id, short hash, method and scoring time as real text', async ({page}) => {
