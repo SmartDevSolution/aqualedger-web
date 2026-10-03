@@ -17,10 +17,20 @@ export type AnalysisRunState =
   | {kind: 'timedOut'; status?: AnalysisStatus | undefined};
 
 export function useAnalysisRun(analysisId: string | undefined) {
-  const [state, setState] = useState<AnalysisRunState>(analysisId ? {kind: 'loading', stage: 'status'} : {kind: 'idle'});
+  // The state is stored together with the id it was produced for. When the route id changes the
+  // previous id's state is never shown for the new id (not even for one render): a result is only
+  // ever read through the id it was fetched for (A25/A39 — one in-memory result keyed by id).
+  const [held, setHeld] = useState<{id: string | undefined; value: AnalysisRunState}>({
+    id: analysisId,
+    value: analysisId ? {kind: 'loading', stage: 'status'} : {kind: 'idle'}
+  });
   const [retryNumber, setRetryNumber] = useState(0);
+  const state: AnalysisRunState = held.id === analysisId
+    ? held.value
+    : analysisId ? {kind: 'loading', stage: 'status'} : {kind: 'idle'};
 
   useEffect(() => {
+    const setState = (value: AnalysisRunState) => setHeld({id: analysisId, value});
     if (!analysisId) {
       setState({kind: 'idle'});
       return;

@@ -954,3 +954,310 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- M3-5: zone priority/evidence panel, history drawer, decision card, print ---- */
+
+.history-toggle {
+  margin-block-start: 0.9rem;
+}
+
+.history-drawer {
+  margin-block-end: 1.25rem;
+}
+
+.history-list,
+.zone-list,
+.card-zone-list,
+.reason-list,
+.legend-ramp {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-item a {
+  display: grid;
+  gap: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.85rem;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--surface);
+}
+
+.history-item a:hover {
+  background: var(--surface-tint);
+}
+
+.history-item.is-current a {
+  border-color: var(--brand);
+  border-width: 2px;
+}
+
+.history-range {
+  font-weight: 740;
+}
+
+.selected-tag {
+  justify-self: start;
+  border: 1px solid var(--brand);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  color: var(--brand-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.zone-row {
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  padding: 0.8rem;
+  background: var(--surface);
+}
+
+.zone-row.is-selected {
+  border: 2px solid var(--focus);
+}
+
+.zone-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zone-select {
+  min-height: 2.5rem;
+  border: 1px solid var(--line-control);
+  border-radius: 0.55rem;
+  padding: 0.25rem 0.6rem;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zone-select[aria-pressed="true"] {
+  background: var(--surface-tint);
+}
+
+.rank-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+/* UNRANKED: neutral hatch, never a ramp colour. */
+.rank-chip-unranked,
+.unranked-hatch {
+  border: 1px solid #6b7c80;
+  color: var(--ink);
+  background: repeating-linear-gradient(135deg, #eef1f0 0 5px, #c8d0d1 5px 7px);
+}
+
+/* The evidence-quality class is a separate OUTLINED badge: white fill, dark outline, no ramp colour. */
+.quality-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border: 2px dashed var(--ink-soft);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  color: var(--ink);
+  background: var(--surface);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.zone-status-line {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.reason-list {
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.chip {
+  display: inline-flex;
+  border: 1px solid var(--line-control);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--surface-tint);
+  font-size: 0.76rem;
+}
+
+.chip-uncounted {
+  border-style: dotted;
+}
+
+.family-chips,
+.confounder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-block-start: 0.55rem;
+}
+
+.legend-ramp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  font-size: 0.76rem;
+}
+
+.legend-swatch-box {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-inline-end: 0.3rem;
+  border: 1px solid var(--ink-soft);
+  border-radius: 0.2rem;
+  vertical-align: middle;
+}
+
+.technical-view {
+  margin-block-start: 0.7rem;
+}
+
+.technical-view summary {
+  min-height: 2.5rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.technical-view,
+.zone-evidence {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.factor-table {
+  width: 100%;
+  margin-block-start: 0.7rem;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.factor-table th,
+.factor-table td {
+  border-block-end: 1px solid var(--line);
+  padding: 0.35rem 0.45rem;
+  text-align: start;
+}
+
+.link-button {
+  border: 0;
+  padding: 0.3rem 0;
+  color: var(--brand-dark);
+  background: none;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.obs-observed { background: var(--brand-bright); }
+.obs-derived { background: #7d8fb0; }
+.obs-missing { background: #b0b8ba; }
+
+.decision-card {
+  margin-block-start: 1.2rem;
+  border: 2px solid var(--line-strong);
+  border-radius: 1rem;
+  padding: 1.1rem;
+  background: #fff;
+}
+
+.card-section {
+  margin-block-start: 1rem;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 0.7rem;
+}
+
+.card-zone {
+  break-inside: avoid;
+}
+
+.print-header,
+.print-footer {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 18mm 14mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .site-header,
+  .site-footer,
+  .no-print,
+  .workspace-grid,
+  .page-heading,
+  .history-drawer,
+  .history-toggle,
+  .result-panel > :not(.zone-panel):not(.decision-card) {
+    display: none;
+  }
+
+  .result-panel,
+  .zone-panel {
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* When a card is open only the card prints; the panel it summarises is hidden. */
+  body:has(.decision-card) .zone-panel,
+  body:has(.decision-card) .result-detail-section:not(.zone-panel) {
+    display: none;
+  }
+
+  .decision-card {
+    display: block;
+    border: 0;
+    padding: 0;
+  }
+
+  .print-header,
+  .print-footer {
+    position: fixed;
+    inset-inline: 0;
+    display: block;
+    border-color: #444;
+    color: #000;
+    font-size: 9pt;
+    unicode-bidi: plaintext;
+  }
+
+  .print-header {
+    top: 0;
+    border-block-end: 1px solid #444;
+  }
+
+  .print-footer {
+    bottom: 0;
+    border-block-start: 1px solid #444;
+  }
+
+  .decision-card {
+    padding-block: 12mm;
+  }
+
+  .rank-chip,
+  .quality-badge {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

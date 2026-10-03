@@ -16,6 +16,8 @@ export type AnalysisStatus =
     });
 export type AnalysisResult = components['schemas']['AnalysisResult'];
 export type SourcesResponse = components['schemas']['SourcesResponse'];
+export type AnalysisHistoryItem = components['schemas']['AnalysisHistoryItem'];
+export type AnalysisHistoryPage = components['schemas']['AnalysisHistoryResponse'];
 
 export type ApiFailure = {
   code: string;
@@ -60,6 +62,19 @@ export function getAnalysisResult(
 ): Promise<ApiResult<AnalysisResult>> {
   return request(`${RELAY_BASE}/analyses/${encodeURIComponent(analysisId)}/result`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisResult =>
     isAnalysisResult(value) && value.analysis_id === analysisId);
+}
+
+/**
+ * One page of the authorized principal's saved analyses (`GET /analyses`, M3). The cursor is
+ * opaque and is the only paging input; there is no search, filter or sort. This is a read — the
+ * history drawer never creates an analysis.
+ */
+export function getAnalysisHistory(
+  cursor: string | null,
+  signal?: AbortSignal
+): Promise<ApiResult<AnalysisHistoryPage>> {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  return request(`${RELAY_BASE}/analyses${query}`, {method: 'GET', ...(signal ? {signal} : {})}, isHistoryPage);
 }
 
 export function getSources(signal?: AbortSignal): Promise<ApiResult<SourcesResponse>> {
@@ -150,6 +165,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isCreateResponse(value: unknown): value is AnalysisCreateResponse {
   return isRecord(value) && isUuid(value.analysis_id) && typeof value.status_url === 'string';
+}
+
+function isHistoryPage(value: unknown): value is AnalysisHistoryPage {
+  if (!isRecord(value) || !Array.isArray(value.items) || !value.items.every(isHistoryItem)) return false;
+  return value.next_cursor === undefined || isNullableString(value.next_cursor);
+}
+
+function isHistoryItem(value: unknown): value is AnalysisHistoryItem {
+  if (!isRecord(value) || !isUuid(value.analysis_id) || !isIsoTimestamp(value.created_at)) return false;
+  if (!isIsoDate(value.start_date) || !isIsoDate(value.end_date) || typeof value.aoi_sha256 !== 'string') return false;
+  if (typeof value.method_version !== 'string') return false;
+  if (typeof value.execution_status !== 'string'
+    || !['QUEUED', 'RUNNING', 'RETRY_WAIT', 'SUCCEEDED', 'FAILED'].includes(value.execution_status)) return false;
+  if (value.evidence_status !== undefined && value.evidence_status !== null
+    && !['NOT_ASSESSED', 'SUFFICIENT', 'LIMITED', 'INSUFFICIENT'].includes(value.evidence_status as string)) return false;
+  for (const field of ['ranked_count', 'unranked_count'] as const) {
+    const count = value[field];
+    if (count !== undefined && count !== null && !(typeof count === 'number' && Number.isInteger(count))) return false;
+  }
+  return value.result_sha256 === undefined || isNullableString(value.result_sha256);
 }
 
 function isAnalysisStatus(value: unknown): value is AnalysisStatus {

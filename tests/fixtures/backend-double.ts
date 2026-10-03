@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import {createServer, type IncomingMessage, type ServerResponse} from 'node:http';
 
 // A labelled test double for the pinned M1 backend contract. It is not a mock of the browser's
@@ -68,6 +69,10 @@ export const M3_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1';
 // A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the gates, so the
 // backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
 // under this method", never as UNRANKED.
+// A scored result served only after a delay and carrying different zones/hash: the late-response
+// test navigates away from it and proves it is never displayed under the newer route id (A39).
+export const M3_SLOW_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2';
+export const M3_SLOW_DELAY_MS = 2500;
 export const M3_NOT_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaf1';
 // A FAILED run whose single `errors[].code` is a real per-date-only rejection code
 // (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
@@ -364,13 +369,55 @@ function noValidPixelResultFixture(id: string): Record<string, unknown> {
   };
 }
 
-// A SUCCEEDED result carrying the complete M3 scoring envelope (contract 0.2.0): run-level
-// `scoring`, two per-zone `assessment` entries and `result_identity`. All numbers are labelled
-// test-double content quoted from the M3 shape, never a production claim. The UNRANKED zone
-// carries a real typed reason; the RANKED zone carries rank/rank_group/rank_key and the
-// uncalibrated evidence-quality class with its label code.
-function m3ScoredResultFixture(id: string): Record<string, unknown> {
-  return {
+// Canonical form used for `result_sha256` (DR-M3-01 §8): sorted keys (by code point), no
+// insignificant whitespace, non-ASCII preserved. Independently implemented here so the e2e tests
+// cross-check the web's own verifier against a second implementation, not against itself.
+function canonical(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonical(entry)}`).join(',')}}`;
+}
+
+export function fixtureResultSha256(body: Record<string, unknown>): string {
+  const payload: Record<string, unknown> = {};
+  for (const key of ['analysis_id', 'execution_status', 'scoring', 'assessment']) {
+    if (key in body) payload[key] = body[key];
+  }
+  return createHash('sha256').update(canonical(payload), 'utf8').digest('hex');
+}
+
+const FACTOR_IDS = ['M1', 'M2', 'M3', 'M4', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8'];
+
+function factorRows(): Record<string, unknown>[] {
+  return FACTOR_IDS.map((factorId) => {
+    if (factorId === 'O4' || factorId === 'O5') {
+      return {factor_id: factorId, score: '0', applicable: true, assessed: false, reason: {code: 'FACTOR_NOT_ASSESSED', params: {factor_id: factorId}}};
+    }
+    if (factorId === 'O6') {
+      return {factor_id: factorId, score: '0', applicable: false, assessed: false, reason: {code: 'FACTOR_NOT_APPLICABLE', params: {factor_id: factorId}}};
+    }
+    if (factorId === 'O1') {
+      return {factor_id: factorId, score: '0.75', applicable: true, assessed: true, reason: {code: 'PROVISIONAL_AOI', params: {}}};
+    }
+    return {factor_id: factorId, score: '1', applicable: true, assessed: true, reason: null};
+  });
+}
+
+function stripClassTest(strip: number): Record<string, unknown> {
+  const left = strip * 0.0025;
+  return {type: 'Polygon', coordinates: [[[left, 0], [left + 0.0025, 0], [left + 0.0025, 0.01], [left, 0.01], [left, 0]]]};
+}
+
+// A SUCCEEDED result carrying the complete M3 scoring envelope (contract 0.2.0) plus the M2 block
+// the zone views read: four zones — Z-1 RANKED (rank 1, group 1, class HIGH), Z-3 RANKED (rank 2,
+// group 2, class LOW), Z-2 UNRANKED (MANDATORY_INPUT_MISSING) and Z-4 UNRANKED with a reason code
+// this web build does not know (FUTURE_CODE_X). All values are labelled test-double content, never
+// a production claim. `result_identity.result_sha256` is the REAL digest of the served payload.
+function m3ScoredResultFixture(id: string, variant: 'main' | 'slow' = 'main'): Record<string, unknown> {
+  const zoneSuffix = variant === 'slow' ? 'S' : '';
+  const body: Record<string, unknown> = {
     analysis_id: id,
     schema_version: '1',
     pipeline_version: 'm3-pipeline-test',
@@ -409,18 +456,42 @@ function m3ScoredResultFixture(id: string): Record<string, unknown> {
     },
     artifacts: [],
     limitations: [],
+    m2: {
+      method_version: 'aq-m2-test',
+      pipeline_version: 'm3-pipeline-test',
+      config_version: 'm2-config-test',
+      zones: [
+        {zone_id: `Z-1${zoneSuffix}`, geometry: stripClassTest(0), geometry_version: '3', geometry_hash: 'fixture-zone-hash', area_m2: 270000},
+        {zone_id: `Z-2${zoneSuffix}`, geometry: stripClassTest(1), geometry_version: '3', geometry_hash: 'fixture-zone-hash-2', area_m2: 270000},
+        {zone_id: `Z-3${zoneSuffix}`, geometry: stripClassTest(2), geometry_version: '3', geometry_hash: 'fixture-zone-hash-3', area_m2: 270000},
+        {zone_id: `Z-4${zoneSuffix}`, geometry: stripClassTest(3), geometry_version: '3', geometry_hash: 'fixture-zone-hash-4', area_m2: 270000}
+      ],
+      observations: [
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-01', window_end: '2026-08-10', observation_class: 'OBSERVED', valid_count: 120, value: 0.42, unit: 'index', valid_area_fraction: 0.92},
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-11', window_end: '2026-08-20', observation_class: 'DERIVED', valid_count: 90, value: 0.38, unit: 'index', valid_area_fraction: 0.8},
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-21', window_end: '2026-08-30', observation_class: 'MISSING', valid_count: 0, value: null, missing_reason: 'NO_OBSERVATION_IN_WINDOW'},
+        {zone_id: `Z-1${zoneSuffix}`, indicator: 'RAINFALL', window_start: '2026-08-01', window_end: '2026-08-30', observation_class: 'OBSERVED', valid_count: 30, value: 4.2, unit: 'mm'},
+        {zone_id: `Z-3${zoneSuffix}`, indicator: 'NDVI', window_start: '2026-08-01', window_end: '2026-08-10', observation_class: 'OBSERVED', valid_count: 60, value: 0.5, unit: 'index', valid_area_fraction: 0.7}
+      ],
+      source_manifest: [
+        {source_id: 'sentinel2_l2a_earth_search', role: 'zone_measurement', status: 'READ', product: 'sentinel-2-l2a'},
+        {source_id: 'chirps', role: 'context', status: 'READ', product: 'chirps-daily'}
+      ],
+      coverage: [],
+      baseline: {status: 'AVAILABLE', method: 'seasonal-median', reference_start: '2024-08-01', reference_end: '2025-08-30'}
+    },
     scoring: {
       method_version: 'aq-scorecard-1',
       operationalization_version: 'aq-scorecard-1-op1',
       scorecard_source_sha256: '457093d9b38347d4d0102bc29fea47ce4376c7a74c2cd0a7315096d1566b468b',
       computed_at: '2026-10-03T00:00:00Z',
-      ranked_count: 1,
-      unranked_count: 1,
+      ranked_count: 2,
+      unranked_count: 2,
       priority_class_status: 'NOT_ESTABLISHED'
     },
     assessment: [
       {
-        zone_id: 'Z-1',
+        zone_id: `Z-1${zoneSuffix}`,
         geometry_version: 3,
         geometry_hash: 'fixture-zone-hash',
         evidence_status: 'SUFFICIENT',
@@ -433,56 +504,89 @@ function m3ScoredResultFixture(id: string): Record<string, unknown> {
           display: '0.81',
           display_decimals: 2,
           label_code: 'EVIDENCE_QUALITY_UNCALIBRATED',
-          factors: [],
-          top_reasons: []
+          factors: factorRows(),
+          top_reasons: [
+            {code: 'FACTOR_NOT_ASSESSED', params: {factor_id: 'O4'}},
+            {code: 'FACTOR_NOT_APPLICABLE', params: {factor_id: 'O6'}},
+            {code: 'PROVISIONAL_AOI', params: {}}
+          ]
         },
         priority: {
           status: 'RANKED',
           rank: 1,
           rank_group: 1,
-          rank_key: {
-            independent_family_count: 2,
-            persistence_windows: 3,
-            recurrence_windows: 3,
-            anomaly_strength: '0.4210',
-            zone_id: 'Z-1'
-          },
+          rank_key: {independent_family_count: 2, persistence_windows: 3, recurrence_windows: 3, anomaly_strength: '0.4210', zone_id: `Z-1${zoneSuffix}`},
           reasons: [
             {code: 'INDEPENDENT_SUPPORT', params: {family_count: 2, families: ['OPTICAL', 'RAINFALL']}},
-            {code: 'PRIORITY_CLASS_NOT_ESTABLISHED', params: {method_version: 'aq-scorecard-1'}}
+            {code: 'PERSISTENT_ANOMALY', params: {windows: 3, start: '2026-08-01', end: '2026-08-30'}},
+            {code: 'PRIORITY_CLASS_NOT_ESTABLISHED', params: {method_version: 'aq-scorecard-1'}},
+            {code: 'TIED_RANK', params: {rank_group: 1, tied_count: 1}}
           ]
         },
-        confounders: [],
-        independent_families: [
-          {family: 'OPTICAL', source_ids: ['sentinel2_l2a_earth_search'], eligible: true, adverse_signal: true, counted: true, reason: null},
-          {family: 'RAINFALL', source_ids: ['chirps'], eligible: true, adverse_signal: true, counted: true, reason: null}
+        confounders: [
+          {code: 'GROWTH_STAGE', assessed: false},
+          {code: 'WEATHER', assessed: true, params: {}},
+          {code: 'SALINITY', assessed: false}
         ],
-        evidence_refs: []
+        independent_families: [
+          {family: 'OPTICAL', source_ids: ['sentinel2_l2a_earth_search', 'landsat_c2'], eligible: true, adverse_signal: true, counted: true, reason: {code: 'SAME_FAMILY_NOT_INDEPENDENT', params: {source_ids: ['sentinel2_l2a_earth_search', 'landsat_c2']}}},
+          {family: 'RAINFALL', source_ids: ['chirps'], eligible: true, adverse_signal: true, counted: true, reason: null},
+          {family: 'SAR', source_ids: ['sentinel1_rtc'], eligible: false, adverse_signal: false, counted: false, reason: {code: 'CONTEXT_ONLY_SOURCE', params: {source_id: 'sentinel1_rtc'}}}
+        ],
+        evidence_refs: [
+          {source_id: 'sentinel2_l2a_earth_search', family: 'OPTICAL', product: 'sentinel-2-l2a', revision: '05.11', dates: ['2026-08-30']}
+        ]
       },
       {
-        zone_id: 'Z-2',
+        zone_id: `Z-2${zoneSuffix}`,
         geometry_version: 3,
         geometry_hash: 'fixture-zone-hash-2',
         evidence_status: 'INSUFFICIENT',
         sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: ['M2'], reasons: []},
         evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
-        priority: {
-          status: 'UNRANKED',
-          reasons: [
-            {code: 'MANDATORY_INPUT_MISSING', params: {source_id: 'chirps'}}
-          ]
-        },
+        priority: {status: 'UNRANKED', reasons: [{code: 'MANDATORY_INPUT_MISSING', params: {source_id: 'chirps'}}]},
         confounders: [],
         independent_families: [],
         evidence_refs: []
+      },
+      {
+        zone_id: `Z-3${zoneSuffix}`,
+        geometry_version: 3,
+        geometry_hash: 'fixture-zone-hash-3',
+        evidence_status: 'LIMITED',
+        sufficiency: {status: 'PASS', failed_factors: [], reasons: []},
+        evidence_quality: {m: '0.5000', o: '0.2500', c: '0.3750', class: 'LOW', display: '0.38', display_decimals: 2, label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', factors: factorRows().slice(0, 4), top_reasons: [{code: 'NO_INDEPENDENT_CORROBORATION', params: {}}]},
+        priority: {
+          status: 'RANKED',
+          rank: 2,
+          rank_group: 2,
+          rank_key: {independent_family_count: 1, persistence_windows: 2, recurrence_windows: 2, anomaly_strength: '0.2000', zone_id: `Z-3${zoneSuffix}`},
+          reasons: [{code: 'PERSISTENT_ANOMALY', params: {windows: 2, start: '2026-08-01', end: '2026-08-20'}}]
+        },
+        confounders: [],
+        independent_families: [{family: 'OPTICAL', source_ids: ['sentinel2_l2a_earth_search'], eligible: true, adverse_signal: true, counted: true, reason: null}],
+        evidence_refs: []
+      },
+      {
+        zone_id: `Z-4${zoneSuffix}`,
+        geometry_version: 3,
+        geometry_hash: 'fixture-zone-hash-4',
+        evidence_status: 'NOT_ASSESSED',
+        sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: [], reasons: []},
+        evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
+        priority: {status: 'UNRANKED', reasons: [{code: 'FUTURE_CODE_X', params: {}}]},
+        confounders: [{code: 'FUTURE_CONFOUNDER_Y', assessed: false}],
+        independent_families: [],
+        evidence_refs: []
       }
-    ],
-    result_identity: {
-      analysis_id: id,
-      attempt_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-      result_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-    }
+    ]
   };
+  body.result_identity = {
+    analysis_id: id,
+    attempt_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    result_sha256: fixtureResultSha256(body)
+  };
+  return body;
 }
 
 // A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the scoring gates,
@@ -521,6 +625,17 @@ function m3NotScoredResultFixture(id: string): Record<string, unknown> {
       {code: 'EVIDENCE_LIMITED', params: {cause_code: 'LIMITED'}}
     ]
   };
+}
+
+// Three saved analyses (two pages of two): newest first. One scored, one pre-M3 (no counts), one
+// scored again so "load more" has a second page to fetch.
+function historyItems(): Record<string, unknown>[] {
+  const scoredHash = fixtureResultSha256(m3ScoredResultFixture(M3_SCORED_ID));
+  return [
+    {analysis_id: M3_SCORED_ID, aoi_sha256: 'a'.repeat(64), created_at: '2026-10-03T08:00:00Z', start_date: '2026-08-01', end_date: '2026-08-30', execution_status: 'SUCCEEDED', evidence_status: 'SUFFICIENT', method_version: 'aq-scorecard-1', ranked_count: 2, unranked_count: 2, result_sha256: scoredHash},
+    {analysis_id: M3_NOT_SCORED_ID, aoi_sha256: 'b'.repeat(64), created_at: '2026-10-02T08:00:00Z', start_date: '2026-07-01', end_date: '2026-07-30', execution_status: 'SUCCEEDED', evidence_status: 'LIMITED', method_version: 'aq-scorecard-1'},
+    {analysis_id: M3_SLOW_ID, aoi_sha256: 'c'.repeat(64), created_at: '2026-10-01T08:00:00Z', start_date: '2026-06-01', end_date: '2026-06-30', execution_status: 'SUCCEEDED', evidence_status: 'SUFFICIENT', method_version: 'aq-scorecard-1', ranked_count: 2, unranked_count: 2, result_sha256: fixtureResultSha256(m3ScoredResultFixture(M3_SLOW_ID, 'slow'))}
+  ];
 }
 
 function errorEnvelope(code: string, params: Record<string, unknown> = {}, requestId = 'req-fixture-1'): Record<string, unknown> {
@@ -572,6 +687,7 @@ export function startBackendDouble(
   // Mutable only for the /sources scenario tests, which run in a serial describe block to avoid
   // cross-test races on this shared, long-lived double.
   let sourcesMode: 'default' | 'empty' | 'outage' | 'unknownRole' = 'default';
+  let historyMode: 'default' | 'empty' | 'error' | 'unauthorized' = 'default';
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
@@ -587,6 +703,7 @@ export function startBackendDouble(
       requests.length = 0;
       notReadyServedIds.clear();
       sourcesMode = 'default';
+      historyMode = 'default';
       respondJson(res, 200, {ok: true});
       return;
     }
@@ -594,6 +711,12 @@ export function startBackendDouble(
       const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'outage' | 'unknownRole'}) : {};
       sourcesMode = body.mode ?? 'default';
       respondJson(res, 200, {ok: true, sourcesMode});
+      return;
+    }
+    if (url.pathname === '/__test__/set-history-mode' && req.method === 'POST') {
+      const body = rawBody ? (JSON.parse(rawBody) as {mode?: 'default' | 'empty' | 'error' | 'unauthorized'}) : {};
+      historyMode = body.mode ?? 'default';
+      respondJson(res, 200, {ok: true, historyMode});
       return;
     }
     if (url.pathname === '/__test__/preview-bytes' && req.method === 'GET') {
@@ -612,6 +735,25 @@ export function startBackendDouble(
       idempotencyKey: (req.headers['idempotency-key'] as string | undefined) ?? null,
       body: parsedBody
     });
+
+    if (req.method === 'GET' && url.pathname === '/analyses') {
+      if (historyMode === 'unauthorized') {
+        respondJson(res, 401, errorEnvelope('UNAUTHENTICATED'));
+        return;
+      }
+      if (historyMode === 'error') {
+        respondJson(res, 503, errorEnvelope('SOURCE_UNAVAILABLE'));
+        return;
+      }
+      const all = historyMode === 'empty' ? [] : historyItems();
+      const cursor = url.searchParams.get('cursor');
+      const pageSize = 2;
+      const start = cursor === 'page-2' ? pageSize : 0;
+      const items = all.slice(start, start + pageSize);
+      const next = start + pageSize < all.length ? 'page-2' : null;
+      respondJson(res, 200, {items, next_cursor: next});
+      return;
+    }
 
     if (req.method === 'POST' && url.pathname === '/analyses') {
       const body = (parsedBody ?? {}) as Record<string, unknown>;
@@ -671,6 +813,7 @@ export function startBackendDouble(
         NO_ELIGIBLE_ACQUISITION_UNDEFINED_COVERAGE_ID,
         NO_VALID_PIXEL_ID,
         M3_SCORED_ID,
+        M3_SLOW_ID,
         M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
@@ -739,6 +882,10 @@ export function startBackendDouble(
       }
       if (id === M3_SCORED_ID) {
         respondJson(res, 200, m3ScoredResultFixture(id));
+        return;
+      }
+      if (id === M3_SLOW_ID) {
+        setTimeout(() => respondJson(res, 200, m3ScoredResultFixture(id, 'slow')), M3_SLOW_DELAY_MS);
         return;
       }
       if (id === M3_NOT_SCORED_ID) {
