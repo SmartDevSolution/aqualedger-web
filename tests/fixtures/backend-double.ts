@@ -66,13 +66,41 @@ export const NO_VALID_PIXEL_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac';
 // two per-zone `assessment` entries (one RANKED with an evidence-quality class, one UNRANKED
 // with a reason) and `result_identity`. Labelled test double content — not a production claim.
 export const M3_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1';
+function m3PersistenceIneligibleResultFixture(id: string, m2ReasonCode: string): Record<string, unknown> {
+  const fixture = m3ScoredResultFixture(id);
+  fixture.scoring = {...(fixture.scoring as Record<string, unknown>), ranked_count: 0, unranked_count: 1};
+  fixture.assessment = [
+    {
+      zone_id: 'Z-9',
+      geometry_version: 3,
+      geometry_hash: 'fixture-zone-hash-persistence',
+      evidence_status: 'INSUFFICIENT',
+      sufficiency: {status: 'INSUFFICIENT DATA', failed_factors: ['M2'], reasons: []},
+      evidence_quality: {factors: [], label_code: 'EVIDENCE_QUALITY_UNCALIBRATED', top_reasons: null},
+      priority: {status: 'UNRANKED', reasons: [{code: 'PERSISTENCE_INELIGIBLE', params: {m2_reason_code: m2ReasonCode}}]},
+      confounders: [],
+      independent_families: [],
+      evidence_refs: []
+    }
+  ];
+  // The payload changed after the first digest: recompute so the served identity stays truthful.
+  fixture.result_identity = {...(fixture.result_identity as Record<string, unknown>), result_sha256: fixtureResultSha256(fixture)};
+  return fixture;
+}
+
 // A SUCCEEDED result computed under aq-scorecard-1 whose zone never passed the gates, so the
 // backend emitted NO scoring envelope at all — per DR-M3-01 §4 this renders as "not scored
 // under this method", never as UNRANKED.
 // A scored result served only after a delay and carrying different zones/hash: the late-response
 // test navigates away from it and proves it is never displayed under the newer route id (A39).
-export const M3_SLOW_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2';
+export const M3_SLOW_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae4';
 export const M3_SLOW_DELAY_MS = 2500;
+// F1 regression doubles (stage-⑥ Council BLOCK at web PR #10 head 00e44802): two SUCCEEDED
+// scored results whose single UNRANKED zone carries a `PERSISTENCE_INELIGIBLE` reason with the M2
+// prerequisite cause the pinned backend publishes in `params.m2_reason_code` (NO_COMPATIBLE_BASELINE
+// m2.py:85, EXCESSIVE_GAPS m2.py:92). Labelled test-double content.
+export const M3_PERSISTENCE_INELIGIBLE_BASELINE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2';
+export const M3_PERSISTENCE_INELIGIBLE_GAPS_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae3';
 export const M3_NOT_SCORED_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaf1';
 // A FAILED run whose single `errors[].code` is a real per-date-only rejection code
 // (`LOW_VALID_COVERAGE`, pipeline.py:246-261) rather than anything the run-level
@@ -800,6 +828,8 @@ export function startBackendDouble(
         NO_VALID_PIXEL_ID,
         M3_SCORED_ID,
         M3_SLOW_ID,
+        M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
+        M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
         M3_NOT_SCORED_ID
       ]);
       if (!immediateResultIds.has(id) && !notReadyServedIds.has(id)) {
@@ -868,6 +898,14 @@ export function startBackendDouble(
       }
       if (id === M3_SCORED_ID) {
         respondJson(res, 200, m3ScoredResultFixture(id));
+        return;
+      }
+      if (id === M3_PERSISTENCE_INELIGIBLE_BASELINE_ID) {
+        respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'NO_COMPATIBLE_BASELINE'));
+        return;
+      }
+      if (id === M3_PERSISTENCE_INELIGIBLE_GAPS_ID) {
+        respondJson(res, 200, m3PersistenceIneligibleResultFixture(id, 'EXCESSIVE_GAPS'));
         return;
       }
       if (id === M3_SLOW_ID) {

@@ -23,6 +23,21 @@ const REASON_KEYS = [
   'FACTOR_NOT_APPLICABLE', 'FACTOR_NOT_ASSESSED', 'EVIDENCE_QUALITY_UNCALIBRATED'
 ] as const satisfies readonly ReasonKey[];
 
+// The M2 prerequisite cause the pinned backend publishes in `params.m2_reason_code` of a
+// PERSISTENCE_INELIGIBLE reason (scorecard.py:611-612). These are exactly the codes the pinned
+// analysis/m2.py assigns to an INELIGIBLE PersistenceAssessment; each leaves the persistence outcome
+// UNASSESSED, so the sentence states a missing prerequisite and never a "not persistent" result (F1).
+// An unrecognised or absent cause yields no cause sentence: the client invents none.
+const PERSISTENCE_CAUSES = ['NO_COMPATIBLE_BASELINE', 'EXCESSIVE_GAPS', 'AGRICULTURAL_MASK_BLOCKED'] as const;
+type PersistenceCause = (typeof PERSISTENCE_CAUSES)[number];
+
+function persistenceCause(reason: ReasonLike): PersistenceCause | null {
+  if (reason.code !== 'PERSISTENCE_INELIGIBLE') return null;
+  const code = reason.params?.m2_reason_code;
+  return typeof code === 'string' && (PERSISTENCE_CAUSES as readonly string[]).includes(code)
+    ? (code as PersistenceCause) : null;
+}
+
 const KNOWN: ReadonlySet<string> = new Set(REASON_KEYS);
 
 export function isKnownReasonCode(code: string): code is ReasonKey {
@@ -83,6 +98,8 @@ export function useReasonText(reference: string) {
     for (const name of placeholderNames(t.raw(reason.code) as string)) {
       values[name] = isolate(stringifyParam(reason.params?.[name], familyName));
     }
-    return t(reason.code, values);
+    const message = t(reason.code, values);
+    const cause = persistenceCause(reason);
+    return cause ? `${message} ${t(`PERSISTENCE_CAUSE_${cause}`)}` : message;
   };
 }

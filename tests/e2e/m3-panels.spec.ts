@@ -2,6 +2,8 @@ import {createHash} from 'node:crypto';
 import {expect, test, type Page} from '@playwright/test';
 import {
   M3_NOT_SCORED_ID,
+  M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
+  M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
   M3_SCORED_ID,
   M3_SLOW_DELAY_MS,
   M3_SLOW_ID,
@@ -212,6 +214,28 @@ for (const locale of ['en', 'ar'] as const) {
       expect(JSON.stringify(layers.selectedFilter)).toContain('Z-1');
     });
   });
+
+  // F1 regression (carried from the M3-4 correction f1426c2): PERSISTENCE_INELIGIBLE is an
+  // eligibility gate. Neither prerequisite failure establishes that the stress was not persistent,
+  // so the zone states the gate plus the sourced M2 cause and never a "not persistent" claim.
+  for (const {label, id, cause} of [
+    {label: 'NO_COMPATIBLE_BASELINE', id: M3_PERSISTENCE_INELIGIBLE_BASELINE_ID, cause: L('No compatible seasonal baseline is available.', 'لا يتوفر خط أساس موسمي متوافق.')},
+    {label: 'EXCESSIVE_GAPS', id: M3_PERSISTENCE_INELIGIBLE_GAPS_ID, cause: L('The requested history has excessive gaps.', 'تحتوي السلسلة المطلوبة على فجوات مفرطة.')}
+  ]) {
+    test(`PERSISTENCE_INELIGIBLE states the eligibility gate and cause, never a non-persistence claim in ${locale} (${label})`, async ({page}) => {
+      await page.goto(`/${locale}/analysis/${id}`);
+      const row = page.locator('.zone-row[data-zone-id="Z-9"]');
+      await expect(row).toBeVisible();
+      await expect(row).toContainText(L('Persistence is not eligible for ranking for this zone.', 'الاستمرارية غير مؤهلة للترتيب لهذه المنطقة.'));
+      await expect(row).toContainText(cause);
+      const claim = L('not persistent', 'لم يكن الإجهاد مستمرًا');
+      await expect(row).not.toContainText(claim);
+      await expect(page.getByText(L('The stress was not persistent', 'لم يكن الإجهاد مستمرًا'))).toHaveCount(0);
+      await expect(row).not.toContainText('UNRANKED');
+      await expect(row.getByTestId('unranked-chip')).toBeVisible();
+      await expect(row.getByTestId('evidence-quality-badge')).toHaveAttribute('data-class', 'none');
+    });
+  }
 
   test.describe(`decision card and identity in ${locale}`, () => {
     test('card identity is derived from the emitted hash and the independent recomputation agrees', async ({page}) => {
