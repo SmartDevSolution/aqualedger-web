@@ -63,12 +63,14 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
      take the typed `params` of DR-M3-01 §6 as placeholders; the F1 regression is ported to the new
      zone rows (both locales, both viewports).
    - Of the 12 `workspace.scoring*` keys, two remain in use (`scoringHeading`, `scoringNotScored`:
-     the not-scored branch, `result-scoring-panel.tsx:32-33`). Nine belonged to the M3-4 flat panel and
+     the not-scored branch, `result-scoring-panel.tsx:39-40`). Nine belonged to the M3-4 flat panel and
      are replaced by `zones.*` / `evidenceQuality.*`; they were removed rather than left orphaned, so the
      two slices cannot drift. An earlier revision of this bullet named a third key
-     (`scoringUncalibratedDisclosure`) as in use; no `src/` file referenced it, so it was removed under
-     the same rule (F1b card t_ebeaaf99 — the Council condition 6 PARTIAL raised by the independent
-     review of head 8c72030 §C is closed).
+     (`scoringUncalibratedDisclosure`) as in use; no `src/` file referenced it after the M3-5 scored-panel
+     rewrite, so it was removed under the same rule (F1b card t_ebeaaf99 — the Council condition 6 PARTIAL
+     raised by the independent review of head 8c72030 §C is closed). The same rule removes the unused
+     `zones.persistenceLabel` and `zones.persistence.*` entries; persistence vocabulary is not rendered
+     by this slice, so it must not remain catalog-only copy.
    - A scored result no longer renders the M3-4 flat list; `ResultScoringSection` keeps only the
      not-scored branch (`if (!view)`, i.e. the committed result carries no M3 envelope) and delegates
      the scored case to `ZonePriorityPanel`. There is no separate envelope-incomplete branch: a body
@@ -130,13 +132,20 @@ This note records the six Council conditions routed from the M3-4 gate (PR #10, 
    | `zones.evidenceStatus.*`, `zones.sufficiency.*` | `models/status.py:28-35`; `models/m3.py:185-189`; `scorecard.py:797` | no | OK |
    | `evidenceQuality.*` | `models/m3.py:148-150`, `:177-182` (the class is never a priority class) | no | OK |
    | `confounders.*` | `models/m3.py:240-249` (alternative explanation, never a diagnosis) | no | OK |
-   | `workspace.scoring*` | `result-scoring-panel.tsx:29-35` not-scored branch; DR-M3-01 §4 | YES — the orphaned `scoringUncalibratedDisclosure` removed (both locales) | corrected; condition 6 PARTIAL closed |
+   | `workspace.scoring*` | `result-scoring-panel.tsx:39-40` not-scored branch; DR-M3-01 §4 | YES — the orphaned `scoringUncalibratedDisclosure` and the unused `zones.persistence*` entries were removed from both locales | corrected; condition 6 PARTIAL closed; catalog-only persistence copy removed |
    | `history.*`, `decisionCard.*`, `print.*`, `settingsM3.*`, `zones.legend*/map*` | `models/m3.py:607-617` (v1 is always `NOT_ESTABLISHED`), `workspace-map.tsx:21`, GET /analyses counts | no | OK |
 
-   Result at the F1b head: the one blocking entry the reviewer found (report §B row 1) is corrected,
-   and no other rendered string in either catalog asserts an outcome the pin does not establish. The
-   reviewer's non-blocking observations are NOT absorbed into this diff (a separate follow-up card
-   carries them).
+   - The not-scored branch has no result body from which to read a method version. `workspace.scoringNotScored`
+     therefore intentionally keeps the pinned literal `aq-scorecard-1` in both locales; this is an explicit
+     v1-only decision, not a missing interpolation. A future method re-pin must update this copy and the
+     settings status copy together (the existing `messages:check` parity gate will not detect semantic
+     drift). The `reasons.INDEPENDENT_SUPPORT` entry intentionally uses both `{family_count}` and
+     `{families}` because the backend emits both parameters; a backend rename must update the catalog and
+     formatter together.
+
+   Result at the merged M3-5 head: the reviewed blocking entry is corrected, the catalog-only persistence
+   family is removed, and no other rendered string in either catalog asserts an outcome the pin does not
+   establish. The reviewer's remaining non-blocking observations are tracked by a separate follow-up card.
 
 9. Round-2 corrections at the F2 head (card `t_38e1dae0`; Council BLOCK 2–0 at `e7ee471`).
    - **B1 — rankability is a precondition of the ranked axis (recorded rule).** DR-M3-01 §3
@@ -281,26 +290,25 @@ The M3-4 landing gate (card `t_b83e34d2`, seat `claude-fable-5-1`) recorded five
 conditions after PR #10 merged (dev `0b48dae`). They are owned as follows so the same edit is never
 made twice:
 
-- **Condition 1 — regression for the `AGRICULTURAL_MASK_BLOCKED` prerequisite cause: done on this
-  branch.** At the pinned backend `6ba3f13d` the only wired persistence path (`build_m2_additions`,
+- **Condition 1 — regression for the `AGRICULTURAL_MASK_BLOCKED` prerequisite cause: present in the
+  merged M3-5 surface.** At the pinned backend `6ba3f13d` the only wired persistence path (`build_m2_additions`,
   `src/aqualedger/analysis/m2.py:382-391` -> `scorecard.py::_persistence_reason`) publishes
   `AGRICULTURAL_MASK_BLOCKED`; `EXCESSIVE_GAPS` is dormant there because `assess_persistence` has no
-  production call site. The bilingual F1 regression in `tests/e2e/m3-panels.spec.ts` now covers all
-  three causes the client can render (`NO_COMPATIBLE_BASELINE`, `EXCESSIVE_GAPS`,
-  `AGRICULTURAL_MASK_BLOCKED`) in `en` and `ar` and in both viewport projects, from new labelled
-  test-double ids (`M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID`).
+  production call site. The bilingual F1 regression in `tests/e2e/m3-panels.spec.ts` covers all three
+  causes the client can render (`NO_COMPATIBLE_BASELINE`, `EXCESSIVE_GAPS`, `AGRICULTURAL_MASK_BLOCKED`)
+  in `en` and `ar` and in both viewport projects, from labelled test-double ids
+  (`M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID`).
 - **Condition 5 — uncalibrated disclosure and "priority class not established" on every scored
-  render: asserted on this branch.** The same regression asserts the ordering-only banner
+  render: present in the merged M3-5 surface.** The same regression asserts the ordering-only banner
   (`aq-scorecard-1`, "Priority class not established") and the decision-support guardrail on each of
   the three scored prerequisite doubles, so the UNRANKED path cannot silently lose either line.
-- **Conditions 2, 3, 4 and the call-site re-check note: owned by card `t_efaf064d`** (M3-4 web
-  follow-ups) and deliberately **not duplicated here**: `docs/M3-CONTRACT-REPIN.md` 124 -> 132, the
-  `ranked` gate on the evidence-quality badge in `result-scoring-panel.tsx`, the unused
-  `scorePresentation` export in `src/lib/api/m3.ts`, the two Arabic gender-agreement slips
-  (`AGRI_MASK_BLOCKED`, `PERSISTENCE_NOT_ASSESSED`) and the recorded next-re-pin re-check of the
-  persistence call site.
-- **Found while preparing the rebase, fixed on this branch: the slice's own UNRANKED group heading
-  still carried the pre-F1 claim.** `zones.unrankedGroup.PERSISTENCE_INELIGIBLE` read
+- **Conditions 2, 3, 4 and the call-site re-check note: completed by the merged PR #12 follow-up**
+  (card `t_efaf064d`) and deliberately not duplicated here: `docs/M3-CONTRACT-REPIN.md`, the `ranked`
+  gate on the evidence-quality badge, removal of the unused `scorePresentation` export, the two Arabic
+  gender-agreement fixes (`AGRI_MASK_BLOCKED`, `PERSISTENCE_NOT_ASSESSED`) and the recorded next-re-pin
+  re-check of the persistence call site.
+- **The slice's UNRANKED group heading was corrected before the M3-5 merge.**
+  `zones.unrankedGroup.PERSISTENCE_INELIGIBLE` previously read
   "Stress not persistent" (`ar` "الإجهاد غير مستمر") and is rendered — via `unrankedGroupHeading`,
   `"{reason} ({count})"` — as the heading of every UNRANKED group for that reason, so the scored
   surface asserted a non-persistence result for zones whose persistence is *unassessed*. That
@@ -309,7 +317,7 @@ made twice:
   regression asserts the group heading and asserts that no non-persistence claim appears anywhere in
   the result panel, so the group surface cannot regress silently.
 
-Base for this slice: web `dev` at merge commit `cbb74fa9ce93ee2fdbd5a6667201b395dceec795` (live base
-and merge-base for PR #11). The earlier M3-4 merge commit `0b48dae` (tree equal to the reviewed
-head `f1426c2`) is a historical/superseded reference only; the M3-4 branch is not a landing
-dependency.
+Base for this slice: web `dev` at merged PR #11 commit `0e142b61b4cce3f1550f55e4b6fb46c54114f987`.
+The PR #11 merge-base was `cbb74fa9ce93ee2fdbd5a6667201b395dceec795`; the earlier M3-4 merge commit
+`0b48dae` (tree equal to the reviewed head `f1426c2`) is a historical/superseded reference only.
+The M3-4 follow-up PR #12 is also merged into this `dev` tree; neither branch is a landing dependency.

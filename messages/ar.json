@@ -334,13 +334,6 @@
     "noEvidenceRefs": "لا توجد مراجع أدلة مسجلة لهذه المنطقة.",
     "provenanceLink": "مصدر النتيجة وتتبّعها",
     "sourcesLink": "حالة مصادر البيانات",
-    "persistenceLabel": "الاستمرارية",
-    "persistence": {
-      "ELIGIBLE": "مؤهلة",
-      "INELIGIBLE": "غير مؤهلة",
-      "UNKNOWN": "غير معروفة",
-      "NOT_ASSESSED": "غير مُقيَّمة"
-    },
     "unrankedGroup": {
       "MANDATORY_INPUT_MISSING": "مدخل إلزامي مفقود",
       "ZONE_FULLY_MASKED": "محجوبة بالكامل",
