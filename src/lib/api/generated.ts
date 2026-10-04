@@ -78,6 +78,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analyses/{analysis_id}/scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Analysis Scenario */
+        get: operations["get_analysis_scenario_analyses__analysis_id__scenario_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sources": {
         parameters: {
             query?: never;
@@ -825,6 +842,121 @@ export interface components {
             /** Unranked Count */
             unranked_count: number;
         };
+        /** ScenarioAssociation */
+        ScenarioAssociation: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /** Result Sha256 */
+            result_sha256: string;
+        };
+        /**
+         * ScenarioDisclosure
+         * @enum {string}
+         */
+        ScenarioDisclosure: "HYPOTHETICAL_NOT_OBSERVED" | "SENSITIVITY_ILLUSTRATION_NOT_BASIN_FORECAST" | "NOT_OBSERVED_SAVINGS" | "APPLICATION_REDUCTION_NOT_BASIN_SAVINGS" | "ILLUSTRATIVE_CONSTANTS_NOT_FROM_THIS_ANALYSIS" | "NO_IN_BASIN_VALIDATION" | "CLOSURE_IS_CONSISTENCY_CHECK_NOT_PROOF" | "BENEFICIAL_ET_REDUCTION_NOT_A_YIELD_ESTIMATE" | "NO_INDIVIDUAL_WELL_PUMPING_CLAIM";
+        /** ScenarioIdentity */
+        ScenarioIdentity: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Scenario Sha256 */
+            scenario_sha256: string;
+        };
+        /** ScenarioQuantity */
+        ScenarioQuantity: {
+            /** Quantity */
+            quantity: string;
+            /** Reasons */
+            reasons: components["schemas"]["ScenarioQuantityReason"][];
+            /**
+             * Status
+             * @constant
+             */
+            status: "NOT_ESTIMABLE";
+        };
+        /** ScenarioQuantityReason */
+        ScenarioQuantityReason: {
+            code: components["schemas"]["ScenarioQuantityReasonCode"];
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ScenarioQuantityReasonCode
+         * @enum {string}
+         */
+        ScenarioQuantityReasonCode: "SCENARIO_NOT_EMPIRICALLY_ANCHORED" | "NO_LOCAL_BASIS" | "BASIN_SAVINGS_INPUTS_MISSING" | "YIELD_RESPONSE_NOT_MODELLED" | "SCENARIO_UNCERTAINTY_NOT_ASSESSED";
+        /** ScenarioResponse */
+        ScenarioResponse: {
+            association: components["schemas"]["ScenarioAssociation"];
+            /**
+             * Basis
+             * @constant
+             */
+            basis: "ILLUSTRATIVE_ONLY";
+            /**
+             * Boundary Code
+             * @constant
+             */
+            boundary_code: "PROVISIONAL_TUBAN_DELTA_REFERENCE_ONLY";
+            /** Disclosures */
+            disclosures: components["schemas"]["ScenarioDisclosure"][];
+            /**
+             * Epistemic Class
+             * @constant
+             */
+            epistemic_class: "MODELED_SIMULATED";
+            /**
+             * Numeric Projection
+             * @constant
+             */
+            numeric_projection: "WITHHELD_PENDING_NEW_COUNCIL_METHOD";
+            /**
+             * Period Code
+             * @constant
+             */
+            period_code: "HYPOTHETICAL_IRRIGATION_SEASON";
+            /** Quantities */
+            quantities: components["schemas"]["ScenarioQuantity"][];
+            /** Scenario Definition Sha256 */
+            scenario_definition_sha256: string;
+            scenario_identity: components["schemas"]["ScenarioIdentity"];
+            /**
+             * Scenario Key
+             * @constant
+             */
+            scenario_key: "tuban-fixed-60";
+            /**
+             * Scenario Method Version
+             * @constant
+             */
+            scenario_method_version: "aq-scenario-1";
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "aq-scenario-response-1";
+            uncertainty: components["schemas"]["ScenarioUncertainty"];
+            /**
+             * Unit
+             * @constant
+             */
+            unit: "Mm3/season";
+        };
+        /** ScenarioUncertainty */
+        ScenarioUncertainty: {
+            /** Reasons */
+            reasons: components["schemas"]["ScenarioQuantityReason"][];
+            status: components["schemas"]["ScenarioUncertaintyStatus"];
+        };
+        /**
+         * ScenarioUncertaintyStatus
+         * @enum {string}
+         */
+        ScenarioUncertaintyStatus: "NOT_ASSESSED";
         /** SceneSelection */
         SceneSelection: {
             /**
@@ -1317,6 +1449,84 @@ export interface operations {
             };
             /** @description SOURCE_UNAVAILABLE */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_analysis_scenario_analyses__analysis_id__scenario_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fixed hypothetical scenario for a committed scored result. When no committed result exists yet, returns the frozen NOT_READY envelope at 200 with typed `execution_status`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioResponse"] | components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description INPUT_INVALID */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description SCENARIO_UNAVAILABLE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description PROCESSING_FAILED */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,7 @@
 import type {components} from './generated';
 import {isM3Assessment, isM3ResultIdentity, isM3Scoring} from './m3';
 import {isM2ResultAdditions} from './m2';
+import {isScenarioResponse, type ScenarioResponse} from './scenario';
 
 export type AnalysisCreateRequest = components['schemas']['AnalysisCreateRequest'];
 export type AnalysisCreateResponse = components['schemas']['AnalysisCreateResponse'];
@@ -18,6 +19,7 @@ export type AnalysisResult = components['schemas']['AnalysisResult'];
 export type SourcesResponse = components['schemas']['SourcesResponse'];
 export type AnalysisHistoryItem = components['schemas']['AnalysisHistoryItem'];
 export type AnalysisHistoryPage = components['schemas']['AnalysisHistoryResponse'];
+export type {ScenarioResponse} from './scenario';
 
 export type ApiFailure = {
   code: string;
@@ -62,6 +64,14 @@ export function getAnalysisResult(
 ): Promise<ApiResult<AnalysisResult>> {
   return request(`${RELAY_BASE}/analyses/${encodeURIComponent(analysisId)}/result`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is AnalysisResult =>
     isAnalysisResult(value) && value.analysis_id === analysisId);
+}
+
+export function getAnalysisScenario(
+  analysisId: string,
+  signal?: AbortSignal
+): Promise<ApiResult<ScenarioResponse>> {
+  return request(`${RELAY_BASE}/analyses/${encodeURIComponent(analysisId)}/scenario`, {method: 'GET', ...(signal ? {signal} : {})}, (value): value is ScenarioResponse =>
+    isScenarioResponse(value) && value.association.analysis_id === analysisId);
 }
 
 /**

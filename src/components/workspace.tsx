@@ -13,6 +13,7 @@ import {emptyWorkspaceDraft, readWorkspaceDraft, writeWorkspaceDraft, type Works
 import type {PreviewOverlayRequest, PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {AnalysisResultPanel} from './analysis-result-panel';
 import {useResultIdentity} from '@/lib/api/use-result-identity';
+import {useScenario} from '@/lib/api/use-scenario';
 import {patchUrlState, useWorkspaceUrlState} from '@/lib/url-state';
 import {buildScoredResultView, isPolygonal, rankGroupStep, type ScoredResultView} from '@/lib/zone-model';
 import type {ZoneLayerRequest} from './workspace-map';
@@ -63,8 +64,14 @@ export function Workspace({analysisId}: WorkspaceProps) {
     ? urlState.zone
     : null;
   const cardOpen = scoredView !== null && urlState.card;
+  const scenarioOpen = urlState.scenario;
+  const committedResultSha256 = runState.kind === 'complete'
+    ? runState.result.result_identity?.result_sha256 ?? null
+    : null;
+  const scenarioState = useScenario(analysisId, committedResultSha256);
   const selectZone = useCallback((zoneId: string) => patchUrlState({zone: zoneId}), []);
   const toggleCard = useCallback(() => patchUrlState({panel: urlState.card ? null : 'card'}), [urlState.card]);
+  const toggleScenario = useCallback(() => patchUrlState({scenario: urlState.scenario ? null : '1'}), [urlState.scenario]);
   const closeHistory = useCallback(() => patchUrlState({history: null}), []);
 
   const zoneLayer = useMemo<ZoneLayerRequest | null>(() => {
@@ -341,6 +348,12 @@ export function Workspace({analysisId}: WorkspaceProps) {
           identity,
           cardOpen,
           onToggleCard: toggleCard
+        }}
+        scenario={{
+          state: scenarioState,
+          resultSha256: committedResultSha256,
+          open: scenarioOpen,
+          onToggle: toggleScenario
         }}
       />
     </main>

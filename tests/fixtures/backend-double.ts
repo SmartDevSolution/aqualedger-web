@@ -1,5 +1,6 @@
 import {createHash} from 'node:crypto';
 import {createServer, type IncomingMessage, type ServerResponse} from 'node:http';
+import {buildScenarioFixture} from './scenario-fixture.ts';
 
 // A labelled test double for the pinned M1 backend contract. It is not a mock of the browser's
 // network layer: the Next.js relay (src/lib/api/relay.ts) makes a real server-to-server HTTP call
@@ -770,6 +771,19 @@ function m3NotScoredResultFixture(id: string): Record<string, unknown> {
   };
 }
 
+/** Committed scored result bodies that carry `result_identity` (M4 scenario association). */
+function scenarioResultBody(id: string): Record<string, unknown> {
+  if (id === M3_SCORED_ID) return m3ScoredResultFixture(id);
+  if (id === M3_SLOW_ID) return m3ScoredResultFixture(id, 'slow');
+  if (id === M3_PERSISTENCE_INELIGIBLE_BASELINE_ID) return m3PersistenceIneligibleResultFixture(id, 'NO_COMPATIBLE_BASELINE');
+  if (id === M3_PERSISTENCE_INELIGIBLE_GAPS_ID) return m3PersistenceIneligibleResultFixture(id, 'EXCESSIVE_GAPS');
+  if (id === M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID) return m3PersistenceIneligibleResultFixture(id, 'AGRICULTURAL_MASK_BLOCKED');
+  if (id === M3_LIMITED_UNRANKED_ID) return m3LimitedUnrankedResultFixture(id);
+  if (id === M3_CONTRADICTORY_LIMITED_RANKED_ID) return m3ContradictoryLimitedRankedResultFixture(id);
+  if (id === M3_CARD_PROJECTION_ID) return m3CardProjectionResultFixture(id);
+  throw new Error(`No scenario result fixture for ${id}`);
+}
+
 // Three saved analyses (two pages of two): newest first. One scored, one pre-M3 (no counts), one
 // scored again so "load more" has a second page to fetch.
 function historyItems(): Record<string, unknown>[] {
@@ -909,6 +923,45 @@ export function startBackendDouble(
         return;
       }
       respondJson(res, 200, statusFixture(id, 'SUCCEEDED', 'NOT_ASSESSED'));
+      return;
+    }
+
+    const scenarioMatch = url.pathname.match(/^\/analyses\/([^/]+)\/scenario$/);
+    if (req.method === 'GET' && scenarioMatch) {
+      const id = scenarioMatch[1] as string;
+      if (id === FAILED_ID || id === FAILED_WRONG_PATH_CODE_ID) {
+        respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'FAILED'}));
+        return;
+      }
+      if (id === RESULT_NOT_FOUND_ID) {
+        respondJson(res, 404, errorEnvelope('NOT_FOUND', {resource: 'analysis'}));
+        return;
+      }
+      if (id === M3_NOT_SCORED_ID) {
+        respondJson(res, 409, errorEnvelope('SCENARIO_UNAVAILABLE', {reason_code: 'RESULT_IDENTITY_MISSING'}));
+        return;
+      }
+      const scenarioResultIds = new Set([
+        M3_SCORED_ID,
+        M3_SLOW_ID,
+        M3_PERSISTENCE_INELIGIBLE_BASELINE_ID,
+        M3_PERSISTENCE_INELIGIBLE_GAPS_ID,
+        M3_PERSISTENCE_INELIGIBLE_AGRI_MASK_ID,
+        M3_LIMITED_UNRANKED_ID,
+        M3_CONTRADICTORY_LIMITED_RANKED_ID,
+        M3_CARD_PROJECTION_ID
+      ]);
+      if (scenarioResultIds.has(id)) {
+        const body = scenarioResultBody(id);
+        const resultSha = fixtureResultSha256(body);
+        respondJson(res, 200, buildScenarioFixture(id, resultSha));
+        return;
+      }
+      if (!notReadyServedIds.has(id)) {
+        respondJson(res, 200, errorEnvelope('NOT_READY', {execution_status: 'RUNNING'}));
+        return;
+      }
+      respondJson(res, 409, errorEnvelope('SCENARIO_UNAVAILABLE', {reason_code: 'RESULT_IDENTITY_MISSING'}));
       return;
     }
 
