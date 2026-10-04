@@ -36,6 +36,33 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.getByTestId('scenario-panel')).toHaveAttribute('data-scenario-id', scenarioIdBefore);
     });
 
+    test('print view shows the scenario panel and hides workspace chrome', async ({page}) => {
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?scenario=1`);
+      const panel = page.getByTestId('scenario-panel');
+      await expect(panel).toBeVisible();
+
+      await page.emulateMedia({media: 'print'});
+      await expect(panel).toBeVisible();
+      await expect(page.locator('.scenario-section .print-header')).toBeVisible();
+      await expect(page.locator('.scenario-section .print-footer')).toBeVisible();
+      await expect(page.locator('.site-header')).toBeHidden();
+      await expect(page.locator('.workspace-grid')).toBeHidden();
+      await expect(page.getByTestId('scenario-withheld-banner')).toBeVisible();
+      expect(await panel.evaluate((node) => getComputedStyle(node).display)).not.toBe('none');
+    });
+
+    test('when card and scenario are both open, only the scenario prints', async ({page}) => {
+      await page.goto(`/${locale}/analysis/${M3_SCORED_ID}?panel=card&scenario=1`);
+      await expect(page.getByTestId('decision-card')).toBeVisible();
+      await expect(page.getByTestId('scenario-panel')).toBeVisible();
+
+      await page.emulateMedia({media: 'print'});
+      await expect(page.getByTestId('scenario-panel')).toBeVisible();
+      await expect(page.getByTestId('decision-card')).toBeHidden();
+      expect(await page.getByTestId('scenario-panel').evaluate((node) => getComputedStyle(node).display)).not.toBe('none');
+      expect(await page.getByTestId('decision-card').evaluate((node) => getComputedStyle(node).display)).toBe('none');
+    });
+
     test('JSON export is deterministic and withholds numeric quantity fields', async ({page, request}) => {
       const api = await request.get(`/api/analyses/${M3_SCORED_ID}/scenario`);
       const scenario = (await api.json()) as ScenarioResponse;

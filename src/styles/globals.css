@@ -1296,7 +1296,7 @@ h3 {
   .page-heading,
   .history-drawer,
   .history-toggle,
-  .result-panel > :not(.zone-panel):not(.decision-card) {
+  .result-panel > :not(.zone-panel):not(.decision-card):not(.scenario-section) {
     display: none;
   }
 
@@ -1307,14 +1307,15 @@ h3 {
   }
 
   /* When a card is open only the card prints; the panel it summarises is hidden. */
-  body:has(.decision-card) .zone-panel,
-  body:has(.decision-card) .result-detail-section:not(.zone-panel) {
+  body:has(.decision-card):not(:has(.scenario-section .scenario-panel)) .zone-panel,
+  body:has(.decision-card):not(:has(.scenario-section .scenario-panel)) .result-detail-section:not(.zone-panel) {
     display: none;
   }
 
-  body:has(.scenario-panel) .zone-panel,
-  body:has(.scenario-panel) .decision-card,
-  body:has(.scenario-panel) .result-detail-section:not(.scenario-section) {
+  /* When the scenario body is open it is the print surface; it wins over an open decision card. */
+  body:has(.scenario-section .scenario-panel) .zone-panel,
+  body:has(.scenario-section .scenario-panel) .decision-card,
+  body:has(.scenario-section .scenario-panel) .result-detail-section:not(.scenario-section) {
     display: none;
   }
 
