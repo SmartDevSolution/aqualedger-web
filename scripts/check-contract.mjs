@@ -2,11 +2,10 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 
-// Pinned-contract guard, moved forward with the M3 re-pin (central issue #17, M3-4).
+// Pinned-contract guard, moved forward with the M4-1 re-pin (backend PR #20 merge to dev).
 // The consumed artifact is the backend `dev` artifact at commit
-// 6ba3f13d6106e295c2cbf00a412624f7b8192de3 (PR #13 merge 7ddb7ca + docs-only PR #14; the
-// artifact is byte-identical to the ratified M3-3 acceptance state, sha256 76876a5d…, contract
-// version 0.2.0). Assertions below keep three families honest:
+// 1fce07076efaa421713cab9a5b6ac561a9578b6a (contract version 0.3.0, sha256 9a4e52bb…).
+// Assertions below keep three families honest:
 //   1. identity — the checked-in artifact, its generated types and BACKEND-REF.json agree;
 //   2. the frozen M1 routes and the M1 top-level shape stay exactly as frozen;
 //   3. the M3 additive envelope is optional-by-schema (a pre-M3 result without
@@ -31,14 +30,15 @@ assert(reference.artifact_git_blob_sha === blobSha, 'OpenAPI Git blob hash does 
 assert(reference.artifact_sha256 === sha256, 'OpenAPI SHA-256 does not match BACKEND-REF.json.');
 assert(reference.openapi_version === spec.openapi, 'OpenAPI version does not match BACKEND-REF.json.');
 assert(reference.contract_version === spec.info?.version, 'Contract version does not match BACKEND-REF.json.');
-assert(reference.backend_commit === '6ba3f13d6106e295c2cbf00a412624f7b8192de3', 'Backend commit pin changed.');
+assert(reference.backend_commit === '1fce07076efaa421713cab9a5b6ac561a9578b6a', 'Backend commit pin changed.');
 assert(reference.generator === 'openapi-typescript@7.6.1', 'Generated type tool pin changed.');
-assert(reference.contract_version === '0.2.0', 'Contract version pin changed.');
+assert(reference.contract_version === '0.3.0', 'Contract version pin changed.');
 
 const expectedOperations = new Map([
   ['/analyses', ['post']],
   ['/analyses/{analysis_id}', ['get']],
   ['/analyses/{analysis_id}/result', ['get']],
+  ['/analyses/{analysis_id}/scenario', ['get']],
   ['/sources', ['get']]
 ]);
 for (const [path, methods] of expectedOperations) {
@@ -90,6 +90,7 @@ for (const code of ['MANDATORY_INPUT_MISSING', 'EVIDENCE_LIMITED', 'PERSISTENCE_
 assertPriorityStatusEnum();
 assertEvidenceQualityClassEnum();
 assertResultIdentityShape();
+assertScenarioResponseShape();
 
 const generatedCheck = spawnSync(process.execPath, [
   cliUrl.pathname,
@@ -120,6 +121,43 @@ function assertResultIdentityShape() {
   const identityProperties = spec.components?.schemas?.ResultIdentity?.properties ?? {};
   assert(typeof identityProperties.result_sha256?.type === 'string', 'ResultIdentity.result_sha256 missing.');
   assert(typeof spec.components?.schemas?.ZoneAssessment?.properties?.priority === 'object', 'ZoneAssessment.priority missing.');
+}
+
+function assertScenarioResponseShape() {
+  const quantityProperties = spec.components?.schemas?.ScenarioQuantity?.properties ?? {};
+  for (const forbidden of ['value', 'lower', 'upper']) {
+    assert(!(forbidden in quantityProperties), `ScenarioQuantity must not expose ${forbidden}.`);
+  }
+  const quantityRequired = spec.components?.schemas?.ScenarioQuantity?.required ?? [];
+  assert(quantityRequired.includes('quantity') && quantityRequired.includes('status') && quantityRequired.includes('reasons'),
+    'ScenarioQuantity must require quantity, status and reasons.');
+  assert(quantityProperties.status?.const === 'NOT_ESTIMABLE', 'ScenarioQuantity.status must be NOT_ESTIMABLE.');
+
+  const reasonCodes = spec.components?.schemas?.ScenarioQuantityReasonCode?.enum ?? [];
+  for (const code of [
+    'SCENARIO_NOT_EMPIRICALLY_ANCHORED',
+    'NO_LOCAL_BASIS',
+    'BASIN_SAVINGS_INPUTS_MISSING',
+    'YIELD_RESPONSE_NOT_MODELLED',
+    'SCENARIO_UNCERTAINTY_NOT_ASSESSED'
+  ]) {
+    assert(reasonCodes.includes(code), `ScenarioQuantityReasonCode is missing ${code}.`);
+  }
+
+  const responseRequired = spec.components?.schemas?.ScenarioResponse?.required ?? [];
+  for (const field of [
+    'schema_version',
+    'scenario_key',
+    'scenario_method_version',
+    'scenario_definition_sha256',
+    'association',
+    'scenario_identity'
+  ]) {
+    assert(responseRequired.includes(field), `ScenarioResponse must require ${field}.`);
+  }
+  const identityRequired = spec.components?.schemas?.ScenarioIdentity?.required ?? [];
+  assert(identityRequired.includes('scenario_id') && identityRequired.includes('scenario_sha256'),
+    'ScenarioIdentity must carry scenario_id and scenario_sha256.');
 }
 
 function assert(condition, message) {

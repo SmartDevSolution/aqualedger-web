@@ -14,6 +14,7 @@ const URL_STATE_EVENT = 'aqualedger:url-state';
 export type WorkspaceUrlState = {
   zone: string | null;
   card: boolean;
+  scenario: boolean;
   history: boolean;
 };
 
@@ -44,6 +45,7 @@ export function parseWorkspaceUrlState(search: string): WorkspaceUrlState {
   return {
     zone: zone && zone.length <= 200 ? zone : null,
     card: params.get('panel') === 'card',
+    scenario: params.get('scenario') === '1',
     history: params.get('history') === '1'
   };
 }
@@ -54,7 +56,7 @@ export function useWorkspaceUrlState(): WorkspaceUrlState {
 }
 
 /** Replace (never push) the query string; `null` removes a key. Hash and pathname are untouched. */
-export function patchUrlState(patch: Partial<{zone: string | null; panel: 'card' | null; history: '1' | null}>): void {
+export function patchUrlState(patch: Partial<{zone: string | null; panel: 'card' | null; scenario: '1' | null; history: '1' | null}>): void {
   const params = new URLSearchParams(window.location.search);
   for (const [key, value] of Object.entries(patch)) {
     if (value === null || value === undefined) params.delete(key);
@@ -70,7 +72,7 @@ export function patchUrlState(patch: Partial<{zone: string | null; panel: 'card'
 export function carriedQuery(search: string): Record<string, string> {
   const params = new URLSearchParams(search);
   const carried: Record<string, string> = {};
-  for (const key of ['zone', 'panel', 'history']) {
+  for (const key of ['zone', 'panel', 'scenario', 'history']) {
     const value = params.get(key);
     if (value) carried[key] = value;
   }

@@ -7,17 +7,26 @@ import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
 import type {PreviewOverlayStatus} from '@/lib/preview/geotiff-overlay';
 import {QualityEvidencePanel} from './quality-evidence-panel';
 import {ResultScoringSection, type ScoringSectionProps} from './result-scoring-panel';
+import {ScenarioPanelSection} from './scenario-panel';
+import type {ScenarioState} from '@/lib/api/use-scenario';
 
 export function AnalysisResultPanel({
   analysisId,
   state,
   previewStatus,
-  scoring
+  scoring,
+  scenario
 }: {
   analysisId?: string | undefined;
   state: AnalysisRunState;
   previewStatus: PreviewOverlayStatus;
   scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
+  scenario: {
+    state: ScenarioState;
+    resultSha256: string | null;
+    open: boolean;
+    onToggle: () => void;
+  };
 }) {
   const locale = useLocale();
   const t = useTranslations('workspace');
@@ -52,22 +61,38 @@ export function AnalysisResultPanel({
       {analysisId && state.kind === 'blocked' ? <p className="notice notice-neutral">{t('resultBlocked')}</p> : null}
       {analysisId && state.kind === 'timedOut' ? <p className="notice notice-neutral">{t('resultTimedOut')}</p> : null}
       {analysisId && state.kind === 'complete' ? (
-        <LoadedAnalysisResult result={state.result} locale={locale} previewStatus={previewStatus} scoring={scoring} />
+        <LoadedAnalysisResult
+          analysisId={analysisId}
+          result={state.result}
+          locale={locale}
+          previewStatus={previewStatus}
+          scoring={scoring}
+          scenario={scenario}
+        />
       ) : null}
     </section>
   );
 }
 
 function LoadedAnalysisResult({
+  analysisId,
   result,
   locale,
   previewStatus,
-  scoring
+  scoring,
+  scenario
 }: {
+  analysisId: string;
   result: import('@/lib/api/client').AnalysisResult;
   locale: string;
   previewStatus: PreviewOverlayStatus;
   scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
+  scenario: {
+    state: ScenarioState;
+    resultSha256: string | null;
+    open: boolean;
+    onToggle: () => void;
+  };
 }) {
   const t = useTranslations('workspace');
   const errors = useTranslations('errors');
@@ -125,6 +150,16 @@ function LoadedAnalysisResult({
       <QualityEvidencePanel result={result} />
 
       <ResultScoringSection {...scoring} hasProvenance={provenance !== null && provenance !== undefined} />
+
+      {scenario.resultSha256 ? (
+        <ScenarioPanelSection
+          analysisId={analysisId}
+          resultSha256={scenario.resultSha256}
+          state={scenario.state}
+          open={scenario.open}
+          onToggle={scenario.onToggle}
+        />
+      ) : null}
 
       {(result.scenes_evaluated?.length ?? 0) > 0 ? (
         <section className="result-detail-section" aria-labelledby="result-scenes-heading">
