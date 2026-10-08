@@ -1,6 +1,6 @@
 # AquaLedger Web — agent instructions
 
-This repository owns Next.js/TypeScript and web tests only. Central authority: `AmeenBinBisher/aqualedger`, documents 00–10, especially decisions/product/architecture/acceptance/engineering standards. Review the latest central owner-correction PR and then pin the merged baseline. Read `docs/IMPLEMENTATION.md` before changes.
+This repository owns Next.js/TypeScript and web tests only. Central authority: `SmartDevSolution/aqualedger`, documents 00–10, especially decisions/product/architecture/acceptance/engineering standards. Review the latest central owner-correction PR and then pin the merged baseline. Read `docs/IMPLEMENTATION.md` before changes.
 
 **Authoring language: English only.** Write project documents, plans, agent prompts/briefs/handoffs, technical reports, issue/PR/review text, commit messages, code comments and docstrings in English even when the owner discusses the task in Arabic. Necessary exact Arabic terms/quotations and Arabic UI catalog values, localized product output and tests are narrow exceptions; surrounding engineering prose stays English. Do not create duplicate Arabic instructions. This is not an English-only product: preserve both Arabic/RTL and English/LTR. Review this rule before every approval; the canonical policy is in central document 10.
 
@@ -18,4 +18,4 @@ This repository owns Next.js/TypeScript and web tests only. Central authority: `
 12. Jarvis coordinates; implementers implement. Use only authorized existing resources. No billing, accounts, agreements, external publication, official submission or application of migrations from web. Simplicity never removes correctness/accessibility/security/scientific disclosure.
 13. Unresolved technical-development or domain/business-logic choices are decided by the Planning Council, not by Jarvis, PM/ChatGPT, implementers or reviewers. Record proposals in the central GitHub decision process with options/trade-offs/impact and link the Council verdict before implementing a semantic/architectural choice. Routine implementation that follows an already-approved decision/contract may proceed without a new Council round. Explicit owner decisions override Council verdicts.
 
-Canonical detailed standards: https://github.com/AmeenBinBisher/aqualedger/blob/dev/docs/current/10-ENGINEERING-STANDARDS.md (available on central PR #1 until merged).
+Canonical detailed standards: https://github.com/SmartDevSolution/aqualedger/blob/dev/docs/current/10-ENGINEERING-STANDARDS.md (available on central PR #1 until merged).
