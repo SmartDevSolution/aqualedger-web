@@ -103,8 +103,12 @@ export default function WorkspaceMap({
         maplibreModule.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
         map = new maplibreModule.Map({
           container: containerRef.current,
-          // DP-4 P2 (Council issue #8): a same-origin, self-hosted minimal style — no external
-          // basemap tile/vector/raster provider is used in M1 (see public/basemap/style.json).
+          // Owner directive 2026-10-11 supersedes the M1 self-hosted minimal style (Council DP-4
+          // P2, central issue #8): the map now uses a real geographical basemap from a keyless
+          // public MapLibre-compatible provider (Esri World Imagery + the Esri reference label
+          // overlay, see public/basemap/style.json). The style file is still served from this
+          // app's own origin; only the declared tile host is external, and both sources declare
+          // their own attribution for MapLibre's attribution control.
           style: '/basemap/style.json',
           center: [0, 0],
           zoom: 1.4,

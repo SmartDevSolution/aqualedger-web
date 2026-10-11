@@ -19,6 +19,18 @@ import {boundsToImageCoordinates, decodePreviewImage} from '../../src/lib/previe
 const PREVIEW_SOURCE_ID = 'ndvi-preview-source';
 const PREVIEW_LAYER_ID = 'ndvi-preview-layer';
 
+// Owner directive 2026-10-11 replaced the M1 self-hosted minimal basemap (Council DP-4 P2) with a
+// real geographical one served by an external MapLibre-compatible provider, so "no request leaves
+// the app origin" can no longer hold literally. It is kept as an explicit *allowlist* of the
+// declared basemap tile hosts instead of being dropped: the property that actually mattered — the
+// browser never talks to an undeclared third party and never fetches a signed storage URL itself —
+// is still enforced, and a new provider cannot be introduced silently.
+const DECLARED_BASEMAP_HOSTS = ['server.arcgisonline.com'];
+const undeclaredOffOrigin = (requests: string[], baseOrigin: string) =>
+  requests.filter(
+    (url) => new URL(url).origin !== baseOrigin && !DECLARED_BASEMAP_HOSTS.includes(new URL(url).host)
+  );
+
 type PreviewProbeResult = {
   hasLayer: boolean;
   hasSource: boolean;
@@ -119,8 +131,7 @@ test.describe('browser-visible preview outcomes and basemap origin (DP-4 P1(c)/P
     expect(previewRequests.length).toBeGreaterThan(0);
 
     const baseOrigin = new URL(page.url()).origin;
-    const offOrigin = requests.filter((url) => new URL(url).origin !== baseOrigin);
-    expect(offOrigin).toEqual([]);
+    expect(undeclaredOffOrigin(requests, baseOrigin)).toEqual([]);
 
     // W7.4: the "ready" text and preview request above are necessary but not sufficient — they
     // still pass when no raster layer is ever added to the map (a suppressed `map.addLayer` was
@@ -259,8 +270,7 @@ test.describe('browser-visible preview outcomes and basemap origin (DP-4 P1(c)/P
     await expect(page.getByText('No map layer is shown.', {exact: false})).toBeVisible({timeout: 15_000});
 
     const baseOrigin = new URL(page.url()).origin;
-    const offOrigin = requests.filter((url) => new URL(url).origin !== baseOrigin);
-    expect(offOrigin).toEqual([]);
+    expect(undeclaredOffOrigin(requests, baseOrigin)).toEqual([]);
   });
 
   test('a committed but not-yet-ready ndvi_preview artifact reads distinctly from a genuinely missing one (W8)', async ({page}) => {
@@ -291,7 +301,12 @@ test.describe('self-hosted basemap and localized map controls (DP-4 P2, W6.4)', 
 
     const baseOrigin = new URL(page.url()).origin;
     expect(requests.some((url) => new URL(url).pathname === '/basemap/style.json')).toBe(true);
-    expect(requests.filter((url) => new URL(url).origin !== baseOrigin)).toEqual([]);
+    // Non-vacuity: the basemap must actually be fetched from the declared provider, otherwise an
+    // allowlist would pass just as happily over a map that loads no tiles at all.
+    const basemapTiles = requests.filter((url) => new URL(url).host === 'server.arcgisonline.com');
+    expect(basemapTiles.length).toBeGreaterThan(0);
+    expect(basemapTiles.every((url) => /\/MapServer\/tile\//.test(url))).toBe(true);
+    expect(undeclaredOffOrigin(requests, baseOrigin)).toEqual([]);
   });
 
   for (const locale of ['en', 'ar'] as const) {
