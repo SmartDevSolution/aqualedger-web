@@ -2,9 +2,9 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 
-// Pinned-contract guard, moved forward with the M4-1 re-pin (backend PR #20 merge to dev).
+// Pinned-contract guard, moved forward with the current backend `dev` baseline.
 // The consumed artifact is the backend `dev` artifact at commit
-// d7111f9484000fc3d69b9a4e72e9f208c688559c (contract version 0.3.0, sha256 9a4e52bb…).
+// e060dc1f0caa956674927241f0f14a9ada9cf7cd (contract version 0.3.0, sha256 9a4e52bb…).
 // Assertions below keep three families honest:
 //   1. identity — the checked-in artifact, its generated types and BACKEND-REF.json agree;
 //   2. the frozen M1 routes and the M1 top-level shape stay exactly as frozen;
@@ -30,7 +30,7 @@ assert(reference.artifact_git_blob_sha === blobSha, 'OpenAPI Git blob hash does 
 assert(reference.artifact_sha256 === sha256, 'OpenAPI SHA-256 does not match BACKEND-REF.json.');
 assert(reference.openapi_version === spec.openapi, 'OpenAPI version does not match BACKEND-REF.json.');
 assert(reference.contract_version === spec.info?.version, 'Contract version does not match BACKEND-REF.json.');
-assert(reference.backend_commit === 'd7111f9484000fc3d69b9a4e72e9f208c688559c', 'Backend commit pin changed.');
+assert(reference.backend_commit === 'e060dc1f0caa956674927241f0f14a9ada9cf7cd', 'Backend commit pin changed.');
 assert(reference.generator === 'openapi-typescript@7.6.1', 'Generated type tool pin changed.');
 assert(reference.contract_version === '0.3.0', 'Contract version pin changed.');
 
