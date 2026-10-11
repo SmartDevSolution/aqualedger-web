@@ -1,0 +1,71 @@
+{
+  "description": "AquaLedger Yemen: real stored single-AOI demonstration analysis, no synthetic measurements; sensitive URLs and credentials excluded",
+  "recorded_at_utc": "2026-10-11T19:00:59.794749+00:00",
+  "application": "https://aqualedger-web.vercel.app",
+  "example_url_en": "https://aqualedger-web.vercel.app/en/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2",
+  "example_url_ar": "https://aqualedger-web.vercel.app/ar/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2",
+  "example_input": {
+    "aoi_geojson": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            44.242237687,
+            13.157522086
+          ],
+          [
+            44.242237687,
+            13.142477683
+          ],
+          [
+            44.257687211,
+            13.142477683
+          ],
+          [
+            44.257687211,
+            13.157522086
+          ],
+          [
+            44.242237687,
+            13.157522086
+          ]
+        ]
+      ]
+    },
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30"
+  },
+  "recorded_output": {
+    "analysis_id": "d38fb448-20d1-481d-91be-dd90ee8575f2",
+    "execution_status": "SUCCEEDED",
+    "evidence_status": "NOT_ASSESSED",
+    "result_sha256": "689c6f3abbf75fe08550227a69b5ca2af0ff2049219450ad9187cc5f7263bca1",
+    "statistics": {
+      "valid_observation_count": 27944,
+      "valid_area_m2": 2794400,
+      "ndvi_min": 0.04566086083650589,
+      "ndvi_max": 0.6478251218795776,
+      "ndvi_mean": 0.2158459573984146,
+      "ndvi_median": 0.19780012965202332,
+      "ndvi_p05": 0.12008105963468552,
+      "ndvi_p95": 0.37006133794784546,
+      "masked_fraction": 0,
+      "rejection_counts": {
+        "masked_class": 0,
+        "missing_data": 0,
+        "out_of_range": 0,
+        "non_positive_denominator": 0
+      }
+    },
+    "baseline": {
+      "grid_crs": "EPSG:32638",
+      "collection": "sentinel-2-l2a",
+      "contract_version": "0.3.0",
+      "pipeline_version": "m1-ndvi-1.0.0",
+      "grid_resolution_m": 10,
+      "mask_policy_version": "v1"
+    },
+    "method_version": "sentinel2-l2a-ndvi-v1"
+  },
+  "limitations": "This is one recorded remote-processing run; evidence_status NOT_ASSESSED does not imply scientific ground truth or independent accuracy validation. Exact live source retrievals may vary."
+}
