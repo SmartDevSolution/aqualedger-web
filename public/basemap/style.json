@@ -4,8 +4,8 @@
   "metadata": {
     "aqualedger:description": "AquaLedger basemap. Owner directive 2026-10-11 replaced the M1 self-hosted minimal style (Council DP-4 P2, central issue #8) with a real geographical basemap: the Esri World Imagery satellite raster with the Esri World Boundaries and Places reference overlay. Both are keyless public ArcGIS REST services that declare their own attribution, which MapLibre's attribution control renders; the localized note beside the map repeats it in EN/AR. The style file itself is still served from this app's own origin - only the declared tile host is external. Satellite imagery is the deliberate choice for this product: AOI selection is over farmland, wadis and irrigation, which a street basemap does not show.",
     "aqualedger:provider": "Esri (server.arcgisonline.com), no API key, no account required",
-    "aqualedger:attribution": "Imagery: Esri, Maxar, Earthstar Geographics, and the GIS User Community | Labels: Esri, HERE, Garmin, FAO, NOAA, USGS",
-    "aqualedger:availability": "Public ArcGIS REST services; if they are unreachable the map degrades to the background layer and MapLibre reports a style/source error rather than a silent blank map."
+    "aqualedger:attribution": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community | Reference: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community (both taken verbatim from each service's own ArcGIS REST metadata copyrightText, not paraphrased)",
+    "aqualedger:availability": "Public ArcGIS REST services with no uptime SLA. If they are unreachable the style document still loads and every drawing interaction keeps working, but the basemap renders as the plain background colour; the failed source requests are reported on the browser console. A failed source deliberately does NOT flip the map into its failed state, because that state disables area drawing - see the error handler in src/components/workspace-map.tsx."
   },
   "sources": {
     "esri-imagery": {
@@ -16,7 +16,7 @@
       "tileSize": 256,
       "minzoom": 0,
       "maxzoom": 19,
-      "attribution": "Imagery: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+      "attribution": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community"
     },
     "esri-labels": {
       "type": "raster",
@@ -26,7 +26,7 @@
       "tileSize": 256,
       "minzoom": 0,
       "maxzoom": 19,
-      "attribution": "Labels: Esri, HERE, Garmin, FAO, NOAA, USGS"
+      "attribution": "Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community"
     }
   },
   "layers": [

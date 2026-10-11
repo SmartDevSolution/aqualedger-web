@@ -21,7 +21,7 @@
     "mapNotReady": "The interactive map is not ready yet.",
     "mapFailure": "The map or polygon drawing control could not be loaded. Area drawing is unavailable.",
     "mapFailureDetail": "Check the map connection and reload this page.",
-    "mapAttribution": "Basemap: Esri World Imagery satellite imagery with the Esri World Boundaries and Places reference overlay, served by Esri's public ArcGIS REST services (no API key). Attribution: imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community; labels © Esri, HERE, Garmin, FAO, NOAA, USGS. Tiles are requested directly from the tile host, so the map is the only part of this app that makes a browser request to a third-party host; the style file itself is still served from this app's own origin.",
+    "mapAttribution": "Basemap: Esri World Imagery satellite imagery with the Esri World Boundaries and Places reference overlay, served by Esri's public ArcGIS REST services (no API key). Attribution: imagery © Esri, Vantor, Earthstar Geographics and the GIS User Community; reference labels © Esri, HERE, Garmin, OpenStreetMap contributors and the GIS user community. Tiles are requested directly from the tile host, so the map is the only part of this app that makes a browser request to a third-party host; the style file itself is still served from this app's own origin.",
     "mapControlZoomIn": "Zoom in",
     "mapControlZoomOut": "Zoom out",
     "mapControlResetBearing": "Drag to rotate the map, click to reset north",
