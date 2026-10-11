@@ -103,8 +103,12 @@ export default function WorkspaceMap({
         maplibreModule.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
         map = new maplibreModule.Map({
           container: containerRef.current,
-          // DP-4 P2 (Council issue #8): a same-origin, self-hosted minimal style — no external
-          // basemap tile/vector/raster provider is used in M1 (see public/basemap/style.json).
+          // Owner directive 2026-10-11 supersedes the M1 self-hosted minimal style (Council DP-4
+          // P2, central issue #8): the map now uses a real geographical basemap from a keyless
+          // public MapLibre-compatible provider (Esri World Imagery + the Esri reference label
+          // overlay, see public/basemap/style.json). The style file is still served from this
+          // app's own origin; only the declared tile host is external, and both sources declare
+          // their own attribution for MapLibre's attribution control.
           style: '/basemap/style.json',
           center: [0, 0],
           zoom: 1.4,
@@ -136,10 +140,26 @@ export default function WorkspaceMap({
         map.getCanvas().setAttribute('aria-label', t('mapHeading'));
         map.getCanvas().setAttribute('role', 'application');
         map.addControl(new maplibreModule.NavigationControl({showCompass: true}), 'top-right');
-        map.on('error', () => {
-          if (!disposed) {
-            updateStatus('failed');
+        map.on('error', (event) => {
+          if (disposed) {
+            return;
           }
+          // Owner directive 2026-10-11: the basemap now fetches raster tiles over the network, so a
+          // failed tile is an ordinary, recoverable condition (provider hiccup, a request dropped
+          // while panning) rather than a broken map. `status` gates EVERY drawing interaction, so
+          // treating any error as fatal would disable area drawing mid-session with no recovery but
+          // a page reload. MapLibre distinguishes the two cases on this event, verified directly
+          // against this build: a source/tile failure carries `sourceId` (alongside `tile` and
+          // `source`), while a failure of the style document itself arrives without one. Source
+          // failures are reported to the console and drawing stays available.
+          const sourceId = (event as {sourceId?: string}).sourceId;
+          if (sourceId) {
+            console.warn(
+              `AquaLedger basemap source error on "${sourceId}"; area drawing remains available: ${String(event.error ?? '')}`
+            );
+            return;
+          }
+          updateStatus('failed');
         });
 
         map.once('load', () => {

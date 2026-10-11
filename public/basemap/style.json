@@ -1,360 +1,32 @@
 {
   "version": 8,
-  "name": "aqualedger-m1-self-hosted-minimal",
+  "name": "aqualedger-esri-world-imagery",
   "metadata": {
-    "aqualedger:description": "M1 self-hosted minimal basemap (Council DP-4 P2, issue #8): a background colour plus an inline WGS84 30-degree graticule for geographic orientation. No external tile, vector or raster data provider is used. Adding a real basemap data provider is a later, separately recorded decision."
+    "aqualedger:description": "AquaLedger basemap. Owner directive 2026-10-11 replaced the M1 self-hosted minimal style (Council DP-4 P2, central issue #8) with a real geographical basemap: the Esri World Imagery satellite raster with the Esri World Boundaries and Places reference overlay. Both are keyless public ArcGIS REST services that declare their own attribution, which MapLibre's attribution control renders; the localized note beside the map repeats it in EN/AR. The style file itself is still served from this app's own origin - only the declared tile host is external. Satellite imagery is the deliberate choice for this product: AOI selection is over farmland, wadis and irrigation, which a street basemap does not show.",
+    "aqualedger:provider": "Esri (server.arcgisonline.com), no API key, no account required",
+    "aqualedger:attribution": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community | Reference: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community (both taken verbatim from each service's own ArcGIS REST metadata copyrightText, not paraphrased)",
+    "aqualedger:availability": "Public ArcGIS REST services with no uptime SLA. If they are unreachable the style document still loads and every drawing interaction keeps working, but the basemap renders as the plain background colour; the failed source requests are reported on the browser console. A failed source deliberately does NOT flip the map into its failed state, because that state disables area drawing - see the error handler in src/components/workspace-map.tsx."
   },
   "sources": {
-    "graticule": {
-      "type": "geojson",
-      "data": {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  -80
-                ],
-                [
-                  -180,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -150,
-                  -80
-                ],
-                [
-                  -150,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -120,
-                  -80
-                ],
-                [
-                  -120,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -90,
-                  -80
-                ],
-                [
-                  -90,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -60,
-                  -80
-                ],
-                [
-                  -60,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -30,
-                  -80
-                ],
-                [
-                  -30,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  0,
-                  -80
-                ],
-                [
-                  0,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  30,
-                  -80
-                ],
-                [
-                  30,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  60,
-                  -80
-                ],
-                [
-                  60,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  90,
-                  -80
-                ],
-                [
-                  90,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  120,
-                  -80
-                ],
-                [
-                  120,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  150,
-                  -80
-                ],
-                [
-                  150,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "meridian"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  180,
-                  -80
-                ],
-                [
-                  180,
-                  80
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "parallel"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  -60
-                ],
-                [
-                  180,
-                  -60
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "parallel"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  -30
-                ],
-                [
-                  180,
-                  -30
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "parallel"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  0
-                ],
-                [
-                  180,
-                  0
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "parallel"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  30
-                ],
-                [
-                  180,
-                  30
-                ]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": {
-              "kind": "parallel"
-            },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [
-                  -180,
-                  60
-                ],
-                [
-                  180,
-                  60
-                ]
-              ]
-            }
-          }
-        ]
-      },
-      "attribution": "AquaLedger self-hosted minimal basemap — no external map data provider (M1)"
+    "esri-imagery": {
+      "type": "raster",
+      "tiles": [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+      ],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 19,
+      "attribution": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community"
+    },
+    "esri-labels": {
+      "type": "raster",
+      "tiles": [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+      ],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 19,
+      "attribution": "Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community"
     }
   },
   "layers": [
@@ -362,17 +34,23 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#dbe9f0"
+        "background-color": "#0b1620"
       }
     },
     {
-      "id": "graticule-lines",
-      "type": "line",
-      "source": "graticule",
+      "id": "basemap-imagery",
+      "type": "raster",
+      "source": "esri-imagery",
       "paint": {
-        "line-color": "#9db8c4",
-        "line-width": 0.75,
-        "line-opacity": 0.8
+        "raster-opacity": 1
+      }
+    },
+    {
+      "id": "basemap-labels",
+      "type": "raster",
+      "source": "esri-labels",
+      "paint": {
+        "raster-opacity": 1
       }
     }
   ]
