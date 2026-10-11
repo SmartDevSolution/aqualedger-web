@@ -4,6 +4,7 @@ import {useEffect, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import type {AoiPolygon} from '@/lib/analysis-input';
 import {zoneBounds} from '@/lib/zone-model';
+import {reportMapFailure, type MapFailureStage} from '@/lib/map-diagnostics';
 import {
   boundsToImageCoordinates,
   decodePreviewImage,
@@ -83,6 +84,17 @@ export default function WorkspaceMap({
     let map: import('maplibre-gl').Map | null = null;
     let drawReady = false;
     let activeDraw: import('terra-draw').TerraDraw | null = null;
+    let initializationStage: MapFailureStage = 'module-import';
+    const reportedStages = new Set<MapFailureStage>();
+
+    function fail(stage: MapFailureStage, error: unknown) {
+      if (disposed) return;
+      if (!reportedStages.has(stage)) {
+        reportedStages.add(stage);
+        reportMapFailure(stage, error);
+      }
+      updateStatus('failed');
+    }
 
     function updateStatus(nextStatus: MapStatus) {
       setStatus(nextStatus);
@@ -100,7 +112,9 @@ export default function WorkspaceMap({
           return;
         }
 
+        initializationStage = 'worker-configuration';
         maplibreModule.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
+        initializationStage = 'map-construction';
         map = new maplibreModule.Map({
           container: containerRef.current,
           // DP-4 P2 (Council issue #8): a same-origin, self-hosted minimal style — no external
@@ -133,19 +147,19 @@ export default function WorkspaceMap({
         // projected placement, rendered pixels) instead of an implementation-private variable a
         // regression could keep alive. Never read by application code itself.
         (window as unknown as {__AQUALEDGER_TEST_MAP__?: import('maplibre-gl').Map}).__AQUALEDGER_TEST_MAP__ = map;
+        initializationStage = 'map-controls';
         map.getCanvas().setAttribute('aria-label', t('mapHeading'));
         map.getCanvas().setAttribute('role', 'application');
         map.addControl(new maplibreModule.NavigationControl({showCompass: true}), 'top-right');
-        map.on('error', () => {
-          if (!disposed) {
-            updateStatus('failed');
-          }
+        map.on('error', (event) => {
+          fail('map-runtime', event.error);
         });
 
         map.once('load', () => {
           if (disposed || !map) {
             return;
           }
+          let drawingStage: MapFailureStage = 'drawing-construction';
           try {
             const draw = new terraDrawModule.TerraDraw({
               adapter: new adapterModule.TerraDrawMapLibreGLAdapter({map}),
@@ -161,10 +175,14 @@ export default function WorkspaceMap({
               if (disposed) {
                 return;
               }
-              drawReady = true;
-              syncGeometry();
-              draw.setMode(drawingEnabledRef.current ? 'polygon' : 'render');
-              updateStatus('ready');
+              try {
+                drawReady = true;
+                syncGeometry();
+                draw.setMode(drawingEnabledRef.current ? 'polygon' : 'render');
+                updateStatus('ready');
+              } catch (error) {
+                fail('drawing-sync', error);
+              }
             });
             draw.on('finish', () => {
               if (disposed) {
@@ -177,15 +195,14 @@ export default function WorkspaceMap({
               }
               draw.setMode('render');
             });
+            drawingStage = 'drawing-start';
             draw.start();
-          } catch {
-            updateStatus('failed');
+          } catch (error) {
+            fail(drawingStage, error);
           }
         });
-      } catch {
-        if (!disposed) {
-          updateStatus('failed');
-        }
+      } catch (error) {
+        fail(initializationStage, error);
       }
     }
 
