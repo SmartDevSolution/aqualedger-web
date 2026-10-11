@@ -1,50 +1,120 @@
-# AquaLedger Web
+# AquaLedger Yemen — Interactive Earth Observation Proof of Concept
 
-Next.js and TypeScript application for the AquaLedger analysis workspace. The product has two primary screens: Analysis Workspace and Settings / Data Sources. Both are available in English/LTR and Arabic/RTL.
+**Track:** Precision Agriculture & Crop Intelligence · **Team:** AquaLedger Yemen · **Country:** Yemen
 
-## Runtime and commands
+**[Open the live, interactive web demonstration](https://aqualedger-web.vercel.app/en/analysis)** · [Arabic interface](https://aqualedger-web.vercel.app/ar/analysis) · **[Inspect a completed real analysis](https://aqualedger-web.vercel.app/en/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2)**
 
-Use Node.js `22.22.2` and its bundled npm `10.9.7`, as pinned by `.nvmrc` and `packageManager` in `package.json`.
+AquaLedger is an Earth-observation decision-support prototype. A user draws an area of interest (AOI), chooses dates, starts a real analysis, and inspects satellite-derived evidence, vegetation indicators, georeferenced map previews, and saved results in English or Arabic. The PoC is a **working application**, not a static concept mockup or a simulated result page.
 
-```sh
+> **Scientific boundary:** Satellite-derived indicators are estimates and decision-support evidence, not ground-truth crop diagnoses, validated yield predictions, or guarantees of field conditions. Evidence eligibility, missing data, and unsupported interpretations must remain visible. A stored `SUCCEEDED` execution status is not a claim of field validation.
+
+## For hackathon evaluators
+
+| Item | Location |
+| --- | --- |
+| **Live PoC / start a new analysis** | [aqualedger-web.vercel.app/en/analysis](https://aqualedger-web.vercel.app/en/analysis) |
+| **Arabic PoC** | [aqualedger-web.vercel.app/ar/analysis](https://aqualedger-web.vercel.app/ar/analysis) |
+| **A real, previously completed example** | [Tuban analysis (English)](https://aqualedger-web.vercel.app/en/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2) · [Arabic](https://aqualedger-web.vercel.app/ar/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2) |
+| **Example input and recorded output** | [submission/example-input-output.json](submission/example-input-output.json) |
+| **Web dependency manifest** | [package.json](package.json) + [package-lock.json](package-lock.json) |
+| **Pinned Python dependency reference** | [requirements.txt](requirements.txt) (corresponds to the separate backend repository) |
+| **Backend/scientific source** | [SmartDevSolution/aqualedger-backend](https://github.com/SmartDevSolution/aqualedger-backend) — **separate repository; evaluator access must be granted if private** |
+| **Project documentation** | [SmartDevSolution/aqualedger](https://github.com/SmartDevSolution/aqualedger) — separate repository; evaluator access required if private |
+
+The presentation PDF is uploaded separately in the hackathon submission form. Any design/mockup imagery in presentation slides is illustrative; **the actual application and the recorded example above are the operational evidence**.
+
+### Quick evaluation walkthrough
+
+1. Open the live application and switch between **English** and **العربية**.
+2. In **Analysis Workspace**, use the geographic map to draw a single polygon. Choose a valid start and end date, then submit the analysis.
+3. Follow its job status. The API persists the request, a separate background worker processes the job, and the completed result can be reopened without re-submitting it.
+4. Inspect the NDVI preview, result statistics, evidence/limitations, and analysis identity. Switch locales and confirm that the analysis ID, geometry, dates, numeric values and result hash remain unchanged.
+5. For an immediately inspectable result without waiting for processing, open the **completed Tuban example** linked above.
+
+The public web demo currently uses a minimal self-hosted map background; a richer geographic basemap may be delivered as an independent UI improvement. Its absence does not make a successful scientific calculation a land-cover/imagery map of its own. Analysis availability also depends on the external satellite data and the server-side processing services.
+
+## Recorded real example (not synthetic)
+
+The example was executed and stored on **2026-10-11** through the running Next.js → FastAPI → worker → Supabase path.
+
+| Field | Recorded value |
+| --- | --- |
+| Area | Tuban area of interest, Yemen (user-drawn polygon) |
+| Time interval | 2026-04-01 through 2026-04-30 |
+| Analysis ID | `d38fb448-20d1-481d-91be-dd90ee8575f2` |
+| Execution status | `SUCCEEDED` |
+| Scientific evidence status | `NOT_ASSESSED` (not field validated) |
+| Valid observations | **27,944** |
+| Valid analyzed area | **2,794,400 m²** (2.7944 km²) |
+| Mean NDVI | **0.2158459573984146** |
+| Analysis result SHA-256 | `689c6f3abbf75fe08550227a69b5ca2af0ff2049219450ad9187cc5f7263bca1` |
+| Geospatial baseline | Sentinel-2 L2A, 10 m, EPSG:32638 |
+
+The exact GeoJSON input and recorded result summary are in [submission/example-input-output.json](submission/example-input-output.json). The identifier/hash refer to one stored run; a new run can have a different result hash even when derived statistics agree.
+
+## Architecture and source ownership
+
+```text
+Browser (EN / AR)
+       |
+       v
+Next.js on Vercel (same-origin HTTP relay, server-only settings)
+       |
+       v
+Netcup (FastAPI API + separately supervised Python worker)
+       |
+       v
+Supabase (PostgreSQL/PostGIS, PGMQ, private Storage)
+       |
+       v
+Documented Earth-observation sources (e.g. Sentinel-2 L2A)
+```
+
+This repository contains the **Next.js frontend**, browser map/drawing logic, localization, typed API consumer, relay routes, and frontend tests. The core scientific algorithms, FastAPI endpoints, independent queue worker and Supabase migrations are owned by **a separate backend repository**. The web code alone **cannot reproduce the scientific computation offline**. Evaluation of those algorithms requires authorized access to that separate repository and suitable data/infrastructure.
+
+The existing live prototype uses an HTTPS connection to the Netcup runtime. The current Quick Tunnel ingress is temporary and may change following server/tunnel restart. Do not interpret its current availability as a permanent uptime guarantee.
+
+## Reproduce the web portion locally
+
+**Requirements:** Node.js `22.22.2` and npm `10.9.7` (see `.nvmrc`, `package.json`, and lockfile).
+
+```bash
 npm ci
 npm run lint
 npm run typecheck
 npm run messages:check
 npm run contracts:check
-npm run check-no-token-leak
 npm run build
-npx playwright install chromium
-npm run test:e2e
-npm run test:e2e:unconfigured
+npm run start
 ```
 
-`npm run test:e2e` builds the app once (the backend base URL and operator token are server-only runtime env, read at request time, not baked into the build) and runs Playwright against `next start`, pointed at a labelled-double backend fixture (`tests/fixtures/backend-double.ts`) started alongside it; its fixtures verify the same-origin relay's request construction (Bearer placement, Idempotency-Key forwarding, dropped inbound Authorization) and pending/failed/succeeded/result/error presentation in both locales. `npm run test:e2e:unconfigured` runs the same build with neither server-only variable set and checks the blocked states. Both suites cover Chromium at 1365×900 and 390×844. `npm run check-no-token-leak` builds once with a synthetic probe token and scans the build output for it (every file under `.next` except Next's local incremental-build cache under `.next/cache`, which is never deployed or served), failing if it cannot read an in-scope file, and asserting the operator token can never reach a client-reachable artifact. Fixture-backed tests are not backend integration evidence.
+Without an authorized FastAPI backend, the web UI loads but cannot execute real scientific analyses. Configure only these **server-side** environment variables when authorized:
 
-`npm run dev` starts the development server. Set the server-only `AQUALEDGER_API_BASE_URL` (the backend API base URL) and `AQUALEDGER_OPERATOR_JWT` (the operator bearer token) to enable analysis/source requests; neither is ever prefixed `NEXT_PUBLIC_` or read by browser code. Both are read only by a `server-only` module (`src/lib/api/server-config.ts`) used by the same-origin route handlers under `src/app/api/**` (Node runtime, dynamic); the browser calls only those same-origin paths and never learns the backend base URL or holds the token. The relay adds the Bearer only on `POST /analyses`, `GET /analyses/{id}` and `GET /analyses/{id}/result`; `GET /sources` is relayed without it; any inbound `Authorization` the browser sends is dropped, never forwarded. Never put a signing secret, service key, database URL, or provider credential in a `NEXT_PUBLIC_` variable.
+```text
+AQUALEDGER_API_BASE_URL=<approved HTTPS FastAPI relay endpoint>
+AQUALEDGER_OPERATOR_JWT=<approved server-side operator token>
+```
 
-## Scope and current backend dependency
+Do **not** put credentials or backend service-role keys in `NEXT_PUBLIC_*` variables or commit real `.env` values. The browser calls same-origin `/api/*` endpoints; it does not receive the operator credential. The authenticated relay and private data access are handled by the server side.
 
-`/` and `/{locale}` redirect to `/{locale}/analysis`. `/{locale}/analysis/{id}` uses the same workspace as the draft route. History, results, provenance, and the NDVI preview are workspace panels. `/{locale}/settings` is a read-only data-source status screen.
+To run the existing frontend tests:
 
-The backend artifact is pinned at `contracts/openapi.json`; `contracts/BACKEND-REF.json` records its commit, version and hashes, and `src/lib/api/generated.ts` is generated from it. The workspace sends `POST /api/analyses` (relayed to the backend's `POST /analyses`) only on an explicit click with an `Idempotency-Key`, polls saved IDs, and retrieves typed result responses. Settings reads `GET /api/sources`. Locale switching persists the choice and never submits a job. Timezone is not included in the API payload.
+```bash
+npm run test
+```
 
-The current merged central baseline is `db404bffe536fc969eb0069deba1acaf3d4b1707` (PR #4); contract rules are pinned to ratified revision 8 at `413dc884a22b05e9f8ed239eb8236e230c640937`. Central PR #5 is still open and is not a merged baseline. Contract and implementation differences are recorded in `docs/CONTRACT-RECONCILIATION.md`, including which map-preview facts are already established on the hosted backend versus which part of the browser render path is still unverified there.
+The frontend Playwright suite uses an explicitly labeled local backend test double; its passing status does **not** substitute for the real cross-host acceptance shown by the saved example. The backend repository separately pins Python versions and dependencies through `pyproject.toml` / its lockfile; `requirements.txt` in this web repository is only a reviewer-facing copy of those **backend** runtime package versions.
 
-## Dependency choices
+## Reproducibility, provenance and limitations
 
-- `next-intl` provides maintained locale routing and catalogs for the pinned Next.js App Router.
-- ESLint 10, the Next.js flat-config plugin and typescript-eslint provide explicit lint checks; Next.js 16 no longer runs lint during build.
-- MapLibre GL JS 6 renders the map; Terra Draw with its MapLibre adapter provides the single-polygon drawing interaction. MapLibre 6.11.2 includes the fix for the critical DOM sanitization advisory reported by npm.
-- The build and dev lifecycle copies MapLibre's version-matched worker pair into ignored public assets, as required by its ESM worker format under Next.js.
-- `geotiff` (DP-4, central issue #8, the one dependency that decision authorizes) decodes the backend's RGBA NDVI preview GeoTIFF client-side so it can be rendered as a MapLibre canvas-source overlay; no second GeoTIFF/COG library is used, and the artifact's own recorded palette is never re-applied client-side.
-- Turf area and validity packages reject unsupported client inputs early. Backend validation remains authoritative.
-- `openapi-typescript` is a pinned development dependency used only to regenerate/check API types from the immutable backend artifact.
-- `server-only` (0.0.1, zero dependencies) marks `src/lib/api/server-config.ts` so any accidental import from client code fails the build, giving the Council DP-2 "server-only module" requirement a compile-time guarantee rather than only a code-review convention.
-- Playwright covers behavior in a real browser against the built application.
+- Inputs are AOI geometry and a date interval; processing uses documented EO-source products, versions and quality/masking rules.
+- Source/network availability, cloud cover, coverage, time-series sufficiency and analysis-method eligibility affect what the system may truthfully conclude.
+- Analysis history, method/source provenance, result identity and limitations are part of the saved results.
+- Results are **decision support for field verification**; they must not be presented as confirmed ground observations or calibrated probabilities.
+- Reproducibility means retaining method, acquisition, area, input, output and dependency identity; no unqualified guarantee of identical future external-provider reads is made.
 
-**The M1 basemap is self-hosted (DP-4 P2, central issue #8).** `public/basemap/style.json` is a minimal MapLibre style served from this app's own origin: a background color plus an inline WGS84 30° graticule (no fetched tiles, vectors or images). No external map tile, vector or raster data provider is used in M1, and no browser request for the map leaves the app's own origin. The style's `sources.graticule.attribution` names the self-hosted style in the map's own attribution control; the note beside the map repeats this. Adding a real external basemap provider (with its own attribution and availability caveat) is a later, separately recorded decision — not made here.
+## Public-sharing and licensing
 
-## Security and ownership
+This repository should be made public **only after** checking its Git history, tracked files, fixture content, third-party map/imagery attribution and all legal and secret-exposure constraints. Keep runtime tokens, signed Storage URLs, database connection strings and private imagery out of public commits. Public access to this frontend repository is **not the same as access to the separate backend source**; share its authorized evaluator access separately.
 
-The web application contains no service/database credentials, EO credentials, migrations, worker code, analysis calculations, or privileged data access. It does contain two authorized same-origin routes beyond plain relaying: the four Council DP-2 relay operations (`src/app/api/**`) recorded at `AmeenBinBisher/aqualedger#8`, and the DP-4 preview route (`src/app/api/analyses/[id]/preview`, same issue) that resolves the frozen signed `preview_url` server-side and streams its bytes — no second authorization model, no credential ever read from the browser or sent to the storage origin. A server-only operator JWT and backend base URL are read only server-side, with the Bearer added only on the three read/write analysis operations and never on `GET /sources`; the browser never holds the token. This is not an end-user login, a role/audience scheme, or a second application secret — the backend still authorizes every request against the single pinned operator principal. Hosted Supabase persist/enqueue, worker claim/commit and private Storage behavior beyond that relay remain NOT RUN/BLOCKED pending a live operator token and paired backend deployment. The returned NDVI GeoTIFF artifact is decoded client-side and rendered as a georeferenced map overlay (DP-4 P1); it is presented as an estimate, colored with the backend's own recorded palette, and every fetch/decode/CRS failure is reported honestly rather than shown as a fabricated layer. Do not treat browser fixtures as integration evidence or close M1 from a web-only result.
+**Hackathon PoC status:** functional interactive application with recorded real execution evidence; external verification, independent scientific field validation and official judging are separate from software test success.
