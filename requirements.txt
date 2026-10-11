@@ -1,0 +1,24 @@
+# AquaLedger Yemen — pinned PYTHON BACKEND runtime dependency reference
+# Live interactive PoC: https://aqualedger-web.vercel.app/en/analysis
+# Real example: https://aqualedger-web.vercel.app/en/analysis/d38fb448-20d1-481d-91be-dd90ee8575f2
+#
+# The repository containing THIS FILE is the Next.js frontend. Its actual
+# dependency manifest is package.json + package-lock.json (npm ci).
+# These Python versions mirror the [project].dependencies in the separate
+# SmartDevSolution/aqualedger-backend/pyproject.toml at the reviewed dev baseline.
+# The backend source, runtime, database schema and worker are NOT in this web repo.
+# To reproduce scientific computation, evaluators also need authorized access to
+# https://github.com/SmartDevSolution/aqualedger-backend and the required environment.
+# Python supported range in backend: >=3.11,<3.14.
+# No credentials, private datasets, or temporary signed artifact URLs here.
+fastapi==0.141.1
+pydantic==2.13.5
+pydantic-settings==2.15.0
+uvicorn[standard]==0.53.0
+psycopg[binary,pool]==3.3.6
+rasterio==1.4.4
+shapely==2.1.2
+pyproj==3.7.2
+affine==3.0.1
+numpy==2.4.6
+httpx==0.28.1
