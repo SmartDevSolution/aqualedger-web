@@ -778,7 +778,8 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(footer).toContainText('2026');
       // Interactive chrome and the map/input panels are not printed; the card is.
       await expect(page.locator('.site-header')).toBeHidden();
-      await expect(page.locator('.workspace-grid')).toBeHidden();
+      await expect(page.locator('.input-panel')).toBeHidden();
+      await expect(page.locator('.map-panel')).toBeHidden();
       await expect(page.locator('.no-print').first()).toBeHidden();
       await expect(page.getByTestId('decision-card')).toBeVisible();
       expect(await page.locator('.print-header').evaluate((node) => getComputedStyle(node).position)).toBe('fixed');

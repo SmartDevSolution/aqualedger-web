@@ -79,7 +79,7 @@
     "previewUnavailable": "No NDVI preview is available.",
     "previewHeading": "NDVI map preview",
     "previewLoading": "Loading the NDVI preview image…",
-    "previewReady": "The NDVI preview is rendered on the map above as an estimate, colored with the backend's own recorded palette. It is not a substitute for the statistics below.",
+    "previewReady": "The NDVI preview is rendered on the map as an estimate, colored with the backend's own recorded palette. It is not a substitute for the returned statistics.",
     "previewNotReady": "The saved analysis result is not committed yet, so no NDVI preview could be requested.",
     "previewNotReadyFailed": "The saved analysis run failed and has no committed result, so no NDVI preview could be requested. No map layer is shown.",
     "previewNoArtifact": "The backend result contains no ready NDVI preview artifact. No map layer is shown.",

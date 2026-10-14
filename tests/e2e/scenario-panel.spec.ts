@@ -46,7 +46,8 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.locator('.scenario-section .print-header')).toBeVisible();
       await expect(page.locator('.scenario-section .print-footer')).toBeVisible();
       await expect(page.locator('.site-header')).toBeHidden();
-      await expect(page.locator('.workspace-grid')).toBeHidden();
+      await expect(page.locator('.input-panel')).toBeHidden();
+      await expect(page.locator('.map-panel')).toBeHidden();
       await expect(page.getByTestId('scenario-withheld-banner')).toBeVisible();
       expect(await panel.evaluate((node) => getComputedStyle(node).display)).not.toBe('none');
     });

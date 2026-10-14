@@ -219,11 +219,11 @@ export function Workspace({analysisId}: WorkspaceProps) {
       {draftLoaded && draftStorageFailed ? <p className="notice notice-warning" role="alert">{errorText('draftStorageUnavailable')}</p> : null}
 
       <div className="workspace-grid">
-        <section className="panel map-panel" aria-labelledby="map-heading">
+        <section className="panel input-panel" aria-labelledby="aoi-heading">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">01</p>
-              <h2 id="map-heading">{t('mapHeading')}</h2>
+              <h2 id="aoi-heading">{t('mapHeading')}</h2>
             </div>
             <span className="panel-step">{draft.aoi ? t('areaDrawn') : t('noArea')}</span>
           </div>
@@ -241,22 +241,6 @@ export function Workspace({analysisId}: WorkspaceProps) {
             )}
             {drawingEnabled ? <span className="map-tool-help">{t('drawingHelp')}</span> : null}
           </div>
-
-          <div className="map-frame" aria-label={t('mapHeading')}>
-            <WorkspaceMap
-              geometry={draft.aoi}
-              drawingEnabled={drawingEnabled}
-              onGeometryChange={setAoi}
-              onDrawingFinished={() => setDrawingEnabled(false)}
-              onStatusChange={setMapStatus}
-              previewOverlay={previewOverlay}
-              onPreviewOverlayStatusChange={setPreviewStatus}
-              zoneLayer={zoneLayer}
-              selectedZoneId={selectedZoneId}
-              onZoneSelect={selectZone}
-            />
-          </div>
-          <p className="map-attribution">{t('mapAttribution')}</p>
 
           <details className="coordinate-entry">
             <summary>{t('coordinateEntry')}</summary>
@@ -280,10 +264,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
             </button>
           </details>
           {draft.aoi && areaText ? <p className="area-summary">{t('areaSummary')}: <bdi dir="ltr">{areaText} {t('areaUnit')}</bdi></p> : null}
-        </section>
-
-        <section className="panel input-panel" aria-labelledby="dates-heading">
-          <div className="panel-heading">
+          <div className="panel-heading input-dates-heading">
             <div>
               <p className="eyebrow">02</p>
               <h2 id="dates-heading">{t('datesHeading')}</h2>
@@ -297,6 +278,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
                 id="start-date"
                 type="date"
                 lang="en"
+                dir="ltr"
                 value={draft.startDate}
                 disabled={submitting}
                 onChange={(event) => updateDraft({...draft, startDate: event.target.value})}
@@ -309,6 +291,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
                 id="end-date"
                 type="date"
                 lang="en"
+                dir="ltr"
                 value={draft.endDate}
                 disabled={submitting}
                 onChange={(event) => updateDraft({...draft, endDate: event.target.value})}
@@ -328,14 +311,30 @@ export function Workspace({analysisId}: WorkspaceProps) {
 
           <p className="science-disclosure">{t('workspaceDisclosure')}</p>
         </section>
-      </div>
 
-      <HistoryDrawer
-        open={urlState.history}
-        onClose={closeHistory}
-        currentAnalysisId={analysisId}
-        hasDraftArea={draft.aoi !== null}
-      />
+        <section className="panel map-panel" aria-labelledby="map-heading">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">03</p>
+              <h2 id="map-heading">{t('mapHeading')}</h2>
+            </div>
+          </div>
+          <div className="map-frame" aria-label={t('mapHeading')}>
+            <WorkspaceMap
+              geometry={draft.aoi}
+              drawingEnabled={drawingEnabled}
+              onGeometryChange={setAoi}
+              onDrawingFinished={() => setDrawingEnabled(false)}
+              onStatusChange={setMapStatus}
+              previewOverlay={previewOverlay}
+              onPreviewOverlayStatusChange={setPreviewStatus}
+              zoneLayer={zoneLayer}
+              selectedZoneId={selectedZoneId}
+              onZoneSelect={selectZone}
+            />
+          </div>
+          <p className="map-attribution">{t('mapAttribution')}</p>
+        </section>
 
       <AnalysisResultPanel
         analysisId={analysisId}
@@ -355,6 +354,14 @@ export function Workspace({analysisId}: WorkspaceProps) {
           open: scenarioOpen,
           onToggle: toggleScenario
         }}
+      />
+      </div>
+
+      <HistoryDrawer
+        open={urlState.history}
+        onClose={closeHistory}
+        currentAnalysisId={analysisId}
+        hasDraftArea={draft.aoi !== null}
       />
     </main>
   );
