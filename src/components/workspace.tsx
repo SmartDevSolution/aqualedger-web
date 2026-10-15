@@ -1,5 +1,7 @@
 'use client';
 
+import {NativeDisclosure} from './native-disclosure';
+
 import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -242,8 +244,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
             {drawingEnabled ? <span className="map-tool-help">{t('drawingHelp')}</span> : null}
           </div>
 
-          <details className="coordinate-entry">
-            <summary>{t('coordinateEntry')}</summary>
+          <NativeDisclosure className="coordinate-entry" summary={t('coordinateEntry')}>
             <p>{t('coordinateInstructions')}</p>
             <label htmlFor="aoi-geojson">{t('coordinateText')}</label>
             <textarea
@@ -262,7 +263,7 @@ export function Workspace({analysisId}: WorkspaceProps) {
             <button type="button" className="button button-tertiary" onClick={useCoordinateText}>
               {t('loadPolygon')}
             </button>
-          </details>
+          </NativeDisclosure>
           {draft.aoi && areaText ? <p className="area-summary">{t('areaSummary')}: <bdi dir="ltr">{areaText} {t('areaUnit')}</bdi></p> : null}
           <div className="panel-heading input-dates-heading">
             <div>

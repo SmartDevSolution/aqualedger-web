@@ -1,0 +1,87 @@
+{
+  "fixture": "44444444-4444-4444-8444-444444444444",
+  "date": {
+    "text": "Aug 30, 2026",
+    "dir": "ltr",
+    "direction": "ltr",
+    "positions": [
+      {
+        "word": "Aug",
+        "x": 36.59375
+      },
+      {
+        "word": "30",
+        "x": 65.015625
+      },
+      {
+        "word": "2026",
+        "x": 86.359375
+      }
+    ]
+  },
+  "contrast": [
+    {
+      "className": "maplibregl-cooperative-gesture-screen maplibregl-show",
+      "text": "Use Ctrl + scroll to zoom the mapUse two fingers to move the map",
+      "color": "rgb(255, 255, 255)",
+      "background": "rgba(0, 0, 0, 0.4)",
+      "effectiveBackgroundOverWhite": [
+        153,
+        153,
+        153
+      ],
+      "contrast": 2.849027755287037,
+      "links": []
+    },
+    {
+      "className": "maplibregl-ctrl maplibregl-ctrl-attrib",
+      "text": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community | Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community",
+      "color": "rgb(230, 244, 242)",
+      "background": "rgba(255, 255, 255, 0.5)",
+      "effectiveBackgroundOverWhite": [
+        255,
+        255,
+        255
+      ],
+      "contrast": 1.129819896637057,
+      "links": []
+    }
+  ],
+  "disclosures": [
+    {
+      "text": "Enter polygon GeoJSON",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "Pixel rejection counts",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "Recorded baseline",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "Evaluated acquisition dates",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "Limitations and exclusions",
+      "expanded": null,
+      "controls": null
+    },
+    {
+      "text": "Provenance",
+      "expanded": null,
+      "controls": null
+    }
+  ]
+}

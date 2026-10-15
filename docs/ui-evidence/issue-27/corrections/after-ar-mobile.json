@@ -1,0 +1,82 @@
+{
+  "fixture": "44444444-4444-4444-8444-444444444444",
+  "date": {
+    "text": "30‏/08‏/2026",
+    "dir": "auto",
+    "direction": "rtl",
+    "positions": [
+      {
+        "word": "30",
+        "x": 339.171875
+      },
+      {
+        "word": "08",
+        "x": 321.375
+      },
+      {
+        "word": "2026",
+        "x": 289.34375
+      }
+    ]
+  },
+  "contrast": [
+    {
+      "className": "maplibregl-cooperative-gesture-screen maplibregl-show",
+      "text": "استخدم Ctrl + التمرير لتكبير الخريطةاستخدم إصبعين لتحريك الخريطة",
+      "color": "rgb(255, 255, 255)",
+      "background": "rgba(3, 25, 31, 0.9)",
+      "effectiveBackgroundOverWhite": [
+        28.199999999999992,
+        47.99999999999999,
+        53.39999999999999
+      ],
+      "contrast": 13.7716679650654,
+      "links": []
+    },
+    {
+      "className": "maplibregl-ctrl maplibregl-ctrl-attrib",
+      "text": "Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community | Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community",
+      "color": "rgb(8, 38, 45)",
+      "background": "rgb(230, 244, 242)",
+      "effectiveBackgroundOverWhite": [
+        230,
+        244,
+        242
+      ],
+      "contrast": 14.023055962522175,
+      "links": []
+    }
+  ],
+  "disclosures": [
+    {
+      "text": "أدخل GeoJSON للمضلع",
+      "expanded": "false",
+      "controls": "_R_25lfiv5uivb_"
+    },
+    {
+      "text": "عدّادات استبعاد البكسلات",
+      "expanded": "false",
+      "controls": "_r_0_"
+    },
+    {
+      "text": "خط المعالجة المسجل",
+      "expanded": "false",
+      "controls": "_r_1_"
+    },
+    {
+      "text": "تواريخ الالتقاط التي جرى تقييمها",
+      "expanded": "false",
+      "controls": "_r_2_"
+    },
+    {
+      "text": "القيود والاستبعادات",
+      "expanded": "false",
+      "controls": "_r_3_"
+    },
+    {
+      "text": "مصدر البيانات والمنهج",
+      "expanded": "false",
+      "controls": "_r_4_"
+    }
+  ]
+}

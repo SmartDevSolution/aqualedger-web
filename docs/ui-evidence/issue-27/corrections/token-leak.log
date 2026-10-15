@@ -1,0 +1,46 @@
+
+> aqualedger-web@0.1.0 check-no-token-leak
+> node scripts/check-no-token-leak.mjs
+
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 58ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.3s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/8) ...
+  Generating static pages using 7 workers (2/8)
+  Generating static pages using 7 workers (4/8)
+  Generating static pages using 7 workers (6/8)
+✓ Generating static pages using 7 workers (8/8) in 429ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├   /[locale]
+│ ├ ● /ar
+│ └ ● /en
+├   /[locale]/analysis
+│ ├ ● /ar/analysis
+│ └ ● /en/analysis
+├ ƒ /[locale]/analysis/[id]
+├   /[locale]/settings
+│ ├ ● /ar/settings
+│ └ ● /en/settings
+├ ƒ /api/analyses
+├ ƒ /api/analyses/[id]
+├ ƒ /api/analyses/[id]/preview
+├ ƒ /api/analyses/[id]/result
+├ ƒ /api/analyses/[id]/scenario
+└ ƒ /api/sources
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+check-no-token-leak: passed — scanned 338 file(s) under .next for the probe token and NEXT_PUBLIC_AQUALEDGER, excluding 16 file(s) under .next/cache (Next's local incremental-build cache, never deployed or served to a browser); 0 unreadable or unclassifiable file(s).

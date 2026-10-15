@@ -1,5 +1,7 @@
 'use client';
 
+import {NativeDisclosure} from './native-disclosure';
+
 import {useLocale, useTranslations} from 'next-intl';
 import {Link} from '@/i18n/navigation';
 import {formatGregorianDate} from '@/lib/format';
@@ -322,8 +324,7 @@ function TechnicalView({view, zone, locale, onSelect}: {view: ScoredResultView; 
   const refs = zone.assessment.evidence_refs ?? [];
 
   return (
-    <details className="technical-view">
-      <summary>{t('technicalHeading', {zoneId: isolate(zone.zoneId)})}</summary>
+    <NativeDisclosure className="technical-view" summary={t('technicalHeading', {zoneId: isolate(zone.zoneId)})}>
 
       <p className="subtle-copy">{e('uncalibratedLabel')}</p>
       <p className="subtle-copy">{e('notPriority')}</p>
@@ -402,7 +403,7 @@ function TechnicalView({view, zone, locale, onSelect}: {view: ScoredResultView; 
         </ul>
       )}
       <p className="subtle-copy"><Link href="/settings">{t('sourcesLink')}</Link></p>
-    </details>
+    </NativeDisclosure>
   );
 }
 

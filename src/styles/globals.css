@@ -26,6 +26,22 @@
   box-sizing: border-box;
 }
 
+/* Opaque surfaces bound contrast even over the brightest satellite tile. Keep
+   source attribution light and distinct from the surrounding dark chrome. */
+.maplibregl-map .maplibregl-ctrl-attrib {
+  color: #08262d;
+  background-color: #e6f4f2;
+}
+
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: #08262d;
+}
+
+.maplibregl-map .maplibregl-cooperative-gesture-screen {
+  color: #fff;
+  background-color: rgb(3 25 31 / 90%);
+}
+
 html {
   min-width: 320px;
   background: var(--paper);

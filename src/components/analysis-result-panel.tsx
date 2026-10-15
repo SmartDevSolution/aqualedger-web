@@ -1,6 +1,7 @@
 'use client';
 
 import {useLocale, useTranslations} from 'next-intl';
+import {NativeDisclosure} from './native-disclosure';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
 import {limitationMessageKey, perDateReasonMessageKey} from '@/lib/api/error-messages';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
@@ -109,7 +110,7 @@ function LoadedAnalysisResult({
           <Fact label={t('evidenceLabel')} value={evidenceLabel(result.evidence_status, t)} />
           <Fact
             label={t('selectedAcquisition')}
-            dir="ltr"
+            dir="auto"
             value={coverage.acquisition_date ? formatGregorianDate(coverage.acquisition_date, locale) : t('noSelectedAcquisition')}
           />
           <Fact
@@ -163,8 +164,7 @@ function LoadedAnalysisResult({
       ) : null}
 
       {(result.scenes_evaluated?.length ?? 0) > 0 ? (
-        <details className="result-detail-section result-disclosure">
-          <summary><h3 id="result-scenes-heading">{t('evaluatedDates')}</h3></summary>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-scenes-heading">{t('evaluatedDates')}</h3>}>
           <ul className="scene-list">
             {result.scenes_evaluated?.map((scene) => (
               <li key={`${scene.acquisition_date}:${scene.item_ids?.join('|') ?? ''}`}>
@@ -180,12 +180,11 @@ function LoadedAnalysisResult({
               </li>
             ))}
           </ul>
-        </details>
+        </NativeDisclosure>
       ) : null}
 
       {(result.limitations?.length ?? 0) > 0 ? (
-        <details className="result-detail-section result-disclosure">
-          <summary><h3 id="result-limitations-heading">{t('limitationsHeading')}</h3></summary>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-limitations-heading">{t('limitationsHeading')}</h3>}>
           <ul className="scene-list">
             {result.limitations?.map((limitation, index) => (
               <li key={`${limitationCode(limitation) ?? 'unknown'}-${index}`}>
@@ -193,12 +192,11 @@ function LoadedAnalysisResult({
               </li>
             ))}
           </ul>
-        </details>
+        </NativeDisclosure>
       ) : null}
 
       {provenance ? (
-        <details className="result-detail-section result-disclosure">
-          <summary><h3 id="result-provenance-heading">{t('provenanceHeading')}</h3></summary>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-provenance-heading">{t('provenanceHeading')}</h3>}>
           <dl className="result-facts">
             <Fact label={t('schemaVersion')} value={<bdi dir="ltr">{result.schema_version}</bdi>} />
             <Fact label={t('pipelineVersion')} value={<bdi dir="ltr">{result.pipeline_version}</bdi>} />
@@ -217,7 +215,7 @@ function LoadedAnalysisResult({
             <Fact label={t('maskedClasses')} value={<bdi dir="ltr">{provenance.mask_masked_classes.join(', ')}</bdi>} />
             <Fact label={t('retainedClasses')} value={<bdi dir="ltr">{provenance.mask_retained_classes.join(', ')}</bdi>} />
           </dl>
-        </details>
+        </NativeDisclosure>
       ) : (
         <p className="subtle-copy">{t('provenanceUnavailable')}</p>
       )}
