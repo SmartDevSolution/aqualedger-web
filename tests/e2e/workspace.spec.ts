@@ -123,6 +123,7 @@ test('explicit submission sends a same-origin keyed request with no browser-held
   await expect(page).toHaveURL(new RegExp(`/en/analysis/${SUCCEEDED_ID}$`));
   await expect(page.getByRole('heading', {name: 'NDVI statistics'})).toBeVisible();
   await expect(page.getByText('85%', {exact: true}).first()).toBeVisible();
+  await page.locator('.result-disclosure summary', {hasText: 'Provenance'}).click();
   await expect(page.getByText('Sentinel-2 item A')).toBeVisible();
   // SUCCEEDED_ID's fixture preview_url is an unreachable placeholder host (private.invalid), so
   // the same-origin preview route (W6.1) honestly reports a fetch failure here — a real signed URL
@@ -255,6 +256,7 @@ test('map drawing works with zoom controls and reaches the AOI form', async ({pa
   for (let step = 0; step < 7; step += 1) await zoomIn.click();
   await drawButton.click();
   const map = page.getByTestId('map-canvas');
+  await map.scrollIntoViewIfNeeded();
   const bounds = await map.boundingBox();
   expect(bounds).not.toBeNull();
   if (!bounds) throw new Error('The map canvas has no visible bounds.');
@@ -347,6 +349,8 @@ async function tabUntilFocused(page: Page, locator: ReturnType<Page['locator']>,
 for (const locale of ['en', 'ar'] as const) {
   test(`provenance shows the real scale/offset value and evaluated-scene/limitation rows are shown honestly in ${locale}`, async ({page}) => {
     await page.goto(`/${locale}/analysis/${SUCCEEDED_ID}`);
+    await expect(page.locator('.result-disclosure')).toHaveCount(5);
+    for (const summary of await page.locator('.result-disclosure summary').all()) await summary.click();
 
     const scaleOffset = page.locator('.result-fact', {hasText: locale === 'en' ? 'Scale / offset' : 'المقياس / الإزاحة'});
     await expect(scaleOffset).toContainText('0.0001 / 0');
@@ -440,6 +444,7 @@ for (const locale of ['en', 'ar'] as const) {
   for (const limitationCase of insufficientLimitationCases) {
     test(`A17-shaped INSUFFICIENT result renders the shipped ${limitationCase.label} limitation translation in ${locale} (W12 F1 / W13)`, async ({page}) => {
       await page.goto(`/${locale}/analysis/${limitationCase.id}`);
+      await page.locator('.result-disclosure summary', {hasText: locale === 'en' ? 'Limitations' : 'القيود'}).click();
 
       const expectedLimitationText = locale === 'en' ? limitationCase.en : limitationCase.ar;
       await expect(page.getByText(expectedLimitationText)).toBeVisible();
@@ -473,6 +478,8 @@ for (const locale of ['en', 'ar'] as const) {
 for (const locale of ['en', 'ar'] as const) {
   test(`a selected acquisition with zero valid NDVI pixels renders its own NO_VALID_PIXEL_IN_SELECTED_DATE limitation translation in ${locale} (W13)`, async ({page}) => {
     await page.goto(`/${locale}/analysis/${NO_VALID_PIXEL_ID}`);
+    await expect(page.locator('.result-disclosure')).toHaveCount(5);
+    for (const summary of await page.locator('.result-disclosure summary').all()) await summary.click();
 
     const expectedLimitationText = locale === 'en'
       ? 'The selected acquisition yielded no valid NDVI pixel.'

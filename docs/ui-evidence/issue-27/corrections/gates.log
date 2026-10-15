@@ -1,0 +1,19 @@
+
+> aqualedger-web@0.1.0 lint
+> eslint . --max-warnings=0
+
+
+> aqualedger-web@0.1.0 typecheck
+> tsc --noEmit
+
+
+> aqualedger-web@0.1.0 messages:check
+> node scripts/check-messages.mjs
+
+Catalog keys and parameters match for en, ar; all 31 M3ReasonCode members have entries; 11 panel group keys are covered in both locales and free of unsupported-outcome tokens (2 denylisted).
+
+> aqualedger-web@0.1.0 contracts:check
+> node scripts/check-contract.mjs
+
+✨ openapi-typescript 7.6.1
+Pinned OpenAPI 0.3.0 verified at backend e060dc1f0caa956674927241f0f14a9ada9cf7cd.

@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 import {useTranslations} from 'next-intl';
+import {WorkspaceIcon} from './workspace-icon';
 import type {AoiPolygon} from '@/lib/analysis-input';
 import {zoneBounds} from '@/lib/zone-model';
 import {
@@ -35,6 +36,9 @@ const ZONES_SELECTED_LAYER_ID = 'scored-zones-selected';
 const HATCH_IMAGE_ID = 'unranked-hatch';
 
 type WorkspaceMapProps = {
+  showPreview?: boolean;
+  showLabels?: boolean;
+  onTogglePreview?: () => void;
   geometry: AoiPolygon | null;
   drawingEnabled: boolean;
   onGeometryChange: (geometry: AoiPolygon | null) => void;
@@ -48,6 +52,9 @@ type WorkspaceMapProps = {
 };
 
 export default function WorkspaceMap({
+  showPreview = true,
+  showLabels = true,
+  onTogglePreview,
   geometry,
   drawingEnabled,
   onGeometryChange,
@@ -60,6 +67,7 @@ export default function WorkspaceMap({
   onZoneSelect
 }: WorkspaceMapProps) {
   const t = useTranslations('workspace');
+  const d = useTranslations('dashboard');
   const containerRef = useRef<HTMLDivElement>(null);
   const drawRef = useRef<import('terra-draw').TerraDraw | null>(null);
   const mapRef = useRef<import('maplibre-gl').Map | null>(null);
@@ -83,6 +91,10 @@ export default function WorkspaceMap({
     let map: import('maplibre-gl').Map | null = null;
     let drawReady = false;
     let activeDraw: import('terra-draw').TerraDraw | null = null;
+    // MapLibre tracks window resizes, not CSS grid/container reflow. Keep its
+    // framebuffer synchronized as the compact rail/results finish laying out.
+    const resizeObserver = new ResizeObserver(() => map?.resize());
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     function updateStatus(nextStatus: MapStatus) {
       setStatus(nextStatus);
@@ -139,7 +151,9 @@ export default function WorkspaceMap({
         (window as unknown as {__AQUALEDGER_TEST_MAP__?: import('maplibre-gl').Map}).__AQUALEDGER_TEST_MAP__ = map;
         map.getCanvas().setAttribute('aria-label', t('mapHeading'));
         map.getCanvas().setAttribute('role', 'application');
-        map.addControl(new maplibreModule.NavigationControl({showCompass: true}), 'top-right');
+        map.addControl(new maplibreModule.NavigationControl({showCompass: false}), 'top-right');
+        map.addControl(new maplibreModule.NavigationControl({showZoom: false, showCompass: true}), 'top-left');
+        map.addControl(new maplibreModule.ScaleControl({unit: 'metric', maxWidth: 100}), 'bottom-left');
         map.on('error', (event) => {
           if (disposed) {
             return;
@@ -233,6 +247,7 @@ export default function WorkspaceMap({
     void initialize();
     return () => {
       disposed = true;
+      resizeObserver.disconnect();
       activeDraw?.stop();
       drawRef.current = null;
       mapRef.current = null;
@@ -442,9 +457,42 @@ export default function WorkspaceMap({
     }
   }, [selectedZoneId, zoneLayer, status]);
 
+  // Frame the committed footprint, not the unrelated editable draft. The frozen
+  // result has no AOI geometry: use its georeferenced artifact or returned zones.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || status !== 'ready') return;
+    const image = previewOverlay ? boundsToImageCoordinates(previewOverlay.bounds, previewOverlay.crs) : null;
+    const bounds = image ? zoneBounds({type: 'Polygon', coordinates: [[...image, image[0]]]}) : zoneBounds(zoneLayer?.zones[0]?.geometry);
+    if (bounds) map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {padding: 36, duration: 0, maxZoom: 16});
+  }, [previewOverlay, zoneLayer, status]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || status !== 'ready') return;
+    const apply = () => {
+      if (map.getLayer(PREVIEW_LAYER_ID) && map.getLayoutProperty(PREVIEW_LAYER_ID, 'visibility') !== (showPreview ? 'visible' : 'none')) map.setLayoutProperty(PREVIEW_LAYER_ID, 'visibility', showPreview ? 'visible' : 'none');
+      for (const layer of map.getStyle().layers) {
+        if ('source' in layer && layer.source === 'esri-labels' && map.getLayoutProperty(layer.id, 'visibility') !== (showLabels ? 'visible' : 'none')) map.setLayoutProperty(layer.id, 'visibility', showLabels ? 'visible' : 'none');
+      }
+    };
+    apply();
+    map.on('styledata', apply);
+    return () => { map.off('styledata', apply); };
+  }, [showPreview, showLabels, status]);
+
   return (
     <div className="map-canvas-wrap" dir="ltr">
       <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />
+      <div className="map-extra-controls">
+        <button type="button" disabled={status !== 'ready' || !previewOverlay} aria-label={d('layers')} aria-pressed={showPreview} onClick={onTogglePreview}><WorkspaceIcon name="layers" /></button>
+        <button type="button" disabled={status !== 'ready' || (!previewOverlay && !zoneLayer?.zones.length)} aria-label={d('footprint')} onClick={() => {
+          const map = mapRef.current;
+          const corners = previewOverlay ? boundsToImageCoordinates(previewOverlay.bounds, previewOverlay.crs) : null;
+          const bounds = corners ? zoneBounds({type: 'Polygon', coordinates: [[...corners, corners[0]]]}) : zoneBounds(zoneLayer?.zones[0]?.geometry);
+          if (map && bounds) map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], {padding: 36, duration: 0, maxZoom: 16});
+        }}><WorkspaceIcon name="target" /></button>
+      </div>
       {status === 'loading' ? <div className="map-state map-state-loading" role="status">{t('mapLoading')}</div> : null}
       {status === 'failed' ? (
         <div className="map-state map-state-error" role="alert">

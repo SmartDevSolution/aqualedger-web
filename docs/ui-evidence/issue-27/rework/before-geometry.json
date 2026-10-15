@@ -1,0 +1,1298 @@
+[
+  {
+    "name": "en-populated-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 200,
+            "bottom": 690,
+            "left": 0
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 569.53125,
+            "height": 627.9375,
+            "top": 60,
+            "right": 777.53125,
+            "bottom": 687.9375,
+            "left": 208
+          },
+          "widthPercent": 52.20268102658112
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 785.53125,
+            "y": 52,
+            "width": 305.46875,
+            "height": 2321.03125,
+            "top": 52,
+            "right": 1091,
+            "bottom": 2373.03125,
+            "left": 785.53125
+          },
+          "widthPercent": 27.998968835930338
+        }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 569.53125,
+        "height": 608,
+        "top": 60,
+        "right": 777.53125,
+        "bottom": 668,
+        "left": 208
+      },
+      "rail": {
+        "x": 785.53125,
+        "y": 52,
+        "width": 305.46875,
+        "height": 2321.03125,
+        "top": 52,
+        "right": 1091,
+        "bottom": 2373.03125,
+        "left": 785.53125
+      },
+      "card": {
+        "x": 787.53125,
+        "y": 98,
+        "width": 141.734375,
+        "height": 145.1875,
+        "top": 98,
+        "right": 929.265625,
+        "bottom": 243.1875,
+        "left": 787.53125
+      },
+      "decision": {
+        "x": 787.53125,
+        "y": 582.0625,
+        "width": 293.46875,
+        "height": 115,
+        "top": 582.0625,
+        "right": 1081,
+        "bottom": 697.0625,
+        "left": 787.53125
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.45881262299909,
+          12.808028498259446
+        ],
+        [
+          45.051779001969976,
+          13.424157815958466
+        ]
+      ],
+      "zoom": 9.395578004041212
+    }
+  },
+  {
+    "name": "en-empty-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 200,
+            "bottom": 690,
+            "left": 0
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 569.53125,
+            "height": 627.9375,
+            "top": 60,
+            "right": 777.53125,
+            "bottom": 687.9375,
+            "left": 208
+          },
+          "widthPercent": 52.20268102658112
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 785.53125,
+            "y": 52,
+            "width": 305.46875,
+            "height": 842.625,
+            "top": 52,
+            "right": 1091,
+            "bottom": 894.625,
+            "left": 785.53125
+          },
+          "widthPercent": 27.998968835930338
+        }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 569.53125,
+        "height": 608,
+        "top": 60,
+        "right": 777.53125,
+        "bottom": 668,
+        "left": 208
+      },
+      "rail": {
+        "x": 785.53125,
+        "y": 52,
+        "width": 305.46875,
+        "height": 842.625,
+        "top": 52,
+        "right": 1091,
+        "bottom": 894.625,
+        "left": 785.53125
+      },
+      "card": {
+        "x": 787.53125,
+        "y": 98,
+        "width": 141.734375,
+        "height": 137.25,
+        "top": 98,
+        "right": 929.265625,
+        "bottom": 235.25,
+        "left": 787.53125
+      },
+      "decision": {
+        "x": 787.53125,
+        "y": 545,
+        "width": 293.46875,
+        "height": 115,
+        "top": 545,
+        "right": 1081,
+        "bottom": 660,
+        "left": 787.53125
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -75.66741296876077,
+          -62.53357696690894
+        ],
+        [
+          75.66741296876194,
+          62.533576966908015
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "en-populated-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 200,
+            "bottom": 900,
+            "left": 0
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 820.8125,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1028.8125,
+            "bottom": 897.9375,
+            "left": 208
+          },
+          "widthPercent": 57.00086805555556
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 1036.8125,
+            "y": 52,
+            "width": 403.1875,
+            "height": 2228.53125,
+            "top": 52,
+            "right": 1440,
+            "bottom": 2280.53125,
+            "left": 1036.8125
+          },
+          "widthPercent": 27.999131944444443
+        }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 820.8125,
+        "height": 818,
+        "top": 60,
+        "right": 1028.8125,
+        "bottom": 878,
+        "left": 208
+      },
+      "rail": {
+        "x": 1036.8125,
+        "y": 52,
+        "width": 403.1875,
+        "height": 2228.53125,
+        "top": 52,
+        "right": 1440,
+        "bottom": 2280.53125,
+        "left": 1036.8125
+      },
+      "card": {
+        "x": 1038.8125,
+        "y": 98,
+        "width": 190.59375,
+        "height": 133.1875,
+        "top": 98,
+        "right": 1229.40625,
+        "bottom": 231.1875,
+        "left": 1038.8125
+      },
+      "decision": {
+        "x": 1038.8125,
+        "y": 559.21875,
+        "width": 391.1875,
+        "height": 101.5,
+        "top": 559.21875,
+        "right": 1430,
+        "bottom": 660.71875,
+        "left": 1038.8125
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.44846147347917,
+          12.818372271380298
+        ],
+        [
+          45.06213015148876,
+          13.413839494504714
+        ]
+      ],
+      "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "en-empty-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 200,
+            "bottom": 900,
+            "left": 0
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 820.8125,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1028.8125,
+            "bottom": 897.9375,
+            "left": 208
+          },
+          "widthPercent": 57.00086805555556
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 1036.8125,
+            "y": 52,
+            "width": 403.1875,
+            "height": 792.296875,
+            "top": 52,
+            "right": 1440,
+            "bottom": 844.296875,
+            "left": 1036.8125
+          },
+          "widthPercent": 27.999131944444443
+        }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 820.8125,
+        "height": 818,
+        "top": 60,
+        "right": 1028.8125,
+        "bottom": 878,
+        "left": 208
+      },
+      "rail": {
+        "x": 1036.8125,
+        "y": 52,
+        "width": 403.1875,
+        "height": 792.296875,
+        "top": 52,
+        "right": 1440,
+        "bottom": 844.296875,
+        "left": 1036.8125
+      },
+      "card": {
+        "x": 1038.8125,
+        "y": 98,
+        "width": 190.59375,
+        "height": 126,
+        "top": 98,
+        "right": 1229.40625,
+        "bottom": 224,
+        "left": 1038.8125
+      },
+      "decision": {
+        "x": 1038.8125,
+        "y": 528,
+        "width": 391.1875,
+        "height": 101.5,
+        "top": 528,
+        "right": 1430,
+        "bottom": 629.5,
+        "left": 1038.8125
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -109.10494933347582,
+          -72.94091236791701
+        ],
+        [
+          109.10494933348082,
+          72.94091236791618
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "en-populated-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 561.703125,
+            "top": 109,
+            "right": 380,
+            "bottom": 670.703125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 680.703125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 680.703125,
+            "right": 380,
+            "bottom": 1140.640625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1150.640625,
+            "width": 370,
+            "height": 2453.359375,
+            "top": 1150.640625,
+            "right": 380,
+            "bottom": 3604,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 680.703125,
+        "width": 370,
+        "height": 440,
+        "top": 680.703125,
+        "right": 380,
+        "bottom": 1120.703125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1150.640625,
+        "width": 370,
+        "height": 2453.359375,
+        "top": 1150.640625,
+        "right": 380,
+        "bottom": 3604,
+        "left": 10
+      },
+      "card": {
+        "x": 10,
+        "y": 1184.640625,
+        "width": 180,
+        "height": 140,
+        "top": 1184.640625,
+        "right": 190,
+        "bottom": 1324.640625,
+        "left": 10
+      },
+      "decision": {
+        "x": 10,
+        "y": 1663.515625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1663.515625,
+        "right": 380,
+        "bottom": 1765.015625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.475036708871016,
+          12.791206242722907
+        ],
+        [
+          45.03555491609822,
+          13.440936827583258
+        ]
+      ],
+      "zoom": 8.850581910637702
+    }
+  },
+  {
+    "name": "en-empty-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 561.703125,
+            "top": 109,
+            "right": 380,
+            "bottom": 670.703125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 680.703125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 680.703125,
+            "right": 380,
+            "bottom": 1140.640625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1150.640625,
+            "width": 370,
+            "height": 812.125,
+            "top": 1150.640625,
+            "right": 380,
+            "bottom": 1962.765625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 680.703125,
+        "width": 370,
+        "height": 440,
+        "top": 680.703125,
+        "right": 380,
+        "bottom": 1120.703125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1150.640625,
+        "width": 370,
+        "height": 812.125,
+        "top": 1150.640625,
+        "right": 380,
+        "bottom": 1962.765625,
+        "left": 10
+      },
+      "card": {
+        "x": 10,
+        "y": 1184.640625,
+        "width": 180,
+        "height": 140,
+        "top": 1184.640625,
+        "right": 190,
+        "bottom": 1324.640625,
+        "left": 10
+      },
+      "decision": {
+        "x": 10,
+        "y": 1642.640625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1642.640625,
+        "right": 380,
+        "bottom": 1744.140625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -49.0239576980718,
+          -50.282816830566205
+        ],
+        [
+          49.02395769806907,
+          50.28281683056957
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 891,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 1091,
+            "bottom": 690,
+            "left": 891
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 313.46875,
+            "y": 60,
+            "width": 569.53125,
+            "height": 627.9375,
+            "top": 60,
+            "right": 883,
+            "bottom": 687.9375,
+            "left": 313.46875
+          },
+          "widthPercent": 52.20268102658112
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 305.46875,
+            "height": 2278.8125,
+            "top": 52,
+            "right": 305.46875,
+            "bottom": 2330.8125,
+            "left": 0
+          },
+          "widthPercent": 27.998968835930338
+        }
+      ],
+      "map": {
+        "x": 313.46875,
+        "y": 60,
+        "width": 569.53125,
+        "height": 608,
+        "top": 60,
+        "right": 883,
+        "bottom": 668,
+        "left": 313.46875
+      },
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 305.46875,
+        "height": 2278.8125,
+        "top": 52,
+        "right": 305.46875,
+        "bottom": 2330.8125,
+        "left": 0
+      },
+      "card": {
+        "x": 153.734375,
+        "y": 98,
+        "width": 141.734375,
+        "height": 145.1875,
+        "top": 98,
+        "right": 295.46875,
+        "bottom": 243.1875,
+        "left": 153.734375
+      },
+      "decision": {
+        "x": 2,
+        "y": 582.0625,
+        "width": 293.46875,
+        "height": 115,
+        "top": 582.0625,
+        "right": 295.46875,
+        "bottom": 697.0625,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.45881262299909,
+          12.808028498259446
+        ],
+        [
+          45.051779001969976,
+          13.424157815958466
+        ]
+      ],
+      "zoom": 9.395578004041212
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 891,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 1091,
+            "bottom": 690,
+            "left": 891
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 313.46875,
+            "y": 60,
+            "width": 569.53125,
+            "height": 627.9375,
+            "top": 60,
+            "right": 883,
+            "bottom": 687.9375,
+            "left": 313.46875
+          },
+          "widthPercent": 52.20268102658112
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 305.46875,
+            "height": 817.046875,
+            "top": 52,
+            "right": 305.46875,
+            "bottom": 869.046875,
+            "left": 0
+          },
+          "widthPercent": 27.998968835930338
+        }
+      ],
+      "map": {
+        "x": 313.46875,
+        "y": 60,
+        "width": 569.53125,
+        "height": 608,
+        "top": 60,
+        "right": 883,
+        "bottom": 668,
+        "left": 313.46875
+      },
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 305.46875,
+        "height": 817.046875,
+        "top": 52,
+        "right": 305.46875,
+        "bottom": 869.046875,
+        "left": 0
+      },
+      "card": {
+        "x": 153.734375,
+        "y": 98,
+        "width": 141.734375,
+        "height": 137.25,
+        "top": 98,
+        "right": 295.46875,
+        "bottom": 235.25,
+        "left": 153.734375
+      },
+      "decision": {
+        "x": 2,
+        "y": 539.25,
+        "width": 293.46875,
+        "height": 115,
+        "top": 539.25,
+        "right": 295.46875,
+        "bottom": 654.25,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -75.66741296876077,
+          -62.53357696690894
+        ],
+        [
+          75.66741296876194,
+          62.533576966908015
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 1240,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 1440,
+            "bottom": 900,
+            "left": 1240
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 411.1875,
+            "y": 60,
+            "width": 820.8125,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1232,
+            "bottom": 897.9375,
+            "left": 411.1875
+          },
+          "widthPercent": 57.00086805555556
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 403.1875,
+            "height": 2192.203125,
+            "top": 52,
+            "right": 403.1875,
+            "bottom": 2244.203125,
+            "left": 0
+          },
+          "widthPercent": 27.999131944444443
+        }
+      ],
+      "map": {
+        "x": 411.1875,
+        "y": 60,
+        "width": 820.8125,
+        "height": 818,
+        "top": 60,
+        "right": 1232,
+        "bottom": 878,
+        "left": 411.1875
+      },
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 403.1875,
+        "height": 2192.203125,
+        "top": 52,
+        "right": 403.1875,
+        "bottom": 2244.203125,
+        "left": 0
+      },
+      "card": {
+        "x": 202.59375,
+        "y": 98,
+        "width": 190.59375,
+        "height": 133.1875,
+        "top": 98,
+        "right": 393.1875,
+        "bottom": 231.1875,
+        "left": 202.59375
+      },
+      "decision": {
+        "x": 2,
+        "y": 559.21875,
+        "width": 391.1875,
+        "height": 101.5,
+        "top": 559.21875,
+        "right": 393.1875,
+        "bottom": 660.71875,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.44846147347917,
+          12.818372271380298
+        ],
+        [
+          45.06213015148876,
+          13.413839494504714
+        ]
+      ],
+      "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 1240,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 1440,
+            "bottom": 900,
+            "left": 1240
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 411.1875,
+            "y": 60,
+            "width": 820.8125,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1232,
+            "bottom": 897.9375,
+            "left": 411.1875
+          },
+          "widthPercent": 57.00086805555556
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 403.1875,
+            "height": 792.296875,
+            "top": 52,
+            "right": 403.1875,
+            "bottom": 844.296875,
+            "left": 0
+          },
+          "widthPercent": 27.999131944444443
+        }
+      ],
+      "map": {
+        "x": 411.1875,
+        "y": 60,
+        "width": 820.8125,
+        "height": 818,
+        "top": 60,
+        "right": 1232,
+        "bottom": 878,
+        "left": 411.1875
+      },
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 403.1875,
+        "height": 792.296875,
+        "top": 52,
+        "right": 403.1875,
+        "bottom": 844.296875,
+        "left": 0
+      },
+      "card": {
+        "x": 202.59375,
+        "y": 98,
+        "width": 190.59375,
+        "height": 126,
+        "top": 98,
+        "right": 393.1875,
+        "bottom": 224,
+        "left": 202.59375
+      },
+      "decision": {
+        "x": 2,
+        "y": 528,
+        "width": 391.1875,
+        "height": 101.5,
+        "top": 528,
+        "right": 393.1875,
+        "bottom": 629.5,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -109.10494933347582,
+          -72.94091236791701
+        ],
+        [
+          109.10494933348082,
+          72.94091236791618
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 561.703125,
+            "top": 109,
+            "right": 380,
+            "bottom": 670.703125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 680.703125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 680.703125,
+            "right": 380,
+            "bottom": 1140.640625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1150.640625,
+            "width": 370,
+            "height": 2453.359375,
+            "top": 1150.640625,
+            "right": 380,
+            "bottom": 3604,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 680.703125,
+        "width": 370,
+        "height": 440,
+        "top": 680.703125,
+        "right": 380,
+        "bottom": 1120.703125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1150.640625,
+        "width": 370,
+        "height": 2453.359375,
+        "top": 1150.640625,
+        "right": 380,
+        "bottom": 3604,
+        "left": 10
+      },
+      "card": {
+        "x": 200,
+        "y": 1184.640625,
+        "width": 180,
+        "height": 140,
+        "top": 1184.640625,
+        "right": 380,
+        "bottom": 1324.640625,
+        "left": 200
+      },
+      "decision": {
+        "x": 10,
+        "y": 1663.515625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1663.515625,
+        "right": 380,
+        "bottom": 1765.015625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          44.475036708871016,
+          12.791206242722907
+        ],
+        [
+          45.03555491609822,
+          13.440936827583258
+        ]
+      ],
+      "zoom": 8.850581910637702
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 561.703125,
+            "top": 109,
+            "right": 380,
+            "bottom": 670.703125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 680.703125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 680.703125,
+            "right": 380,
+            "bottom": 1140.640625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1150.640625,
+            "width": 370,
+            "height": 792.296875,
+            "top": 1150.640625,
+            "right": 380,
+            "bottom": 1942.9375,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 680.703125,
+        "width": 370,
+        "height": 440,
+        "top": 680.703125,
+        "right": 380,
+        "bottom": 1120.703125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1150.640625,
+        "width": 370,
+        "height": 792.296875,
+        "top": 1150.640625,
+        "right": 380,
+        "bottom": 1942.9375,
+        "left": 10
+      },
+      "card": {
+        "x": 200,
+        "y": 1184.640625,
+        "width": 180,
+        "height": 140,
+        "top": 1184.640625,
+        "right": 380,
+        "bottom": 1324.640625,
+        "left": 200
+      },
+      "decision": {
+        "x": 10,
+        "y": 1642.640625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1642.640625,
+        "right": 380,
+        "bottom": 1744.140625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -49.0239576980718,
+          -50.282816830566205
+        ],
+        [
+          49.02395769806907,
+          50.28281683056957
+        ]
+      ],
+      "zoom": 1.4
+    }
+  }
+]

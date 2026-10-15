@@ -125,7 +125,7 @@ test.describe('browser-visible preview outcomes and basemap origin (DP-4 P1(c)/P
     page.on('request', (req) => requests.push(req.url()));
 
     await page.goto(`/en/analysis/${PREVIEW_READY_ID}`);
-    await expect(page.getByText(/rendered on the map above as an estimate/)).toBeVisible({timeout: 15_000});
+    await expect(page.getByText(/rendered on the map as an estimate/)).toBeVisible({timeout: 15_000});
 
     const previewRequests = requests.filter((url) => new URL(url).pathname === `/api/analyses/${PREVIEW_READY_ID}/preview`);
     expect(previewRequests.length).toBeGreaterThan(0);

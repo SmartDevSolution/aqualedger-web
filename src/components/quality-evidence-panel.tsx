@@ -1,6 +1,7 @@
 'use client';
 
 import {useLocale, useTranslations} from 'next-intl';
+import {NativeDisclosure} from './native-disclosure';
 import {formatPercent, formatValue} from '@/lib/format';
 import type {AnalysisResult} from '@/lib/api/client';
 
@@ -53,17 +54,15 @@ export function QualityEvidencePanel({result}: QualityEvidencePanelProps) {
 
       {statistics ? (
         <div className="quality-evidence-grid">
-          <div>
-            <h4>{t('rejectionCountsHeading')}</h4>
+          <NativeDisclosure className="result-disclosure" summary={<h4>{t('rejectionCountsHeading')}</h4>}>
             <dl className="result-facts compact-facts">
               <Fact label={t('rejectionMaskedClass')} value={formatValue(statistics.rejection_counts.masked_class, locale, 0)} />
               <Fact label={t('rejectionMissingData')} value={formatValue(statistics.rejection_counts.missing_data, locale, 0)} />
               <Fact label={t('rejectionNonPositive')} value={formatValue(statistics.rejection_counts.non_positive_denominator, locale, 0)} />
               <Fact label={t('rejectionOutOfRange')} value={formatValue(statistics.rejection_counts.out_of_range, locale, 0)} />
             </dl>
-          </div>
-          <div>
-            <h4>{t('baselineHeading')}</h4>
+          </NativeDisclosure>
+          <NativeDisclosure className="result-disclosure" summary={<h4>{t('baselineHeading')}</h4>}>
             <dl className="result-facts compact-facts">
               <Fact label={t('baselineCollection')} value={<bdi dir="auto">{baseline.collection}</bdi>} />
               <Fact label={t('baselineContract')} value={<bdi dir="ltr">{baseline.contract_version}</bdi>} />
@@ -71,7 +70,7 @@ export function QualityEvidencePanel({result}: QualityEvidencePanelProps) {
               <Fact label={t('baselineMaskPolicy')} value={<bdi dir="ltr">{baseline.mask_policy_version}</bdi>} />
               <Fact label={t('baselineResolution')} value={`${formatValue(baseline.grid_resolution_m, locale)} m`} />
             </dl>
-          </div>
+          </NativeDisclosure>
         </div>
       ) : null}
       <p className="science-disclosure">{t('qualityEvidenceDisclosure')}</p>

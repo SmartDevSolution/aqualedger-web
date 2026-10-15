@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
       aria-label={t('switchLanguage')}
       hrefLang={nextLocale}
     >
-      {t('switchLanguage')}
+      <span className={locale === 'en' ? 'is-active' : ''}>EN</span><span className={locale === 'ar' ? 'is-active' : ''}>AR</span>
     </Link>
   );
 }

@@ -1,6 +1,9 @@
 'use client';
 
+import {ResultsDashboard} from './results-dashboard';
+import {WorkspaceIcon} from './workspace-icon';
 import {useLocale, useTranslations} from 'next-intl';
+import {NativeDisclosure} from './native-disclosure';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
 import {limitationMessageKey, perDateReasonMessageKey} from '@/lib/api/error-messages';
 import type {AnalysisRunState} from '@/lib/api/use-analysis-run';
@@ -12,12 +15,14 @@ import type {ScenarioState} from '@/lib/api/use-scenario';
 
 export function AnalysisResultPanel({
   analysisId,
+  stagePanel,
   state,
   previewStatus,
   scoring,
   scenario
 }: {
   analysisId?: string | undefined;
+  stagePanel: React.ReactNode;
   state: AnalysisRunState;
   previewStatus: PreviewOverlayStatus;
   scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
@@ -30,25 +35,18 @@ export function AnalysisResultPanel({
 }) {
   const locale = useLocale();
   const t = useTranslations('workspace');
+  const d = useTranslations('dashboard');
 
   return (
     <section className="panel result-panel" aria-labelledby="result-heading">
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">04</p>
-          <h2 id="result-heading">{t('resultHeading')}</h2>
-        </div>
-        {analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}
+      <div className="compact-results">
+        <div className="panel-heading results-heading"><h2 id="result-heading">{d('results')}</h2><a href="#result-details" aria-label={d('details')}>•••</a></div>
+        <ResultsDashboard result={state.kind === 'complete' ? state.result : null} selectedZoneId={scoring.selectedZoneId} />
+        <section className="decision-support-card"><h3><WorkspaceIcon name="bulb" />{d('decision')}</h3><p>{t('workspaceDisclosure')}</p><a className="button button-primary" href="#result-details">{d('details')} ↓</a></section>
       </div>
-      {!analysisId ? (
-        <div className="result-empty-state">
-          <div className="result-icon" aria-hidden="true">NDVI</div>
-          <div>
-            <h3>{t('previewUnavailable')}</h3>
-            <p>{t('noResult')}</p>
-          </div>
-        </div>
-      ) : null}
+      <div id="result-details" className="result-details-heading"><h3>{t('resultHeading')}</h3>{analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}</div>
+      {stagePanel}
+      {!analysisId ? <p className="subtle-copy">{t('noResult')}</p> : null}
       {analysisId && (state.kind === 'loading' || state.kind === 'pending') ? (
         <p className="notice notice-neutral" role="status">{t(state.kind === 'loading' && state.stage === 'result' ? 'loadingResult' : 'checkingSavedAnalysis')}</p>
       ) : null}
@@ -102,14 +100,6 @@ function LoadedAnalysisResult({
 
   return (
     <>
-      <div className={`result-preview-state notice ${previewStatus === 'ready' ? 'notice-positive' : 'notice-warning'}`} role="status">
-        <div className="result-icon" aria-hidden="true">NDVI</div>
-        <div>
-          <h3>{t('previewHeading')}</h3>
-          <p>{t(previewMessageKey(previewStatus))}</p>
-        </div>
-      </div>
-
       <section className="result-detail-section" aria-labelledby="result-coverage-heading">
         <h3 id="result-coverage-heading">{t('coverageHeading')}</h3>
         <dl className="result-facts">
@@ -117,10 +107,12 @@ function LoadedAnalysisResult({
           <Fact label={t('evidenceLabel')} value={evidenceLabel(result.evidence_status, t)} />
           <Fact
             label={t('selectedAcquisition')}
+            dir="auto"
             value={coverage.acquisition_date ? formatGregorianDate(coverage.acquisition_date, locale) : t('noSelectedAcquisition')}
           />
           <Fact
             label={t('validCoverage')}
+            dir="ltr"
             value={coverage.valid_coverage_fraction === null ? t('coverageUnavailable') : formatPercent(coverage.valid_coverage_fraction, locale)}
           />
           <Fact
@@ -134,18 +126,25 @@ function LoadedAnalysisResult({
         <section className="result-detail-section" aria-labelledby="result-statistics-heading">
           <h3 id="result-statistics-heading">{t('statisticsHeading')}</h3>
           <dl className="result-facts result-statistics">
-            <Fact label={t('validObservationCount')} value={formatValue(statistics.valid_observation_count, locale, 0)} />
-            <Fact label={t('validArea')} value={`${formatValue(statistics.valid_area_m2 / 1_000_000, locale)} ${t('areaUnit')}`} />
-            <Fact label={t('ndviMean')} value={formatNullableValue(statistics.ndvi_mean, locale, t)} />
-            <Fact label={t('ndviMedian')} value={formatNullableValue(statistics.ndvi_median, locale, t)} />
-            <Fact label={t('ndviRange')} value={`${formatNullableValue(statistics.ndvi_min, locale, t)} – ${formatNullableValue(statistics.ndvi_max, locale, t)}`} />
-            <Fact label={t('ndviPercentiles')} value={`${formatNullableValue(statistics.ndvi_p05, locale, t)} – ${formatNullableValue(statistics.ndvi_p95, locale, t)}`} />
-            <Fact label={t('maskedFraction')} value={formatPercent(statistics.masked_fraction, locale)} />
+            <Fact label={t('validObservationCount')} dir="ltr" value={formatValue(statistics.valid_observation_count, locale, 0)} />
+            <Fact label={t('validArea')} dir="ltr" value={`${formatValue(statistics.valid_area_m2 / 1_000_000, locale)} ${t('areaUnit')}`} />
+            <Fact label={t('ndviMean')} dir="ltr" value={formatNullableValue(statistics.ndvi_mean, locale, t)} />
+            <Fact label={t('ndviMedian')} dir="ltr" value={formatNullableValue(statistics.ndvi_median, locale, t)} />
+            <Fact label={t('ndviRange')} dir="ltr" value={`${formatNullableValue(statistics.ndvi_min, locale, t)} – ${formatNullableValue(statistics.ndvi_max, locale, t)}`} />
+            <Fact label={t('ndviPercentiles')} dir="ltr" value={`${formatNullableValue(statistics.ndvi_p05, locale, t)} – ${formatNullableValue(statistics.ndvi_p95, locale, t)}`} />
+            <Fact label={t('maskedFraction')} dir="ltr" value={formatPercent(statistics.masked_fraction, locale)} />
           </dl>
         </section>
       ) : (
         <p className="subtle-copy">{t('statisticsUnavailable')}</p>
       )}
+
+      <div className={`result-preview-state notice ${previewStatus === 'ready' ? 'notice-positive' : 'notice-warning'}`} role="status">
+        <div>
+          <h3>{t('previewHeading')}</h3>
+          <p>{t(previewMessageKey(previewStatus))}</p>
+        </div>
+      </div>
 
       <QualityEvidencePanel result={result} />
 
@@ -162,8 +161,7 @@ function LoadedAnalysisResult({
       ) : null}
 
       {(result.scenes_evaluated?.length ?? 0) > 0 ? (
-        <section className="result-detail-section" aria-labelledby="result-scenes-heading">
-          <h3 id="result-scenes-heading">{t('evaluatedDates')}</h3>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-scenes-heading">{t('evaluatedDates')}</h3>}>
           <ul className="scene-list">
             {result.scenes_evaluated?.map((scene) => (
               <li key={`${scene.acquisition_date}:${scene.item_ids?.join('|') ?? ''}`}>
@@ -179,12 +177,11 @@ function LoadedAnalysisResult({
               </li>
             ))}
           </ul>
-        </section>
+        </NativeDisclosure>
       ) : null}
 
       {(result.limitations?.length ?? 0) > 0 ? (
-        <section className="result-detail-section" aria-labelledby="result-limitations-heading">
-          <h3 id="result-limitations-heading">{t('limitationsHeading')}</h3>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-limitations-heading">{t('limitationsHeading')}</h3>}>
           <ul className="scene-list">
             {result.limitations?.map((limitation, index) => (
               <li key={`${limitationCode(limitation) ?? 'unknown'}-${index}`}>
@@ -192,12 +189,11 @@ function LoadedAnalysisResult({
               </li>
             ))}
           </ul>
-        </section>
+        </NativeDisclosure>
       ) : null}
 
       {provenance ? (
-        <section className="result-detail-section" aria-labelledby="result-provenance-heading">
-          <h3 id="result-provenance-heading">{t('provenanceHeading')}</h3>
+        <NativeDisclosure className="result-detail-section result-disclosure" summary={<h3 id="result-provenance-heading">{t('provenanceHeading')}</h3>}>
           <dl className="result-facts">
             <Fact label={t('schemaVersion')} value={<bdi dir="ltr">{result.schema_version}</bdi>} />
             <Fact label={t('pipelineVersion')} value={<bdi dir="ltr">{result.pipeline_version}</bdi>} />
@@ -216,7 +212,7 @@ function LoadedAnalysisResult({
             <Fact label={t('maskedClasses')} value={<bdi dir="ltr">{provenance.mask_masked_classes.join(', ')}</bdi>} />
             <Fact label={t('retainedClasses')} value={<bdi dir="ltr">{provenance.mask_retained_classes.join(', ')}</bdi>} />
           </dl>
-        </section>
+        </NativeDisclosure>
       ) : (
         <p className="subtle-copy">{t('provenanceUnavailable')}</p>
       )}
@@ -224,8 +220,8 @@ function LoadedAnalysisResult({
   );
 }
 
-function Fact({label, value}: {label: string; value: React.ReactNode}) {
-  return <div className="result-fact"><dt>{label}</dt><dd>{value}</dd></div>;
+function Fact({label, value, dir = 'auto'}: {label: string; value: React.ReactNode; dir?: 'ltr' | 'auto'}) {
+  return <div className="result-fact"><dt>{label}</dt><dd><bdi dir={dir}>{value}</bdi></dd></div>;
 }
 
 type PreviewMessageKey =

@@ -1,0 +1,446 @@
+{
+  "baseline": "30d0057dad731843612bcb5e40554892224aa0c9",
+  "fixture": "Labelled local browser fixtures, not scientific acceptance",
+  "rows": [
+    {
+      "name": "en-populated-browser-fixture-1091x690",
+      "viewport": {
+        "width": 1091,
+        "height": 690
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 569.53125,
+            "widthPercent": 52.20268102658112
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 305.46875,
+            "widthPercent": 27.998968835930338
+          }
+        ],
+        "mapWidthPx": 569.53125,
+        "railWidthPx": 305.46875,
+        "cardWidthPx": 141.734375,
+        "decisionBottomY": 697.0625,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 449.515625,
+            "widthPercent": 41.20216544454629
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 425.484375,
+            "widthPercent": 38.99948441796517
+          }
+        ],
+        "mapWidthPx": 449.515625,
+        "railWidthPx": 425.484375,
+        "cardWidthPx": 201.734375,
+        "decisionBottomY": 650.71875,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "en-empty-browser-fixture-1091x690",
+      "viewport": {
+        "width": 1091,
+        "height": 690
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 569.53125,
+            "widthPercent": 52.20268102658112
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 305.46875,
+            "widthPercent": 27.998968835930338
+          }
+        ],
+        "mapWidthPx": 569.53125,
+        "railWidthPx": 305.46875,
+        "cardWidthPx": 141.734375,
+        "decisionBottomY": 660,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 449.515625,
+            "widthPercent": 41.20216544454629
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 425.484375,
+            "widthPercent": 38.99948441796517
+          }
+        ],
+        "mapWidthPx": 449.515625,
+        "railWidthPx": 425.484375,
+        "cardWidthPx": 201.734375,
+        "decisionBottomY": 612.75,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "en-populated-browser-fixture-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 820.8125,
+            "widthPercent": 57.00086805555556
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 403.1875,
+            "widthPercent": 27.999131944444443
+          }
+        ],
+        "mapWidthPx": 820.8125,
+        "railWidthPx": 403.1875,
+        "cardWidthPx": 190.59375,
+        "decisionBottomY": 660.71875,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 662.40625,
+            "widthPercent": 46.00043402777778
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 561.59375,
+            "widthPercent": 38.99956597222222
+          }
+        ],
+        "mapWidthPx": 662.40625,
+        "railWidthPx": 561.59375,
+        "cardWidthPx": 269.796875,
+        "decisionBottomY": 637.53125,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "en-empty-browser-fixture-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 820.8125,
+            "widthPercent": 57.00086805555556
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 403.1875,
+            "widthPercent": 27.999131944444443
+          }
+        ],
+        "mapWidthPx": 820.8125,
+        "railWidthPx": 403.1875,
+        "cardWidthPx": 190.59375,
+        "decisionBottomY": 629.5,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 662.40625,
+            "widthPercent": 46.00043402777778
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 561.59375,
+            "widthPercent": 38.99956597222222
+          }
+        ],
+        "mapWidthPx": 662.40625,
+        "railWidthPx": 561.59375,
+        "cardWidthPx": 269.796875,
+        "decisionBottomY": 607.5,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "ar-populated-browser-fixture-1091x690",
+      "viewport": {
+        "width": 1091,
+        "height": 690
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 569.53125,
+            "widthPercent": 52.20268102658112
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 305.46875,
+            "widthPercent": 27.998968835930338
+          }
+        ],
+        "mapWidthPx": 569.53125,
+        "railWidthPx": 305.46875,
+        "cardWidthPx": 141.734375,
+        "decisionBottomY": 697.0625,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 449.515625,
+            "widthPercent": 41.20216544454629
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 425.484375,
+            "widthPercent": 38.99948441796517
+          }
+        ],
+        "mapWidthPx": 449.515625,
+        "railWidthPx": 425.484375,
+        "cardWidthPx": 201.734375,
+        "decisionBottomY": 637.53125,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "ar-empty-browser-fixture-1091x690",
+      "viewport": {
+        "width": 1091,
+        "height": 690
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 569.53125,
+            "widthPercent": 52.20268102658112
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 305.46875,
+            "widthPercent": 27.998968835930338
+          }
+        ],
+        "mapWidthPx": 569.53125,
+        "railWidthPx": 305.46875,
+        "cardWidthPx": 141.734375,
+        "decisionBottomY": 654.25,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 18.331805682859763
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 449.515625,
+            "widthPercent": 41.20216544454629
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 425.484375,
+            "widthPercent": 38.99948441796517
+          }
+        ],
+        "mapWidthPx": 449.515625,
+        "railWidthPx": 425.484375,
+        "cardWidthPx": 201.734375,
+        "decisionBottomY": 607.5,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "ar-populated-browser-fixture-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 820.8125,
+            "widthPercent": 57.00086805555556
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 403.1875,
+            "widthPercent": 27.999131944444443
+          }
+        ],
+        "mapWidthPx": 820.8125,
+        "railWidthPx": 403.1875,
+        "cardWidthPx": 190.59375,
+        "decisionBottomY": 660.71875,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 662.40625,
+            "widthPercent": 46.00043402777778
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 561.59375,
+            "widthPercent": 38.99956597222222
+          }
+        ],
+        "mapWidthPx": 662.40625,
+        "railWidthPx": 561.59375,
+        "cardWidthPx": 269.796875,
+        "decisionBottomY": 637.53125,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "name": "ar-empty-browser-fixture-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "before": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 820.8125,
+            "widthPercent": 57.00086805555556
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 403.1875,
+            "widthPercent": 27.999131944444443
+          }
+        ],
+        "mapWidthPx": 820.8125,
+        "railWidthPx": 403.1875,
+        "cardWidthPx": 190.59375,
+        "decisionBottomY": 629.5,
+        "horizontalOverflow": false
+      },
+      "after": {
+        "columns": [
+          {
+            "class": "panel input-panel",
+            "widthPx": 200,
+            "widthPercent": 13.88888888888889
+          },
+          {
+            "class": "panel map-panel",
+            "widthPx": 662.40625,
+            "widthPercent": 46.00043402777778
+          },
+          {
+            "class": "panel result-panel",
+            "widthPx": 561.59375,
+            "widthPercent": 38.99956597222222
+          }
+        ],
+        "mapWidthPx": 662.40625,
+        "railWidthPx": 561.59375,
+        "cardWidthPx": 269.796875,
+        "decisionBottomY": 607.5,
+        "horizontalOverflow": false
+      }
+    }
+  ]
+}

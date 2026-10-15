@@ -1,5 +1,13 @@
 {
+  "dashboard": {
+    "results": "Analysis Results", "ndvi": "Vegetation Index (NDVI)", "area": "Total Area (AOI)", "observations": "Observations", "evidence": "Key Evidence", "trend": "Vegetation Trend (NDVI)", "decision": "Decision Support", "unavailable": "Unavailable", "noArea": "AOI area not returned", "noLandCover": "Land-cover split not returned", "noTrend": "Not enough observations to plot a trend", "noThumbnails": "Evidence thumbnails not returned", "sources": "Source records", "emptyDates": "0 evaluated dates", "dates": "Evaluated acquisition dates", "details": "Analysis details", "layers": "Data Layers", "satellite": "Satellite basemap", "labels": "Place Labels", "polygon": "Polygon", "rectangle": "Rectangle", "point": "Point", "time": "Time Range", "update": "Update Map", "search": "Search places, farms, or coordinates…", "searchUnavailable": "Place search is not supported yet", "accountUnavailable": "Account controls are not supported yet", "low": "Low", "high": "High", "observationOnly": "Observed index · not a crop-health assessment", "series": "Selected zone · dated observations", "footprint": "Returned observation footprint", "mapDetails": "Map attribution and scientific notes"
+  },
   "navigation": {
+    "map": "Map",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "areas": "Areas",
+    "data": "Data",
     "mainNavigation": "Main navigation",
     "analysis": "Analysis Workspace",
     "settings": "Settings / Data Sources",
@@ -79,7 +87,7 @@
     "previewUnavailable": "No NDVI preview is available.",
     "previewHeading": "NDVI map preview",
     "previewLoading": "Loading the NDVI preview image…",
-    "previewReady": "The NDVI preview is rendered on the map above as an estimate, colored with the backend's own recorded palette. It is not a substitute for the statistics below.",
+    "previewReady": "The NDVI preview is rendered on the map as an estimate, colored with the backend's own recorded palette. It is not a substitute for the returned statistics.",
     "previewNotReady": "The saved analysis result is not committed yet, so no NDVI preview could be requested.",
     "previewNotReadyFailed": "The saved analysis run failed and has no committed result, so no NDVI preview could be requested. No map layer is shown.",
     "previewNoArtifact": "The backend result contains no ready NDVI preview artifact. No map layer is shown.",

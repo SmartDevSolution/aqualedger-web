@@ -1,0 +1,51 @@
+
+> aqualedger-web@0.1.0 check-relay-log-leak
+> node scripts/check-relay-log-leak.mjs
+
+(node:3931634) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/hermes/.hermes/kanban/boards/connector/workspaces/t_21638b02/tests/fixtures/backend-double.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/hermes/.hermes/kanban/boards/connector/workspaces/t_21638b02/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+check-relay-log-leak: building production server...
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 56ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 244ms
+  Running TypeScript ...
+  Finished TypeScript in 1942ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/8) ...
+  Generating static pages using 7 workers (2/8)
+  Generating static pages using 7 workers (4/8)
+  Generating static pages using 7 workers (6/8)
+✓ Generating static pages using 7 workers (8/8) in 378ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├   /[locale]
+│ ├ ● /ar
+│ └ ● /en
+├   /[locale]/analysis
+│ ├ ● /ar/analysis
+│ └ ● /en/analysis
+├ ƒ /[locale]/analysis/[id]
+├   /[locale]/settings
+│ ├ ● /ar/settings
+│ └ ● /en/settings
+├ ƒ /api/analyses
+├ ƒ /api/analyses/[id]
+├ ƒ /api/analyses/[id]/preview
+├ ƒ /api/analyses/[id]/result
+├ ƒ /api/analyses/[id]/scenario
+└ ƒ /api/sources
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+check-relay-log-leak: PASS — captured 147 bytes of server stdout/stderr across 4 relay call(s) plus 1 preview-route call against the backend double; none contained the operator token, any Authorization value, or the signed preview URL.
