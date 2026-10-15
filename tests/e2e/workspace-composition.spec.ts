@@ -13,8 +13,9 @@ for (const locale of ['en', 'ar'] as const) {
     const [input, map, result] = boxes;
     if (!input || !map || !result) throw new Error('All three zones must have visible bounds.');
     if (page.viewportSize()!.width >= 1024) {
-      expect(Math.abs(input.y - map.y)).toBeLessThan(2);
-      expect(Math.abs(result.y - map.y)).toBeLessThan(2);
+      // The approved map has an exact 8px top inset; the rail and results start at the header.
+      expect(map.y - input.y).toBe(8);
+      expect(map.y - result.y).toBe(8);
       expect(map.width).toBeGreaterThan(input.width);
       expect(map.width).toBeGreaterThan(result.width);
       if (locale === 'en') {
@@ -41,7 +42,7 @@ for (const locale of ['en', 'ar'] as const) {
       const bg = luminance(style.backgroundColor);
       return {background: style.backgroundColor, contrast: (luminance(style.color) + 0.05) / (bg + 0.05)};
     });
-    expect(colors.background).toBe('rgb(8, 38, 45)');
+    expect(colors.background).toBe('rgb(13, 28, 43)');
     expect(colors.contrast).toBeGreaterThanOrEqual(4.5);
     const provenance = page.locator('.result-disclosure').filter({has: page.locator('#result-provenance-heading')});
     const summary = provenance.locator('summary');
@@ -65,6 +66,9 @@ for (const locale of ['en', 'ar'] as const) {
     await expect(page.getByText(locale === 'en' ? 'The result contains no AOI-level NDVI statistics.' : 'لا تتضمن النتيجة إحصاءات NDVI على مستوى منطقة الاهتمام.')).toBeVisible();
     await expect(page.locator('.result-statistics')).toHaveCount(0);
     await expect(page.locator('.evidence-chart-value').first()).toHaveText(locale === 'en' ? 'Not returned' : 'لم يُعَد');
-    await expect(page.locator('.result-panel').getByText(/Monthly|Vegetation trend|Healthy/i)).toHaveCount(0);
+    // The new mandatory trend card remains, but must contain an honest unavailable state, never a fabricated plot.
+    await expect(page.locator('.result-panel').getByText(/Monthly|Healthy/i)).toHaveCount(0);
+    await expect(page.locator('.trend-card svg.ndvi-series')).toHaveCount(0);
+    await expect(page.locator('.trend-unavailable')).toContainText(locale === 'en' ? 'Not enough observations to plot a trend' : 'لا توجد رصدات كافية لرسم اتجاه');
   });
 }

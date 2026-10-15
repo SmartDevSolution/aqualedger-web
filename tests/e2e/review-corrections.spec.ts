@@ -34,12 +34,24 @@ for (const locale of ['en', 'ar'] as const) {
     const canvas = page.locator('.maplibregl-canvas');
     await canvas.scrollIntoViewIfNeeded();
     await page.locator('.map-canvas-wrap').screenshot({path: `${directory}/${phase}-${locale}-${size}-map.png`});
+    // Screenshot auto-scrolling can leave an absolute canvas outside the touch viewport.
+    // Center the actual map frame again before dispatching the real single-finger gesture.
+    await page.locator('.map-frame').evaluate(element => element.scrollIntoView({block: 'center'}));
+    await page.waitForTimeout(150);
     const box = (await canvas.boundingBox())!;
-    if (testInfo.project.name.includes('small')) {
-      const session = await page.context().newCDPSession(page);
+    const touchSession = testInfo.project.name.includes('small') ? await page.context().newCDPSession(page) : null;
+    if (touchSession) {
+      const session = touchSession;
       await session.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x: box.x + box.width / 2, y: box.y + 100}]});
+      // Use consecutive movement frames, as a human drag does. One coalesced move
+      // can become a document scroll before MapLibre observes its first touchmove.
+      await page.waitForTimeout(80);
+      await session.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x: box.x + box.width / 2, y: box.y + 120}]});
+      await page.waitForTimeout(80);
       await session.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x: box.x + box.width / 2, y: box.y + 150}]});
-      await session.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
+      await expect(page.locator('.maplibregl-cooperative-gesture-screen')).toHaveClass(/maplibregl-show/);
+      // Hold the touch through the visibility/contrast measurement: MapLibre hides
+      // the mobile-only hint on touchEnd, unlike the desktop wheel hint timer.
     } else {
       await page.mouse.move(box.x + box.width / 2, box.y + 100);
       await page.mouse.wheel(0, 100);
@@ -61,6 +73,7 @@ for (const locale of ['en', 'ar'] as const) {
     }));
     await page.screenshot({path: `${directory}/${phase}-${locale}-${size}-overlays.png`, fullPage: true});
     writeFileSync(`${directory}/${phase}-${locale}-${size}.json`, JSON.stringify({fixture: PREVIEW_READY_ID, date: dateMeasurement, contrast, disclosures: disclosuresBefore}, null, 2) + '\n');
+    if (touchSession) await touchSession.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []});
     if (process.env.CORRECTION_BASELINE) return;
     expect(dateMeasurement.dir).toBe('auto');
     expect(dateMeasurement.direction).toBe(locale === 'ar' ? 'rtl' : 'ltr');

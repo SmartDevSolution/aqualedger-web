@@ -12,10 +12,11 @@ export function MainNavigation() {
   return (
     <nav className="primary-nav" aria-label={t('mainNavigation')}>
       <Link href="/analysis" aria-current={onAnalysis ? 'page' : undefined}>
-        {t('analysis')}
+        <span className="sr-only">{t('analysis')}</span><span aria-hidden="true">{t('map')}</span>
       </Link>
+      {(['analytics', 'reports', 'areas', 'data'] as const).map((item) => <span key={item} className="nav-unavailable" aria-disabled="true">{t(item)}</span>)}
       <Link href="/settings" aria-current={onSettings ? 'page' : undefined}>
-        {t('settings')}
+        <span className="sr-only">{t('settings')}</span><span aria-hidden="true">{t('settings').split(' / ')[0]}</span>
       </Link>
     </nav>
   );

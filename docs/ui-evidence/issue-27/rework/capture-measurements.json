@@ -1,0 +1,498 @@
+[
+  {
+    "name": "en-populated-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 200,
+          "height": 638,
+          "top": 52,
+          "right": 200,
+          "bottom": 690,
+          "left": 0
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 208,
+          "y": 60,
+          "width": 569.53125,
+          "height": 627.9375,
+          "top": 60,
+          "right": 777.53125,
+          "bottom": 687.9375,
+          "left": 208
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 785.53125,
+          "y": 52,
+          "width": 305.46875,
+          "height": 2321.03125,
+          "top": 52,
+          "right": 1091,
+          "bottom": 2373.03125,
+          "left": 785.53125
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.45881262299909,
+          12.808028498259446
+        ],
+        [
+          45.051779001969976,
+          13.424157815958466
+        ]
+      ],
+      "zoom": 9.395578004041212
+    }
+  },
+  {
+    "name": "en-empty-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Empty workspace",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 200,
+          "height": 638,
+          "top": 52,
+          "right": 200,
+          "bottom": 690,
+          "left": 0
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 208,
+          "y": 60,
+          "width": 569.53125,
+          "height": 627.9375,
+          "top": 60,
+          "right": 777.53125,
+          "bottom": 687.9375,
+          "left": 208
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 785.53125,
+          "y": 52,
+          "width": 305.46875,
+          "height": 842.625,
+          "top": 52,
+          "right": 1091,
+          "bottom": 894.625,
+          "left": 785.53125
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          -75.66741296876077,
+          -62.53357696690894
+        ],
+        [
+          75.66741296876194,
+          62.533576966908015
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "en-populated-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 200,
+          "height": 848,
+          "top": 52,
+          "right": 200,
+          "bottom": 900,
+          "left": 0
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 208,
+          "y": 60,
+          "width": 820.8125,
+          "height": 837.9375,
+          "top": 60,
+          "right": 1028.8125,
+          "bottom": 897.9375,
+          "left": 208
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 1036.8125,
+          "y": 52,
+          "width": 403.1875,
+          "height": 2228.53125,
+          "top": 52,
+          "right": 1440,
+          "bottom": 2280.53125,
+          "left": 1036.8125
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.44846147347917,
+          12.818372271380298
+        ],
+        [
+          45.06213015148876,
+          13.413839494504714
+        ]
+      ],
+      "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "en-populated-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 10,
+          "y": 109,
+          "width": 370,
+          "height": 561.703125,
+          "top": 109,
+          "right": 380,
+          "bottom": 670.703125,
+          "left": 10
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 10,
+          "y": 680.703125,
+          "width": 370,
+          "height": 459.9375,
+          "top": 680.703125,
+          "right": 380,
+          "bottom": 1140.640625,
+          "left": 10
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 10,
+          "y": 1150.640625,
+          "width": 370,
+          "height": 2453.359375,
+          "top": 1150.640625,
+          "right": 380,
+          "bottom": 3604,
+          "left": 10
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.475036708871016,
+          12.791206242722907
+        ],
+        [
+          45.03555491609822,
+          13.440936827583258
+        ]
+      ],
+      "zoom": 8.850581910637702
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 891,
+          "y": 52,
+          "width": 200,
+          "height": 638,
+          "top": 52,
+          "right": 1091,
+          "bottom": 690,
+          "left": 891
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 313.46875,
+          "y": 60,
+          "width": 569.53125,
+          "height": 627.9375,
+          "top": 60,
+          "right": 883,
+          "bottom": 687.9375,
+          "left": 313.46875
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 305.46875,
+          "height": 2278.8125,
+          "top": 52,
+          "right": 305.46875,
+          "bottom": 2330.8125,
+          "left": 0
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.45881262299909,
+          12.808028498259446
+        ],
+        [
+          45.051779001969976,
+          13.424157815958466
+        ]
+      ],
+      "zoom": 9.395578004041212
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-1091x690",
+    "viewport": {
+      "width": 1091,
+      "height": 690
+    },
+    "fixture": "Empty workspace",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 891,
+          "y": 52,
+          "width": 200,
+          "height": 638,
+          "top": 52,
+          "right": 1091,
+          "bottom": 690,
+          "left": 891
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 313.46875,
+          "y": 60,
+          "width": 569.53125,
+          "height": 627.9375,
+          "top": 60,
+          "right": 883,
+          "bottom": 687.9375,
+          "left": 313.46875
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 305.46875,
+          "height": 817.046875,
+          "top": 52,
+          "right": 305.46875,
+          "bottom": 869.046875,
+          "left": 0
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          -75.66741296876077,
+          -62.53357696690894
+        ],
+        [
+          75.66741296876194,
+          62.533576966908015
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 1240,
+          "y": 52,
+          "width": 200,
+          "height": 848,
+          "top": 52,
+          "right": 1440,
+          "bottom": 900,
+          "left": 1240
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 411.1875,
+          "y": 60,
+          "width": 820.8125,
+          "height": 837.9375,
+          "top": 60,
+          "right": 1232,
+          "bottom": 897.9375,
+          "left": 411.1875
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 0,
+          "y": 52,
+          "width": 403.1875,
+          "height": 2192.203125,
+          "top": 52,
+          "right": 403.1875,
+          "bottom": 2244.203125,
+          "left": 0
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.44846147347917,
+          12.818372271380298
+        ],
+        [
+          45.06213015148876,
+          13.413839494504714
+        ]
+      ],
+      "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "ar-populated-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
+    "geometry": [
+      {
+        "class": "panel input-panel",
+        "bounds": {
+          "x": 10,
+          "y": 109,
+          "width": 370,
+          "height": 561.703125,
+          "top": 109,
+          "right": 380,
+          "bottom": 670.703125,
+          "left": 10
+        }
+      },
+      {
+        "class": "panel map-panel",
+        "bounds": {
+          "x": 10,
+          "y": 680.703125,
+          "width": 370,
+          "height": 459.9375,
+          "top": 680.703125,
+          "right": 380,
+          "bottom": 1140.640625,
+          "left": 10
+        }
+      },
+      {
+        "class": "panel result-panel",
+        "bounds": {
+          "x": 10,
+          "y": 1150.640625,
+          "width": 370,
+          "height": 2453.359375,
+          "top": 1150.640625,
+          "right": 380,
+          "bottom": 3604,
+          "left": 10
+        }
+      }
+    ],
+    "map": {
+      "bounds": [
+        [
+          44.475036708871016,
+          12.791206242722907
+        ],
+        [
+          45.03555491609822,
+          13.440936827583258
+        ]
+      ],
+      "zoom": 8.850581910637702
+    }
+  }
+]

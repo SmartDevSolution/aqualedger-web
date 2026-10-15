@@ -18,7 +18,6 @@ export function AnalysisStagePanel({analysisId, state, submitFailure, onRetry}: 
 
   return (
     <section className="stage-card" aria-labelledby="stage-heading">
-      <p className="eyebrow">03</p>
       <h3 id="stage-heading">{t('analysisStageHeading')}</h3>
       {!analysisId ? (
         <>

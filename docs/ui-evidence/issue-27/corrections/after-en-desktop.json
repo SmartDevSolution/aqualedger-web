@@ -7,21 +7,21 @@
     "positions": [
       {
         "word": "Aug",
-        "x": 985.3125
+        "x": 991.8125
       },
       {
         "word": "30",
-        "x": 1013.734375
+        "x": 1014.015625
       },
       {
         "word": "2026",
-        "x": 1035.078125
+        "x": 1030.703125
       }
     ]
   },
   "contrast": [
     {
-      "className": "maplibregl-cooperative-gesture-screen maplibregl-show",
+      "className": "maplibregl-cooperative-gesture-screen",
       "text": "Use Ctrl + scroll to zoom the mapUse two fingers to move the map",
       "color": "rgb(255, 255, 255)",
       "background": "rgba(3, 25, 31, 0.9)",
@@ -52,6 +52,11 @@
       "text": "Enter polygon GeoJSON",
       "expanded": "false",
       "controls": "_R_25lfiv5uivb_"
+    },
+    {
+      "text": "Map attribution and scientific notes",
+      "expanded": "false",
+      "controls": "_R_1plfiv5uivb_"
     },
     {
       "text": "Pixel rejection counts",

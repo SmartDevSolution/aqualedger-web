@@ -1,5 +1,7 @@
 'use client';
 
+import {ResultsDashboard} from './results-dashboard';
+import {WorkspaceIcon} from './workspace-icon';
 import {useLocale, useTranslations} from 'next-intl';
 import {NativeDisclosure} from './native-disclosure';
 import {formatGregorianDate, formatPercent, formatTimestamp, formatValue} from '@/lib/format';
@@ -13,12 +15,14 @@ import type {ScenarioState} from '@/lib/api/use-scenario';
 
 export function AnalysisResultPanel({
   analysisId,
+  stagePanel,
   state,
   previewStatus,
   scoring,
   scenario
 }: {
   analysisId?: string | undefined;
+  stagePanel: React.ReactNode;
   state: AnalysisRunState;
   previewStatus: PreviewOverlayStatus;
   scoring: Omit<ScoringSectionProps, 'hasProvenance'>;
@@ -31,25 +35,16 @@ export function AnalysisResultPanel({
 }) {
   const locale = useLocale();
   const t = useTranslations('workspace');
+  const d = useTranslations('dashboard');
 
   return (
     <section className="panel result-panel" aria-labelledby="result-heading">
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">04</p>
-          <h2 id="result-heading">{t('resultHeading')}</h2>
-        </div>
-        {analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}
-      </div>
-      {!analysisId ? (
-        <div className="result-empty-state">
-          <div className="result-icon" aria-hidden="true">NDVI</div>
-          <div>
-            <h3>{t('previewUnavailable')}</h3>
-            <p>{t('noResult')}</p>
-          </div>
-        </div>
-      ) : null}
+      <div className="panel-heading results-heading"><h2 id="result-heading">{d('results')}</h2><a href="#result-details" aria-label={d('details')}>•••</a></div>
+      <ResultsDashboard result={state.kind === 'complete' ? state.result : null} selectedZoneId={scoring.selectedZoneId} />
+      <section className="decision-support-card"><h3><WorkspaceIcon name="bulb" />{d('decision')}</h3><p>{t('workspaceDisclosure')}</p><a className="button button-primary" href="#result-details">{d('details')} ↓</a></section>
+      <div id="result-details" className="result-details-heading"><h3>{t('resultHeading')}</h3>{analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}</div>
+      {stagePanel}
+      {!analysisId ? <p className="subtle-copy">{t('noResult')}</p> : null}
       {analysisId && (state.kind === 'loading' || state.kind === 'pending') ? (
         <p className="notice notice-neutral" role="status">{t(state.kind === 'loading' && state.stage === 'result' ? 'loadingResult' : 'checkingSavedAnalysis')}</p>
       ) : null}

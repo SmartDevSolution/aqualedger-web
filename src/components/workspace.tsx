@@ -1,6 +1,7 @@
 'use client';
 
 import {NativeDisclosure} from './native-disclosure';
+import {WorkspaceIcon} from './workspace-icon';
 
 import dynamic from 'next/dynamic';
 import {useLocale, useTranslations} from 'next-intl';
@@ -38,12 +39,15 @@ export function Workspace({analysisId}: WorkspaceProps) {
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations('workspace');
+  const d = useTranslations('dashboard');
   const errorText = useTranslations('errors');
   const historyText = useTranslations('history');
   const [draft, setDraft] = useState<WorkspaceDraft>(emptyWorkspaceDraft);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [draftStorageFailed, setDraftStorageFailed] = useState(false);
   const [drawingEnabled, setDrawingEnabled] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
   const [coordinateText, setCoordinateText] = useState('');
   const [inputProblem, setInputProblem] = useState<InputProblem | null>(null);
   const [submitFailure, setSubmitFailure] = useState<ApiFailure | null>(null);
@@ -203,34 +207,13 @@ export function Workspace({analysisId}: WorkspaceProps) {
 
   return (
     <main className="page-content workspace-page">
-      <header className="page-heading">
-        <p className="eyebrow"><bdi dir="ltr">AquaLedger</bdi> · {t('title')}</p>
-        <h1>{t('title')}</h1>
-        <p className="page-intro">{t('intro')}</p>
-        <button
-          type="button"
-          className="button button-secondary history-toggle"
-          aria-expanded={urlState.history}
-          aria-controls="history-drawer"
-          onClick={() => patchUrlState({history: urlState.history ? null : '1'})}
-        >
-          {historyText('toggleOpen')}
-        </button>
-      </header>
+      <h1 className="sr-only">{t('title')}</h1>
 
       {draftLoaded && draftStorageFailed ? <p className="notice notice-warning" role="alert">{errorText('draftStorageUnavailable')}</p> : null}
 
       <div className="workspace-grid">
         <section className="panel input-panel" aria-labelledby="aoi-heading">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">01</p>
-              <h2 id="aoi-heading">{t('mapHeading')}</h2>
-            </div>
-            <span className="panel-step">{draft.aoi ? t('areaDrawn') : t('noArea')}</span>
-          </div>
-          <p className="section-copy">{t('mapDescription')}</p>
-
+          <div className="panel-heading"><h2 id="aoi-heading"><WorkspaceIcon name="area" />{t('mapHeading')} (AOI)</h2></div>
           <div className="map-tools">
             {!draft.aoi ? (
               <button type="button" className="button button-secondary" onClick={() => setDrawingEnabled(true)} disabled={mapStatus !== 'ready' || submitting}>
@@ -244,6 +227,11 @@ export function Workspace({analysisId}: WorkspaceProps) {
             {drawingEnabled ? <span className="map-tool-help">{t('drawingHelp')}</span> : null}
           </div>
 
+          <div className="shape-tools">
+            <button type="button" className="shape-active" onClick={() => setDrawingEnabled(true)} disabled={mapStatus !== 'ready' || submitting}><WorkspaceIcon name="polygon" />{d('polygon')}</button>
+            <button type="button" disabled><WorkspaceIcon name="rectangle" />{d('rectangle')}</button>
+            <button type="button" disabled><WorkspaceIcon name="pin" />{d('point')}</button>
+          </div>
           <NativeDisclosure className="coordinate-entry" summary={t('coordinateEntry')}>
             <p>{t('coordinateInstructions')}</p>
             <label htmlFor="aoi-geojson">{t('coordinateText')}</label>
@@ -264,13 +252,8 @@ export function Workspace({analysisId}: WorkspaceProps) {
               {t('loadPolygon')}
             </button>
           </NativeDisclosure>
-          {draft.aoi && areaText ? <p className="area-summary">{t('areaSummary')}: <bdi dir="ltr">{areaText} {t('areaUnit')}</bdi></p> : null}
-          <div className="panel-heading input-dates-heading">
-            <div>
-              <p className="eyebrow">02</p>
-              <h2 id="dates-heading">{t('datesHeading')}</h2>
-            </div>
-          </div>
+          {draft.aoi && areaText ? <p className="area-summary"><span>{t('areaDrawn')}</span><br />{t('areaSummary')}: <bdi dir="ltr">{areaText} {t('areaUnit')}</bdi></p> : null}
+          <div className="panel-heading input-dates-heading"><h2 id="dates-heading"><WorkspaceIcon name="calendar" />{d('time')}</h2></div>
 
           <div className="field-stack">
             <div className="field-group">
@@ -302,24 +285,23 @@ export function Workspace({analysisId}: WorkspaceProps) {
           </div>
           <p id="date-help" className="field-help">{t('dateHelp')}</p>
 
+          <div className="layer-controls"><h2><WorkspaceIcon name="layers" />{d('layers')}</h2>
+            <label><input type="checkbox" checked={showPreview} disabled={!previewOverlay} onChange={(event) => setShowPreview(event.target.checked)} />{d('ndvi')}</label>
+            <label><input type="checkbox" checked disabled />{d('satellite')}</label>
+            <label><input type="checkbox" checked={showLabels} onChange={(event) => setShowLabels(event.target.checked)} />{d('labels')}</label>
+          </div>
           {problem ? <p className="notice notice-warning validation-message" role="status">{errorText(problem)}</p> : null}
-          <button type="button" className="button button-primary run-button" disabled={!validation.valid || submitting} onClick={runAnalysis}>
-            {submitting ? t('submittingAnalysis') : t('runAnalysis')}
+          <button type="button" className="button button-primary run-button" aria-label={submitting ? t('submittingAnalysis') : t('runAnalysis')} disabled={!validation.valid || submitting} onClick={runAnalysis}>
+            <WorkspaceIcon name="refresh" />{submitting ? t('submittingAnalysis') : d('update')}
           </button>
           {submitFailure ? <BackendErrorNotice failure={submitFailure} /> : null}
 
-          <AnalysisStagePanel analysisId={analysisId} state={runState} submitFailure={null} onRetry={retryStatus} />
-
+          <button type="button" className="button button-secondary history-toggle" aria-expanded={urlState.history} aria-controls="history-drawer" onClick={() => patchUrlState({history: urlState.history ? null : '1'})}><WorkspaceIcon name="history" />{historyText('toggleOpen')}</button>
           <p className="science-disclosure">{t('workspaceDisclosure')}</p>
         </section>
 
         <section className="panel map-panel" aria-labelledby="map-heading">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">03</p>
-              <h2 id="map-heading">{t('mapHeading')}</h2>
-            </div>
-          </div>
+          <h2 id="map-heading" className="sr-only">{t('mapHeading')}</h2>
           <div className="map-frame" aria-label={t('mapHeading')}>
             <WorkspaceMap
               geometry={draft.aoi}
@@ -328,17 +310,23 @@ export function Workspace({analysisId}: WorkspaceProps) {
               onDrawingFinished={() => setDrawingEnabled(false)}
               onStatusChange={setMapStatus}
               previewOverlay={previewOverlay}
+              showPreview={showPreview}
+              showLabels={showLabels}
+              onTogglePreview={() => setShowPreview(value => !value)}
               onPreviewOverlayStatusChange={setPreviewStatus}
               zoneLayer={zoneLayer}
               selectedZoneId={selectedZoneId}
               onZoneSelect={selectZone}
             />
+            {effectivePreviewStatus === 'ready' && showPreview ? <div className="map-ndvi-legend"><strong>NDVI</strong><span className="ndvi-ramp" /><span>{d('low')} <span>{d('high')}</span></span></div> : null}
+            {runState.kind === 'complete' && runState.result.provenance ? <div className="map-provenance"><bdi dir="auto">{runState.result.provenance.collection} · {runState.result.provenance.grid_resolution_m} m · {runState.result.effective_coverage.acquisition_date ?? d('unavailable')}</bdi></div> : null}
           </div>
-          <p className="map-attribution">{t('mapAttribution')}</p>
+          <NativeDisclosure className="map-attribution" summary={d('mapDetails')}><p>{t('mapAttribution')}</p><p>{t('workspaceDisclosure')}</p></NativeDisclosure>
         </section>
 
       <AnalysisResultPanel
         analysisId={analysisId}
+        stagePanel={<AnalysisStagePanel analysisId={analysisId} state={runState} submitFailure={null} onRetry={retryStatus} />}
         state={runState}
         previewStatus={effectivePreviewStatus}
         scoring={{
