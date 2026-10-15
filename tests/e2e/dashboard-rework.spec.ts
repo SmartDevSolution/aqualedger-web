@@ -32,19 +32,30 @@ for (const locale of ['en', 'ar'] as const) {
   test(`matched desktop geometry at both evidence sizes in ${locale}`, async ({page}) => {
     for (const viewport of [{width: 1091, height: 690}, {width: 1440, height: 900}]) {
       await page.setViewportSize(viewport);
-      await page.goto(`/${locale}/analysis`);
+      for (const suffix of ['', `/${PREVIEW_READY_ID}`]) {
+      await page.goto(`/${locale}/analysis${suffix}`);
+      await expect(page.locator('.metric-card').first()).toContainText(suffix ? '0.42' : (locale === 'en' ? 'Unavailable' : 'غير متاح'));
       const header = await page.locator('.site-header').boundingBox();
       const rail = await page.locator('.input-panel').boundingBox();
       const map = await page.locator('.map-frame').boundingBox();
       const cta = await page.locator('.run-button').boundingBox();
       expect(header!.height).toBe(52);
       expect(rail!.width).toBe(200);
-      expect(map!.width).toBeGreaterThan(viewport.width * .5);
+      expect(map!.width / viewport.width).toBeGreaterThan(.37);
+      expect(map!.width / viewport.width).toBeLessThan(.47);
+      const results = await page.locator('.result-panel').boundingBox();
+      expect(results!.width / viewport.width).toBeCloseTo(.39, 2);
+      const card = await page.locator('.metric-card').first().boundingBox();
+      expect(card!.width).toBeGreaterThanOrEqual(195);
+      const decision = await page.locator('.decision-support-card').boundingBox();
+      expect(decision!.y + decision!.height).toBeLessThan(viewport.height);
+      expect(await page.locator('.result-details-heading').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(viewport.height);
       expect(cta!.y + cta!.height).toBeLessThanOrEqual(viewport.height);
       expect(await page.locator('.metric-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(2);
       await expect(page.locator('.header-search input')).toBeDisabled();
       await expect(page.locator('.shape-tools button').nth(1)).toBeDisabled();
       await expect(page.locator('.shape-tools button').nth(2)).toBeDisabled();
+      }
     }
   });
 }

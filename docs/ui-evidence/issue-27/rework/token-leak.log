@@ -3,18 +3,18 @@
 > node scripts/check-no-token-leak.mjs
 
 ▲ Next.js 16.3.6 (Turbopack)
-✓ Running next.config.ts took 59ms
+✓ Running next.config.ts took 67ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 7.6s
+✓ Compiled successfully in 6.6s
   Running TypeScript ...
-  Finished TypeScript in 6.4s ...
+  Finished TypeScript in 4.9s ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/8) ...
-  Generating static pages using 7 workers (2/8) 
-  Generating static pages using 7 workers (4/8) 
-  Generating static pages using 7 workers (6/8) 
-✓ Generating static pages using 7 workers (8/8) in 585ms
+  Generating static pages using 7 workers (2/8)
+  Generating static pages using 7 workers (4/8)
+  Generating static pages using 7 workers (6/8)
+✓ Generating static pages using 7 workers (8/8) in 420ms
   Finalizing page optimization ...
 
 Route (app)

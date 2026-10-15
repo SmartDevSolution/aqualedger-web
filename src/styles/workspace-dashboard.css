@@ -24,7 +24,7 @@
 .workspace-page { width: 100%; max-width: none; padding: 0; position: relative; font-size: 12px; }
 .workspace-utility { position: absolute; z-index: 10; inset-inline-start: 12px; top: calc(100vh - 96px); }
 .workspace-utility .history-toggle { min-height: 26px; padding: 3px 8px; font-size: 10px; margin: 0; }
-.workspace-grid { grid-template-columns: 200px minmax(0, 1fr) minmax(286px, 28%); gap: 8px; align-items: start; min-height: calc(100vh - 52px); }
+.workspace-grid { grid-template-columns: 200px minmax(0, 1fr) minmax(0, 39%); gap: 8px; align-items: start; min-height: calc(100vh - 52px); }
 .workspace-grid .input-panel { display: flex; flex-direction: column; gap: 12px; min-height: calc(100vh - 52px); padding: 18px 12px 12px; border-radius: 0; border: 0; border-inline-end: 1px solid var(--line); box-shadow: none; background: var(--surface); position: relative; }
 .workspace-grid h2 { font-size: 11px; font-weight: 650; letter-spacing: 0; }
 .input-panel h2 { display: flex; gap: 8px; align-items: center; }
@@ -86,7 +86,7 @@
 .results-heading a { color: var(--brand); text-decoration: none; letter-spacing: 2px; }
 .metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .metric-card, .trend-card, .decision-support-card { border: 1px solid rgb(255 255 255 / 9%); border-radius: 12px; background: var(--surface-tint); padding: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / 20%); min-width: 0; }
-.metric-card { min-height: 126px; }
+.metric-card { min-height: 120px; }
 .metric-card h3, .trend-card h3, .decision-support-card h3 { display: flex; align-items: center; gap: 7px; font-size: 10px; line-height: 1.4; font-weight: 600; }
 .metric-card h3 svg { width: 16px; height: 16px; }
 .metric-number { font-size: 26px; font-weight: 700; line-height: 1.2; margin: 8px 0; }
@@ -98,13 +98,14 @@
 .date-observations { display: flex; gap: 4px; overflow: auto; font-size: 7px; margin-top: 8px; direction: ltr; }
 .date-observations span { display: grid; gap: 3px; align-content: end; }
 .date-observations i { display: block; background: var(--brand); border-radius: 2px; }
-.trend-card { margin-top: 10px; min-height: 148px; }
+.trend-card { margin-top: 10px; min-height: 138px; }
 .chart-tag { margin-inline-start: auto; border: 1px solid var(--line-strong); padding: 2px 7px; border-radius: 4px; font-size: 8px; font-weight: 400; }
-.trend-unavailable { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 94px; color: var(--ink-soft); }
+.trend-unavailable { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 84px; color: var(--ink-soft); }
 .trend-unavailable svg { opacity: .6; width: 24px; height: 24px; }
-.ndvi-series { display: block; width: 100%; direction: ltr; color: var(--ink-soft); font-size: 8px; }
+.ndvi-series { display: block; width: 100%; height: 94px; direction: ltr; color: var(--ink-soft); font-size: 8px; }
 .decision-support-card { margin-top: 10px; }
 .decision-support-card .button { font-size: 10px; padding: 5px 10px; min-height: 30px; border-radius: 7px; text-decoration: none; margin-top: 4px; }
+.compact-results { min-height: calc(100vh - 64px); }
 .result-details-heading { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; scroll-margin-top: 65px; }
 .result-details-heading h3 { font-size: 11px; margin-bottom: 5px; }
 .result-panel .result-detail-section h3 { font-size: 11px; }
@@ -122,11 +123,12 @@
   .workspace-utility { position: static; padding: 10px 10px 0; }
   .shape-tools { max-width: 250px; }.input-panel .field-stack { max-width: 380px; }.layer-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }.layer-controls h2 { grid-column: 1 / -1; }
   .workspace-grid .map-panel { position: static; margin: 0; }.workspace-grid .map-panel .map-frame { height: 440px; min-height: 320px; }
-  .workspace-grid .result-panel { padding: 0; }.metric-card { min-height: 140px; }.site-footer { display: none; }
+  .workspace-grid .result-panel { padding: 0; }.compact-results { min-height: 0; }.metric-card { min-height: 140px; }.site-footer { display: none; }
 }
 @media print {
   .workspace-grid > .input-panel, .workspace-grid > .map-panel, .workspace-utility, .dashboard-summary, .decision-support-card, .result-details-heading, .history-toggle { display: none; }
   .workspace-grid { display: block; min-height: 0; padding: 0; }
   .workspace-grid .result-panel { padding: 0; }
+  .compact-results { min-height: 0; }
   .site-header { display: none; }
 }

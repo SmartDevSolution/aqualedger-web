@@ -1,0 +1,74 @@
+[
+  {
+    "name": "install",
+    "command": "npm ci",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "lint",
+    "command": "npm run lint",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "typecheck",
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "messages",
+    "command": "npm run messages:check",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "contracts",
+    "command": "npm run contracts:check",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "build",
+    "command": "npm run build",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "token-leak",
+    "command": "npm run check-no-token-leak",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "relay-log-leak",
+    "command": "npm run check-relay-log-leak",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "preview-decode",
+    "command": "npm run check-preview-decode",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "e2e-build",
+    "command": "npm run build:e2e",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "e2e",
+    "command": "node node_modules/@playwright/test/cli.js test --workers=4",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "unconfigured",
+    "command": "npm run test:e2e:unconfigured",
+    "exitCode": 0,
+    "error": null
+  }
+]

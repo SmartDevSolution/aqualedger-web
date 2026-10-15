@@ -17,7 +17,7 @@ for (const locale of ['en', 'ar'] as const) {
       expect(map.y - input.y).toBe(8);
       expect(map.y - result.y).toBe(8);
       expect(map.width).toBeGreaterThan(input.width);
-      expect(map.width).toBeGreaterThan(result.width);
+      expect(result.width / page.viewportSize()!.width).toBeCloseTo(.39, 2);
       if (locale === 'en') {
         expect(input.x + input.width).toBeLessThan(map.x);
         expect(map.x + map.width).toBeLessThan(result.x);

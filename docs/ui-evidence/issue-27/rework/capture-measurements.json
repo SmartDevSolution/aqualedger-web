@@ -6,59 +6,105 @@
       "height": 690
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 200,
-          "height": 638,
-          "top": 52,
-          "right": 200,
-          "bottom": 690,
-          "left": 0
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 200,
+            "bottom": 690,
+            "left": 0
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 449.515625,
+            "height": 627.9375,
+            "top": 60,
+            "right": 657.515625,
+            "bottom": 687.9375,
+            "left": 208
+          },
+          "widthPercent": 41.20216544454629
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 665.515625,
+            "y": 52,
+            "width": 425.484375,
+            "height": 2238.234375,
+            "top": 52,
+            "right": 1091,
+            "bottom": 2290.234375,
+            "left": 665.515625
+          },
+          "widthPercent": 38.99948441796517
         }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 449.515625,
+        "height": 608,
+        "top": 60,
+        "right": 657.515625,
+        "bottom": 668,
+        "left": 208
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 208,
-          "y": 60,
-          "width": 569.53125,
-          "height": 627.9375,
-          "top": 60,
-          "right": 777.53125,
-          "bottom": 687.9375,
-          "left": 208
-        }
+      "rail": {
+        "x": 665.515625,
+        "y": 52,
+        "width": 425.484375,
+        "height": 2238.234375,
+        "top": 52,
+        "right": 1091,
+        "bottom": 2290.234375,
+        "left": 665.515625
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 785.53125,
-          "y": 52,
-          "width": 305.46875,
-          "height": 2321.03125,
-          "top": 52,
-          "right": 1091,
-          "bottom": 2373.03125,
-          "left": 785.53125
-        }
-      }
-    ],
+      "card": {
+        "x": 667.515625,
+        "y": 98,
+        "width": 201.734375,
+        "height": 133.1875,
+        "top": 98,
+        "right": 869.25,
+        "bottom": 231.1875,
+        "left": 667.515625
+      },
+      "decision": {
+        "x": 667.515625,
+        "y": 549.21875,
+        "width": 413.484375,
+        "height": 101.5,
+        "top": 549.21875,
+        "right": 1081,
+        "bottom": 650.71875,
+        "left": 667.515625
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          44.45881262299909,
-          12.808028498259446
+          44.51863654173505,
+          12.804317568706452
         ],
         [
-          45.051779001969976,
-          13.424157815958466
+          44.99195508323092,
+          13.427859403164376
         ]
       ],
-      "zoom": 9.395578004041212
+      "zoom": 9.3783246748235
     }
   },
   {
@@ -68,55 +114,101 @@
       "height": 690
     },
     "fixture": "Empty workspace",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 200,
-          "height": 638,
-          "top": 52,
-          "right": 200,
-          "bottom": 690,
-          "left": 0
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 200,
+            "bottom": 690,
+            "left": 0
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 449.515625,
+            "height": 627.9375,
+            "top": 60,
+            "right": 657.515625,
+            "bottom": 687.9375,
+            "left": 208
+          },
+          "widthPercent": 41.20216544454629
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 665.515625,
+            "y": 52,
+            "width": 425.484375,
+            "height": 852.796875,
+            "top": 52,
+            "right": 1091,
+            "bottom": 904.796875,
+            "left": 665.515625
+          },
+          "widthPercent": 38.99948441796517
         }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 449.515625,
+        "height": 608,
+        "top": 60,
+        "right": 657.515625,
+        "bottom": 668,
+        "left": 208
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 208,
-          "y": 60,
-          "width": 569.53125,
-          "height": 627.9375,
-          "top": 60,
-          "right": 777.53125,
-          "bottom": 687.9375,
-          "left": 208
-        }
+      "rail": {
+        "x": 665.515625,
+        "y": 52,
+        "width": 425.484375,
+        "height": 852.796875,
+        "top": 52,
+        "right": 1091,
+        "bottom": 904.796875,
+        "left": 665.515625
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 785.53125,
-          "y": 52,
-          "width": 305.46875,
-          "height": 842.625,
-          "top": 52,
-          "right": 1091,
-          "bottom": 894.625,
-          "left": 785.53125
-        }
-      }
-    ],
+      "card": {
+        "x": 667.515625,
+        "y": 98,
+        "width": 201.734375,
+        "height": 125.25,
+        "top": 98,
+        "right": 869.25,
+        "bottom": 223.25,
+        "left": 667.515625
+      },
+      "decision": {
+        "x": 667.515625,
+        "y": 511.25,
+        "width": 413.484375,
+        "height": 101.5,
+        "top": 511.25,
+        "right": 1081,
+        "bottom": 612.75,
+        "left": 667.515625
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          -75.66741296876077,
+          -59.68133980634694,
           -62.53357696690894
         ],
         [
-          75.66741296876194,
+          59.68133980634724,
           62.533576966908015
         ]
       ],
@@ -130,59 +222,213 @@
       "height": 900
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 200,
-          "height": 848,
-          "top": 52,
-          "right": 200,
-          "bottom": 900,
-          "left": 0
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 200,
+            "bottom": 900,
+            "left": 0
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 662.40625,
+            "height": 837.9375,
+            "top": 60,
+            "right": 870.40625,
+            "bottom": 897.9375,
+            "left": 208
+          },
+          "widthPercent": 46.00043402777778
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 878.40625,
+            "y": 52,
+            "width": 561.59375,
+            "height": 2357.5,
+            "top": 52,
+            "right": 1440,
+            "bottom": 2409.5,
+            "left": 878.40625
+          },
+          "widthPercent": 38.99956597222222
         }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 662.40625,
+        "height": 818,
+        "top": 60,
+        "right": 870.40625,
+        "bottom": 878,
+        "left": 208
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 208,
-          "y": 60,
-          "width": 820.8125,
-          "height": 837.9375,
-          "top": 60,
-          "right": 1028.8125,
-          "bottom": 897.9375,
-          "left": 208
-        }
+      "rail": {
+        "x": 878.40625,
+        "y": 52,
+        "width": 561.59375,
+        "height": 2357.5,
+        "top": 52,
+        "right": 1440,
+        "bottom": 2409.5,
+        "left": 878.40625
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 1036.8125,
-          "y": 52,
-          "width": 403.1875,
-          "height": 2228.53125,
-          "top": 52,
-          "right": 1440,
-          "bottom": 2280.53125,
-          "left": 1036.8125
-        }
-      }
-    ],
+      "card": {
+        "x": 880.40625,
+        "y": 98,
+        "width": 269.796875,
+        "height": 120,
+        "top": 98,
+        "right": 1150.203125,
+        "bottom": 218,
+        "left": 880.40625
+      },
+      "decision": {
+        "x": 880.40625,
+        "y": 536.03125,
+        "width": 549.59375,
+        "height": 101.5,
+        "top": 536.03125,
+        "right": 1430,
+        "bottom": 637.53125,
+        "left": 880.40625
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          44.44846147347917,
+          44.508030044785556,
           12.818372271380298
         ],
         [
-          45.06213015148876,
+          45.00256158017743,
           13.413839494504714
         ]
       ],
       "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "en-empty-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 200,
+            "bottom": 900,
+            "left": 0
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 208,
+            "y": 60,
+            "width": 662.40625,
+            "height": 837.9375,
+            "top": 60,
+            "right": 870.40625,
+            "bottom": 897.9375,
+            "left": 208
+          },
+          "widthPercent": 46.00043402777778
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 878.40625,
+            "y": 52,
+            "width": 561.59375,
+            "height": 1062.796875,
+            "top": 52,
+            "right": 1440,
+            "bottom": 1114.796875,
+            "left": 878.40625
+          },
+          "widthPercent": 38.99956597222222
+        }
+      ],
+      "map": {
+        "x": 208,
+        "y": 60,
+        "width": 662.40625,
+        "height": 818,
+        "top": 60,
+        "right": 870.40625,
+        "bottom": 878,
+        "left": 208
+      },
+      "rail": {
+        "x": 878.40625,
+        "y": 52,
+        "width": 561.59375,
+        "height": 1062.796875,
+        "top": 52,
+        "right": 1440,
+        "bottom": 1114.796875,
+        "left": 878.40625
+      },
+      "card": {
+        "x": 880.40625,
+        "y": 98,
+        "width": 269.796875,
+        "height": 120,
+        "top": 98,
+        "right": 1150.203125,
+        "bottom": 218,
+        "left": 880.40625
+      },
+      "decision": {
+        "x": 880.40625,
+        "y": 506,
+        "width": 549.59375,
+        "height": 101.5,
+        "top": 506,
+        "right": 1430,
+        "bottom": 607.5,
+        "left": 880.40625
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -87.9234023932774,
+          -72.94091236791701
+        ],
+        [
+          87.92340239328126,
+          72.94091236791618
+        ]
+      ],
+      "zoom": 1.4
     }
   },
   {
@@ -192,47 +438,93 @@
       "height": 844
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 10,
-          "y": 109,
-          "width": 370,
-          "height": 561.703125,
-          "top": 109,
-          "right": 380,
-          "bottom": 670.703125,
-          "left": 10
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 520.203125,
+            "top": 109,
+            "right": 380,
+            "bottom": 629.203125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 639.203125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 639.203125,
+            "right": 380,
+            "bottom": 1099.140625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1109.140625,
+            "width": 370,
+            "height": 2443.359375,
+            "top": 1109.140625,
+            "right": 380,
+            "bottom": 3552.5,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
         }
+      ],
+      "map": {
+        "x": 10,
+        "y": 639.203125,
+        "width": 370,
+        "height": 440,
+        "top": 639.203125,
+        "right": 380,
+        "bottom": 1079.203125,
+        "left": 10
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 10,
-          "y": 680.703125,
-          "width": 370,
-          "height": 459.9375,
-          "top": 680.703125,
-          "right": 380,
-          "bottom": 1140.640625,
-          "left": 10
-        }
+      "rail": {
+        "x": 10,
+        "y": 1109.140625,
+        "width": 370,
+        "height": 2443.359375,
+        "top": 1109.140625,
+        "right": 380,
+        "bottom": 3552.5,
+        "left": 10
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 10,
-          "y": 1150.640625,
-          "width": 370,
-          "height": 2453.359375,
-          "top": 1150.640625,
-          "right": 380,
-          "bottom": 3604,
-          "left": 10
-        }
-      }
-    ],
+      "card": {
+        "x": 10,
+        "y": 1143.140625,
+        "width": 180,
+        "height": 140,
+        "top": 1143.140625,
+        "right": 190,
+        "bottom": 1283.140625,
+        "left": 10
+      },
+      "decision": {
+        "x": 10,
+        "y": 1612.015625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1612.015625,
+        "right": 380,
+        "bottom": 1713.515625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
@@ -248,65 +540,219 @@
     }
   },
   {
+    "name": "en-empty-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 520.203125,
+            "top": 109,
+            "right": 380,
+            "bottom": 629.203125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 639.203125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 639.203125,
+            "right": 380,
+            "bottom": 1099.140625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1109.140625,
+            "width": 370,
+            "height": 802.125,
+            "top": 1109.140625,
+            "right": 380,
+            "bottom": 1911.265625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 639.203125,
+        "width": 370,
+        "height": 440,
+        "top": 639.203125,
+        "right": 380,
+        "bottom": 1079.203125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1109.140625,
+        "width": 370,
+        "height": 802.125,
+        "top": 1109.140625,
+        "right": 380,
+        "bottom": 1911.265625,
+        "left": 10
+      },
+      "card": {
+        "x": 10,
+        "y": 1143.140625,
+        "width": 180,
+        "height": 140,
+        "top": 1143.140625,
+        "right": 190,
+        "bottom": 1283.140625,
+        "left": 10
+      },
+      "decision": {
+        "x": 10,
+        "y": 1591.140625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1591.140625,
+        "right": 380,
+        "bottom": 1692.640625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -49.0239576980718,
+          -50.282816830566205
+        ],
+        [
+          49.02395769806907,
+          50.28281683056957
+        ]
+      ],
+      "zoom": 1.4
+    }
+  },
+  {
     "name": "ar-populated-browser-fixture-1091x690",
     "viewport": {
       "width": 1091,
       "height": 690
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 891,
-          "y": 52,
-          "width": 200,
-          "height": 638,
-          "top": 52,
-          "right": 1091,
-          "bottom": 690,
-          "left": 891
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 891,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 1091,
+            "bottom": 690,
+            "left": 891
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 433.484375,
+            "y": 60,
+            "width": 449.515625,
+            "height": 627.9375,
+            "top": 60,
+            "right": 883,
+            "bottom": 687.9375,
+            "left": 433.484375
+          },
+          "widthPercent": 41.20216544454629
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 425.484375,
+            "height": 2186.15625,
+            "top": 52,
+            "right": 425.484375,
+            "bottom": 2238.15625,
+            "left": 0
+          },
+          "widthPercent": 38.99948441796517
         }
+      ],
+      "map": {
+        "x": 433.484375,
+        "y": 60,
+        "width": 449.515625,
+        "height": 608,
+        "top": 60,
+        "right": 883,
+        "bottom": 668,
+        "left": 433.484375
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 313.46875,
-          "y": 60,
-          "width": 569.53125,
-          "height": 627.9375,
-          "top": 60,
-          "right": 883,
-          "bottom": 687.9375,
-          "left": 313.46875
-        }
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 425.484375,
+        "height": 2186.15625,
+        "top": 52,
+        "right": 425.484375,
+        "bottom": 2238.15625,
+        "left": 0
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 305.46875,
-          "height": 2278.8125,
-          "top": 52,
-          "right": 305.46875,
-          "bottom": 2330.8125,
-          "left": 0
-        }
-      }
-    ],
+      "card": {
+        "x": 213.75,
+        "y": 98,
+        "width": 201.734375,
+        "height": 120,
+        "top": 98,
+        "right": 415.484375,
+        "bottom": 218,
+        "left": 213.75
+      },
+      "decision": {
+        "x": 2,
+        "y": 536.03125,
+        "width": 413.484375,
+        "height": 101.5,
+        "top": 536.03125,
+        "right": 415.484375,
+        "bottom": 637.53125,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          44.45881262299909,
-          12.808028498259446
+          44.51863654173505,
+          12.804317568706452
         ],
         [
-          45.051779001969976,
-          13.424157815958466
+          44.99195508323092,
+          13.427859403164376
         ]
       ],
-      "zoom": 9.395578004041212
+      "zoom": 9.3783246748235
     }
   },
   {
@@ -316,55 +762,101 @@
       "height": 690
     },
     "fixture": "Empty workspace",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 891,
-          "y": 52,
-          "width": 200,
-          "height": 638,
-          "top": 52,
-          "right": 1091,
-          "bottom": 690,
-          "left": 891
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 891,
+            "y": 52,
+            "width": 200,
+            "height": 638,
+            "top": 52,
+            "right": 1091,
+            "bottom": 690,
+            "left": 891
+          },
+          "widthPercent": 18.331805682859763
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 433.484375,
+            "y": 60,
+            "width": 449.515625,
+            "height": 627.9375,
+            "top": 60,
+            "right": 883,
+            "bottom": 687.9375,
+            "left": 433.484375
+          },
+          "widthPercent": 41.20216544454629
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 425.484375,
+            "height": 852.796875,
+            "top": 52,
+            "right": 425.484375,
+            "bottom": 904.796875,
+            "left": 0
+          },
+          "widthPercent": 38.99948441796517
         }
+      ],
+      "map": {
+        "x": 433.484375,
+        "y": 60,
+        "width": 449.515625,
+        "height": 608,
+        "top": 60,
+        "right": 883,
+        "bottom": 668,
+        "left": 433.484375
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 313.46875,
-          "y": 60,
-          "width": 569.53125,
-          "height": 627.9375,
-          "top": 60,
-          "right": 883,
-          "bottom": 687.9375,
-          "left": 313.46875
-        }
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 425.484375,
+        "height": 852.796875,
+        "top": 52,
+        "right": 425.484375,
+        "bottom": 904.796875,
+        "left": 0
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 305.46875,
-          "height": 817.046875,
-          "top": 52,
-          "right": 305.46875,
-          "bottom": 869.046875,
-          "left": 0
-        }
-      }
-    ],
+      "card": {
+        "x": 213.75,
+        "y": 98,
+        "width": 201.734375,
+        "height": 120,
+        "top": 98,
+        "right": 415.484375,
+        "bottom": 218,
+        "left": 213.75
+      },
+      "decision": {
+        "x": 2,
+        "y": 506,
+        "width": 413.484375,
+        "height": 101.5,
+        "top": 506,
+        "right": 415.484375,
+        "bottom": 607.5,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          -75.66741296876077,
+          -59.68133980634694,
           -62.53357696690894
         ],
         [
-          75.66741296876194,
+          59.68133980634724,
           62.533576966908015
         ]
       ],
@@ -378,59 +870,213 @@
       "height": 900
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 1240,
-          "y": 52,
-          "width": 200,
-          "height": 848,
-          "top": 52,
-          "right": 1440,
-          "bottom": 900,
-          "left": 1240
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 1240,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 1440,
+            "bottom": 900,
+            "left": 1240
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 569.59375,
+            "y": 60,
+            "width": 662.40625,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1232,
+            "bottom": 897.9375,
+            "left": 569.59375
+          },
+          "widthPercent": 46.00043402777778
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 561.59375,
+            "height": 2337.671875,
+            "top": 52,
+            "right": 561.59375,
+            "bottom": 2389.671875,
+            "left": 0
+          },
+          "widthPercent": 38.99956597222222
         }
+      ],
+      "map": {
+        "x": 569.59375,
+        "y": 60,
+        "width": 662.40625,
+        "height": 818,
+        "top": 60,
+        "right": 1232,
+        "bottom": 878,
+        "left": 569.59375
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 411.1875,
-          "y": 60,
-          "width": 820.8125,
-          "height": 837.9375,
-          "top": 60,
-          "right": 1232,
-          "bottom": 897.9375,
-          "left": 411.1875
-        }
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 561.59375,
+        "height": 2337.671875,
+        "top": 52,
+        "right": 561.59375,
+        "bottom": 2389.671875,
+        "left": 0
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 0,
-          "y": 52,
-          "width": 403.1875,
-          "height": 2192.203125,
-          "top": 52,
-          "right": 403.1875,
-          "bottom": 2244.203125,
-          "left": 0
-        }
-      }
-    ],
+      "card": {
+        "x": 281.796875,
+        "y": 98,
+        "width": 269.796875,
+        "height": 120,
+        "top": 98,
+        "right": 551.59375,
+        "bottom": 218,
+        "left": 281.796875
+      },
+      "decision": {
+        "x": 2,
+        "y": 536.03125,
+        "width": 549.59375,
+        "height": 101.5,
+        "top": 536.03125,
+        "right": 551.59375,
+        "bottom": 637.53125,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
-          44.44846147347917,
+          44.508030044785556,
           12.818372271380298
         ],
         [
-          45.06213015148876,
+          45.00256158017743,
           13.413839494504714
         ]
       ],
       "zoom": 9.87404088346169
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-1440x900",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 1240,
+            "y": 52,
+            "width": 200,
+            "height": 848,
+            "top": 52,
+            "right": 1440,
+            "bottom": 900,
+            "left": 1240
+          },
+          "widthPercent": 13.88888888888889
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 569.59375,
+            "y": 60,
+            "width": 662.40625,
+            "height": 837.9375,
+            "top": 60,
+            "right": 1232,
+            "bottom": 897.9375,
+            "left": 569.59375
+          },
+          "widthPercent": 46.00043402777778
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 0,
+            "y": 52,
+            "width": 561.59375,
+            "height": 1062.796875,
+            "top": 52,
+            "right": 561.59375,
+            "bottom": 1114.796875,
+            "left": 0
+          },
+          "widthPercent": 38.99956597222222
+        }
+      ],
+      "map": {
+        "x": 569.59375,
+        "y": 60,
+        "width": 662.40625,
+        "height": 818,
+        "top": 60,
+        "right": 1232,
+        "bottom": 878,
+        "left": 569.59375
+      },
+      "rail": {
+        "x": 0,
+        "y": 52,
+        "width": 561.59375,
+        "height": 1062.796875,
+        "top": 52,
+        "right": 561.59375,
+        "bottom": 1114.796875,
+        "left": 0
+      },
+      "card": {
+        "x": 281.796875,
+        "y": 98,
+        "width": 269.796875,
+        "height": 120,
+        "top": 98,
+        "right": 551.59375,
+        "bottom": 218,
+        "left": 281.796875
+      },
+      "decision": {
+        "x": 2,
+        "y": 506,
+        "width": 549.59375,
+        "height": 101.5,
+        "top": 506,
+        "right": 551.59375,
+        "bottom": 607.5,
+        "left": 2
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -87.9234023932774,
+          -72.94091236791701
+        ],
+        [
+          87.92340239328126,
+          72.94091236791618
+        ]
+      ],
+      "zoom": 1.4
     }
   },
   {
@@ -440,47 +1086,93 @@
       "height": 844
     },
     "fixture": "Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO",
-    "geometry": [
-      {
-        "class": "panel input-panel",
-        "bounds": {
-          "x": 10,
-          "y": 109,
-          "width": 370,
-          "height": 561.703125,
-          "top": 109,
-          "right": 380,
-          "bottom": 670.703125,
-          "left": 10
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 520.203125,
+            "top": 109,
+            "right": 380,
+            "bottom": 629.203125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 639.203125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 639.203125,
+            "right": 380,
+            "bottom": 1099.140625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1109.140625,
+            "width": 370,
+            "height": 2443.359375,
+            "top": 1109.140625,
+            "right": 380,
+            "bottom": 3552.5,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
         }
+      ],
+      "map": {
+        "x": 10,
+        "y": 639.203125,
+        "width": 370,
+        "height": 440,
+        "top": 639.203125,
+        "right": 380,
+        "bottom": 1079.203125,
+        "left": 10
       },
-      {
-        "class": "panel map-panel",
-        "bounds": {
-          "x": 10,
-          "y": 680.703125,
-          "width": 370,
-          "height": 459.9375,
-          "top": 680.703125,
-          "right": 380,
-          "bottom": 1140.640625,
-          "left": 10
-        }
+      "rail": {
+        "x": 10,
+        "y": 1109.140625,
+        "width": 370,
+        "height": 2443.359375,
+        "top": 1109.140625,
+        "right": 380,
+        "bottom": 3552.5,
+        "left": 10
       },
-      {
-        "class": "panel result-panel",
-        "bounds": {
-          "x": 10,
-          "y": 1150.640625,
-          "width": 370,
-          "height": 2453.359375,
-          "top": 1150.640625,
-          "right": 380,
-          "bottom": 3604,
-          "left": 10
-        }
-      }
-    ],
+      "card": {
+        "x": 200,
+        "y": 1143.140625,
+        "width": 180,
+        "height": 140,
+        "top": 1143.140625,
+        "right": 380,
+        "bottom": 1283.140625,
+        "left": 200
+      },
+      "decision": {
+        "x": 10,
+        "y": 1612.015625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1612.015625,
+        "right": 380,
+        "bottom": 1713.515625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
     "map": {
       "bounds": [
         [
@@ -493,6 +1185,114 @@
         ]
       ],
       "zoom": 8.850581910637702
+    }
+  },
+  {
+    "name": "ar-empty-browser-fixture-390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fixture": "Empty workspace",
+    "geometry": {
+      "columns": [
+        {
+          "class": "panel input-panel",
+          "bounds": {
+            "x": 10,
+            "y": 109,
+            "width": 370,
+            "height": 520.203125,
+            "top": 109,
+            "right": 380,
+            "bottom": 629.203125,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel map-panel",
+          "bounds": {
+            "x": 10,
+            "y": 639.203125,
+            "width": 370,
+            "height": 459.9375,
+            "top": 639.203125,
+            "right": 380,
+            "bottom": 1099.140625,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        },
+        {
+          "class": "panel result-panel",
+          "bounds": {
+            "x": 10,
+            "y": 1109.140625,
+            "width": 370,
+            "height": 782.296875,
+            "top": 1109.140625,
+            "right": 380,
+            "bottom": 1891.4375,
+            "left": 10
+          },
+          "widthPercent": 94.87179487179486
+        }
+      ],
+      "map": {
+        "x": 10,
+        "y": 639.203125,
+        "width": 370,
+        "height": 440,
+        "top": 639.203125,
+        "right": 380,
+        "bottom": 1079.203125,
+        "left": 10
+      },
+      "rail": {
+        "x": 10,
+        "y": 1109.140625,
+        "width": 370,
+        "height": 782.296875,
+        "top": 1109.140625,
+        "right": 380,
+        "bottom": 1891.4375,
+        "left": 10
+      },
+      "card": {
+        "x": 200,
+        "y": 1143.140625,
+        "width": 180,
+        "height": 140,
+        "top": 1143.140625,
+        "right": 380,
+        "bottom": 1283.140625,
+        "left": 200
+      },
+      "decision": {
+        "x": 10,
+        "y": 1591.140625,
+        "width": 370,
+        "height": 101.5,
+        "top": 1591.140625,
+        "right": 380,
+        "bottom": 1692.640625,
+        "left": 10
+      },
+      "horizontalOverflow": false
+    },
+    "map": {
+      "bounds": [
+        [
+          -49.0239576980718,
+          -50.282816830566205
+        ],
+        [
+          49.02395769806907,
+          50.28281683056957
+        ]
+      ],
+      "zoom": 1.4
     }
   }
 ]

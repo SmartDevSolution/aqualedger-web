@@ -203,7 +203,8 @@ export function Workspace({analysisId}: WorkspaceProps) {
     router.push(`/analysis/${response.data.analysis_id}`);
   }
 
-  const problem = inputProblem ?? validation.problem;
+  // An untouched/cleared workspace is not an invalid user action.
+  const problem = inputProblem ?? (draft.aoi ? validation.problem : null);
 
   return (
     <main className="page-content workspace-page">

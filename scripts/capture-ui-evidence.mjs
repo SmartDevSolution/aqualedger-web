@@ -22,7 +22,7 @@ try {
   for (const locale of ['en', 'ar']) {
     for (const viewport of [{width: 1091, height: 690}, {width: 1440, height: 900}, {width: 390, height: 844}]) {
       for (const state of ['populated', 'empty']) {
-        if (state === 'empty' && viewport.width !== 1091) continue;
+        // Capture both states at every exact acceptance viewport.
         const context = await browser.newContext({viewport, isMobile: viewport.width === 390, hasTouch: viewport.width === 390});
         const page = await context.newPage();
         // A clearly labelled screenshot-only fixture: existing saved-result payload and TIFF,
@@ -46,13 +46,17 @@ try {
         const name = `${locale}-${state}-browser-fixture-${viewport.width}x${viewport.height}`;
         await page.screenshot({path: `${output}/${name}.png`});
         if (viewport.width === 390) await page.screenshot({path: `${output}/${name}-full.png`, fullPage: true});
-        measurements.push({name, viewport, fixture: state === 'populated' ? 'Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO' : 'Empty workspace', geometry: await page.locator('.workspace-grid').evaluate(el => [...el.children].map(child => ({class: child.className, bounds: child.getBoundingClientRect().toJSON()}))), map: await page.evaluate(() => { const map = globalThis.__AQUALEDGER_TEST_MAP__; return map ? {bounds: map.getBounds().toArray(), zoom: map.getZoom()} : null; })});
+        measurements.push({name, viewport, fixture: state === 'populated' ? 'Existing PREVIEW_READY saved-route fixture; screenshot-only Yemen artifact positioning, not real EO' : 'Empty workspace', geometry: await page.evaluate(() => {
+          const bounds = selector => globalThis.document.querySelector(selector)?.getBoundingClientRect().toJSON();
+          const columns = [...globalThis.document.querySelector('.workspace-grid').children].map(child => ({class: child.className, bounds: child.getBoundingClientRect().toJSON(), widthPercent: child.getBoundingClientRect().width / globalThis.innerWidth * 100}));
+          return {columns, map: bounds('.map-frame'), rail: bounds('.result-panel'), card: bounds('.metric-card'), decision: bounds('.decision-support-card'), horizontalOverflow: globalThis.document.documentElement.scrollWidth > globalThis.innerWidth};
+        }), map: await page.evaluate(() => { const map = globalThis.__AQUALEDGER_TEST_MAP__; return map ? {bounds: map.getBounds().toArray(), zoom: map.getZoom()} : null; })});
         await context.close();
       }
     }
   }
   await writeFile(`${output}/capture-measurements.json`, JSON.stringify(measurements, null, 2));
-  console.log(`Captured ${measurements.length} states with two additional full-page mobile captures in ${output}`);
+  console.log(`Captured ${measurements.length} states with four additional full-page mobile captures in ${output}`);
 } finally {
   await browser?.close();
   app.kill(); backend.kill();

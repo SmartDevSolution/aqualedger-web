@@ -39,9 +39,11 @@ export function AnalysisResultPanel({
 
   return (
     <section className="panel result-panel" aria-labelledby="result-heading">
-      <div className="panel-heading results-heading"><h2 id="result-heading">{d('results')}</h2><a href="#result-details" aria-label={d('details')}>•••</a></div>
-      <ResultsDashboard result={state.kind === 'complete' ? state.result : null} selectedZoneId={scoring.selectedZoneId} />
-      <section className="decision-support-card"><h3><WorkspaceIcon name="bulb" />{d('decision')}</h3><p>{t('workspaceDisclosure')}</p><a className="button button-primary" href="#result-details">{d('details')} ↓</a></section>
+      <div className="compact-results">
+        <div className="panel-heading results-heading"><h2 id="result-heading">{d('results')}</h2><a href="#result-details" aria-label={d('details')}>•••</a></div>
+        <ResultsDashboard result={state.kind === 'complete' ? state.result : null} selectedZoneId={scoring.selectedZoneId} />
+        <section className="decision-support-card"><h3><WorkspaceIcon name="bulb" />{d('decision')}</h3><p>{t('workspaceDisclosure')}</p><a className="button button-primary" href="#result-details">{d('details')} ↓</a></section>
+      </div>
       <div id="result-details" className="result-details-heading"><h3>{t('resultHeading')}</h3>{analysisId ? <bdi className="result-id" dir="ltr">{analysisId}</bdi> : null}</div>
       {stagePanel}
       {!analysisId ? <p className="subtle-copy">{t('noResult')}</p> : null}
