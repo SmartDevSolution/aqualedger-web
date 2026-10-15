@@ -1,0 +1,6 @@
+
+> aqualedger-web@0.1.0 contracts:check
+> node scripts/check-contract.mjs
+
+✨ openapi-typescript 7.6.1
+Pinned OpenAPI 0.3.0 verified at backend e060dc1f0caa956674927241f0f14a9ada9cf7cd.

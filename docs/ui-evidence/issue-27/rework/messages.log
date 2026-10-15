@@ -1,0 +1,5 @@
+
+> aqualedger-web@0.1.0 messages:check
+> node scripts/check-messages.mjs
+
+Catalog keys and parameters match for en, ar; all 31 M3ReasonCode members have entries; 11 panel group keys are covered in both locales and free of unsupported-outcome tokens (2 denylisted).
